@@ -28,10 +28,9 @@ export async function middleware(request) {
 
 	const { pathname } = request.nextUrl;
 
-	// Rutas que requieren autenticación (dashboard)
-	const protectedPaths = ['/comprobantes', '/clientes', '/productos', '/reportes', '/configuracion', '/onboarding', '/ia'];
+	// Rutas que requieren autenticación
+	const protectedPaths = ['/comprobantes', '/clientes', '/productos', '/reportes', '/configuracion', '/onboarding'];
 	const isProtectedRoute = protectedPaths.some((path) => pathname.startsWith(path));
-	const isDashboardRoot = pathname === '/' && !request.nextUrl.searchParams.has('landing');
 
 	// Redirigir a login si no está autenticado en rutas protegidas
 	if (!user && isProtectedRoute) {

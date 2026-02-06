@@ -3,9 +3,9 @@
 import { motion } from 'framer-motion';
 
 const variants = {
-	default: 'bg-white/[0.03] border-white/[0.06]',
-	solid: 'bg-white/[0.06] border-white/[0.10]',
-	ghost: 'bg-transparent border-transparent',
+	default: '',
+	solid: 'glass-solid',
+	ghost: 'glass-ghost',
 };
 
 export default function GlassCard({
@@ -17,11 +17,15 @@ export default function GlassCard({
 	onClick,
 	...props
 }) {
+	const variantClass = variants[variant] || '';
+
 	const baseClasses = `
 		backdrop-blur-2xl rounded-2xl border
-		shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)]
-		${variants[variant] || variants.default}
-		${hover ? 'transition-all duration-300 hover:bg-white/[0.06] hover:border-white/[0.10]' : ''}
+		bg-[var(--glass-bg)] border-[var(--glass-border)]
+		shadow-[var(--shadow-glass)]
+		${variant === 'solid' ? 'bg-[var(--glass-hover)] border-[var(--glass-active)]' : ''}
+		${variant === 'ghost' ? 'bg-transparent border-transparent shadow-none' : ''}
+		${hover ? 'transition-all duration-300 hover:bg-[var(--glass-hover)] hover:border-[var(--glass-active)]' : ''}
 		${onClick ? 'cursor-pointer' : ''}
 		${className}
 	`.trim();

@@ -12,14 +12,16 @@ export default function Logo({ size = 'md', showText = true, className = '' }) {
 	return (
 		<div className={`flex items-center gap-2.5 ${className}`}>
 			<div className="relative">
-				<div className="absolute inset-0 bg-white/10 rounded-lg blur-lg" />
-				<div className={`relative bg-white ${config.pad} rounded-lg`}>
-					<Zap className={`${config.icon} text-black`} />
+				<div
+					className={`relative ${config.pad} rounded-lg`}
+					style={{ background: 'var(--btn-primary-bg)' }}
+				>
+					<Zap className={config.icon} style={{ color: 'var(--btn-primary-text)' }} />
 				</div>
 			</div>
 			{showText && (
-				<span className={`${config.text} font-semibold tracking-tight text-white/90`}>
-					factur<span className="text-white">IA</span>
+				<span className={`${config.text} font-semibold tracking-tight`} style={{ color: 'var(--text-secondary)' }}>
+					factur<span style={{ color: 'var(--text-primary)' }}>IA</span>
 				</span>
 			)}
 		</div>

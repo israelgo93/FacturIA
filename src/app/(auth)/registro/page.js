@@ -12,6 +12,7 @@ import GlassInput from '@/components/ui/GlassInput';
 import GlassButton from '@/components/ui/GlassButton';
 import GlassAlert from '@/components/ui/GlassAlert';
 import Logo from '@/components/shared/Logo';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 export default function RegistroPage() {
 	const [state, formAction, isPending] = useActionState(signup, null);
@@ -25,9 +26,9 @@ export default function RegistroPage() {
 				<GlassCard className="w-full max-w-md p-8 text-center">
 					<Logo size="lg" className="mb-6 justify-center" />
 					<GlassAlert type="success" message={state.success} className="mb-6" />
-					<p className="text-xs text-white/30">
+					<p className="text-xs" style={{ color: 'var(--text-muted)' }}>
 						Una vez confirmes tu correo, podrás{' '}
-						<Link href="/login" className="text-white/60 hover:text-white">
+						<Link href="/login" style={{ color: 'var(--text-secondary)' }}>
 							iniciar sesión
 						</Link>
 					</p>
@@ -37,12 +38,15 @@ export default function RegistroPage() {
 	}
 
 	return (
-		<div className="min-h-screen flex items-center justify-center px-4 py-12">
+		<div className="min-h-screen flex items-center justify-center px-4 py-12 relative">
+			<div className="absolute top-4 right-4">
+				<ThemeToggle />
+			</div>
 			<GlassCard className="w-full max-w-md p-8">
 				<div className="flex flex-col items-center mb-8">
 					<Logo size="lg" className="mb-5" />
-					<h1 className="text-lg font-medium text-white/90">Crear Cuenta</h1>
-					<p className="text-xs text-white/30 mt-1">Empieza a facturar con IA</p>
+					<h1 className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>Crear Cuenta</h1>
+					<p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Empieza a facturar con IA</p>
 				</div>
 
 				{state?.error && (
@@ -58,7 +62,6 @@ export default function RegistroPage() {
 						error={errors.email?.message || state?.errors?.email?.[0]}
 						{...register('email')}
 					/>
-
 					<GlassInput
 						label="Contraseña"
 						type="password"
@@ -67,7 +70,6 @@ export default function RegistroPage() {
 						error={errors.password?.message || state?.errors?.password?.[0]}
 						{...register('password')}
 					/>
-
 					<GlassInput
 						label="Confirmar contraseña"
 						type="password"
@@ -76,7 +78,6 @@ export default function RegistroPage() {
 						error={errors.confirmPassword?.message || state?.errors?.confirmPassword?.[0]}
 						{...register('confirmPassword')}
 					/>
-
 					<GlassButton
 						type="submit"
 						loading={isPending}
@@ -88,12 +89,9 @@ export default function RegistroPage() {
 					</GlassButton>
 				</form>
 
-				<p className="text-center text-xs text-white/25 mt-8">
+				<p className="text-center text-xs mt-8" style={{ color: 'var(--text-muted)' }}>
 					¿Ya tienes cuenta?{' '}
-					<Link
-						href="/login"
-						className="text-white/60 hover:text-white font-medium transition-colors duration-300"
-					>
+					<Link href="/login" className="font-medium transition-colors duration-300" style={{ color: 'var(--text-secondary)' }}>
 						Iniciar sesión
 					</Link>
 				</p>

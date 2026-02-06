@@ -26,32 +26,47 @@ export default function Sidebar() {
 		<aside
 			className={`
 				hidden lg:flex flex-col h-screen sticky top-0
-				bg-white/[0.02] border-r border-white/[0.05]
 				transition-all duration-300
 				${sidebarCollapsed ? 'w-[68px]' : 'w-[240px]'}
 			`}
+			style={{
+				background: 'var(--sidebar-bg)',
+				borderRight: '1px solid var(--divider)',
+			}}
 		>
-			<div className="flex items-center justify-between px-4 h-16 border-b border-white/[0.05]">
+			<div
+				className="flex items-center justify-between px-4 h-16"
+				style={{ borderBottom: '1px solid var(--divider)' }}
+			>
 				<Logo size={sidebarCollapsed ? 'sm' : 'md'} showText={!sidebarCollapsed} />
 				{!sidebarCollapsed && (
 					<button
 						onClick={toggleSidebarCollapsed}
-						className="p-1.5 rounded-lg hover:bg-white/[0.05] transition-colors duration-300"
+						className="p-1.5 rounded-lg transition-colors duration-300"
+						style={{ color: 'var(--text-muted)' }}
+						onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
+						onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
 						aria-label="Colapsar sidebar"
 					>
-						<ChevronLeft className="w-4 h-4 text-white/20" />
+						<ChevronLeft className="w-4 h-4" />
 					</button>
 				)}
 			</div>
 
 			{sidebarCollapsed && (
-				<div className="flex justify-center py-3 border-b border-white/[0.05]">
+				<div
+					className="flex justify-center py-3"
+					style={{ borderBottom: '1px solid var(--divider)' }}
+				>
 					<button
 						onClick={toggleSidebarCollapsed}
-						className="p-1.5 rounded-lg hover:bg-white/[0.05] transition-colors duration-300"
+						className="p-1.5 rounded-lg transition-colors duration-300"
+						style={{ color: 'var(--text-muted)' }}
+						onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
+						onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
 						aria-label="Expandir sidebar"
 					>
-						<ChevronRight className="w-4 h-4 text-white/20" />
+						<ChevronRight className="w-4 h-4" />
 					</button>
 				</div>
 			)}
@@ -67,17 +82,26 @@ export default function Sidebar() {
 						<Link
 							key={item.href}
 							href={item.href}
-							className={`
-								flex items-center gap-3 px-3 py-2 rounded-xl
-								transition-all duration-300 group
-								${isActive
-									? 'bg-white/[0.08] text-white'
-									: 'text-white/30 hover:text-white/60 hover:bg-white/[0.04]'
+							className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300 group"
+							style={{
+								background: isActive ? 'var(--glass-hover)' : 'transparent',
+								color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+							}}
+							onMouseEnter={(e) => {
+								if (!isActive) {
+									e.currentTarget.style.background = 'var(--glass-bg)';
+									e.currentTarget.style.color = 'var(--text-secondary)';
 								}
-							`}
+							}}
+							onMouseLeave={(e) => {
+								if (!isActive) {
+									e.currentTarget.style.background = 'transparent';
+									e.currentTarget.style.color = 'var(--text-muted)';
+								}
+							}}
 							title={sidebarCollapsed ? item.label : undefined}
 						>
-							<Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-white' : 'text-white/25 group-hover:text-white/50'}`} />
+							<Icon className="w-[18px] h-[18px] shrink-0" />
 							{!sidebarCollapsed && (
 								<span className="text-[13px] font-medium truncate">{item.label}</span>
 							)}
@@ -86,9 +110,18 @@ export default function Sidebar() {
 				})}
 			</nav>
 
-			<div className="px-2.5 py-3 border-t border-white/[0.05]">
+			<div className="px-2.5 py-3" style={{ borderTop: '1px solid var(--divider)' }}>
 				<button
-					className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-white/20 hover:text-white/50 hover:bg-white/[0.04] transition-all duration-300"
+					className="flex items-center gap-3 w-full px-3 py-2 rounded-xl transition-all duration-300"
+					style={{ color: 'var(--text-muted)' }}
+					onMouseEnter={(e) => {
+						e.currentTarget.style.color = 'var(--text-secondary)';
+						e.currentTarget.style.background = 'var(--glass-bg)';
+					}}
+					onMouseLeave={(e) => {
+						e.currentTarget.style.color = 'var(--text-muted)';
+						e.currentTarget.style.background = 'transparent';
+					}}
 					title={sidebarCollapsed ? 'Cerrar sesión' : undefined}
 				>
 					<LogOut className="w-[18px] h-[18px] shrink-0" />

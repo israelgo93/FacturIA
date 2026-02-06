@@ -36,12 +36,15 @@ El nombre fusiona "factura" + "IA", comunicando que la inteligencia artificial e
 | UI | React | 19 |
 | Lenguaje | JavaScript (ES2024) | - |
 | CSS | Tailwind CSS | 4 |
+| Temas | next-themes | 0.4 |
 | Base de datos | PostgreSQL (Supabase) | 15 |
 | Autenticacion | Supabase Auth | - |
 | Almacenamiento | Supabase Storage | - |
 | Estado global | Zustand | 5 |
 | Validacion | Zod + React Hook Form | 4 / 7 |
 | Animaciones | Framer Motion | 12 |
+| Certificados | node-forge | 1.3 |
+| Cifrado | crypto-js (AES-256) | 4 |
 | IA | Google Gemini API | 2.0 Flash |
 | Despliegue | Google Cloud Run | - |
 | CI/CD | GitHub Actions | - |
@@ -50,31 +53,41 @@ El nombre fusiona "factura" + "IA", comunicando que la inteligencia artificial e
 
 ## Sistema de diseno
 
-**Ethereal Glass Monocromatico** — un estilo visual etereo y minimalista que usa exclusivamente blanco y negro.
+**Ethereal Glass** — un estilo visual etereo y minimalista con soporte de temas claro, oscuro y sistema.
 
+### Modo oscuro (default)
 ```
 Fondo:      #09090b (negro solido)
-Glass:      rgba(255, 255, 255, 0.03–0.08) + backdrop-blur
-Bordes:     rgba(255, 255, 255, 0.05–0.10)
-Texto:      white con opacidades 0.90 / 0.55 / 0.30 / 0.15
+Glass:      rgba(255, 255, 255, 0.03-0.06) + backdrop-blur
+Bordes:     rgba(255, 255, 255, 0.05-0.10)
+Texto:      white con opacidades 0.90 / 0.55 / 0.30
 Boton CTA:  fondo blanco, texto negro
-Estados:    diferenciados por brillo, no por color
 ```
 
-La jerarquia visual se logra mediante niveles de opacidad del blanco. No se usan colores.
+### Modo claro
+```
+Fondo:      #fafafa (blanco solido)
+Glass:      rgba(0, 0, 0, 0.02-0.04) + backdrop-blur
+Bordes:     rgba(0, 0, 0, 0.07-0.10)
+Texto:      negro con opacidades 0.90 / 0.55 / 0.35
+Boton CTA:  fondo negro, texto blanco
+```
+
+Todos los colores se definen como variables CSS en `src/styles/globals.css` y cambian automaticamente segun el tema seleccionado. El toggle de tema esta disponible en el Topbar y en las paginas de autenticacion.
 
 ### Componentes UI
 
 | Componente | Proposito |
 |-----------|-----------|
 | GlassCard | Contenedor con variantes y animacion |
-| GlassButton | Primario (blanco/negro), secundario, ghost |
+| GlassButton | Primario, secundario, ghost, danger, accent |
 | GlassInput | Input con label uppercase e icono |
 | GlassSelect | Select con chevron |
 | GlassModal | Modal con backdrop blur |
 | GlassTable | Tabla con paginacion y loading |
 | GlassAlert | Alertas diferenciadas por opacidad |
 | GlassBadge | Estados SRI por nivel de brillo |
+| ThemeToggle | Selector de tema (claro/oscuro/sistema) |
 
 ---
 
@@ -85,23 +98,26 @@ facturia.app (Google Cloud Run)
     |
     +-- Next.js 16 (App Router, SSR, Server Actions)
     |       |
-    |       +-- /              Landing publica
+    |       +-- /              Landing publica (Server Component con auth check)
     |       +-- /login         Autenticacion
     |       +-- /registro      Registro
     |       +-- /recuperar     Recuperar contrasena
     |       +-- /(dashboard)   Rutas protegidas
-    |           +-- /              Dashboard KPIs
-    |           +-- /comprobantes  Comprobantes electronicos
-    |           +-- /clientes      Gestion de clientes
-    |           +-- /productos     Catalogo productos
-    |           +-- /reportes      Reportes SRI con IA
-    |           +-- /configuracion Empresa y ajustes
-    |           +-- /onboarding    Configuracion guiada por IA
+    |           +-- /onboarding        Wizard configuracion empresa (5 pasos)
+    |           +-- /comprobantes      Comprobantes electronicos
+    |           +-- /clientes          CRUD clientes (tabla, busqueda, CSV)
+    |           +-- /productos         CRUD productos (tabla, IVA/ICE, CSV)
+    |           +-- /reportes          Reportes SRI con IA
+    |           +-- /configuracion     Hub de configuracion
+    |               +-- /empresa           Datos del contribuyente
+    |               +-- /establecimientos  CRUD establecimientos
+    |               +-- /puntos-emision    CRUD puntos de emision
+    |               +-- /certificado       Upload y gestion .p12
     |
     +-- Supabase
     |       +-- PostgreSQL 15 (15 tablas, RLS multi-tenant)
     |       +-- Auth (email/password, refresh tokens)
-    |       +-- Storage (certificados .p12)
+    |       +-- Storage (certificados .p12, cifrado AES-256)
     |
     +-- Google Gemini API (IA tributaria)
     |
@@ -112,6 +128,14 @@ facturia.app (Google Cloud Run)
 
 Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Todas las tablas filtran por `empresa_id` a nivel de base de datos, imposibilitando el acceso cruzado entre empresas.
 
+### Flujo de autenticacion
+
+1. Usuario no autenticado en `/` ve la landing publica
+2. Despues del login, `/` detecta auth y redirige automaticamente
+3. Si no ha completado onboarding, va a `/onboarding` (wizard 5 pasos)
+4. Si ya completo onboarding, va a `/comprobantes`
+5. Rutas protegidas redirigen a `/login` si no hay sesion
+
 ---
 
 ## Base de datos
@@ -121,12 +145,12 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 | Tabla | Proposito |
 |-------|-----------|
 | planes | Planes SaaS (starter, professional, enterprise) |
-| empresas | Datos del contribuyente y suscripcion |
+| empresas | Datos del contribuyente, suscripcion y estado de onboarding |
 | establecimientos | Establecimientos del contribuyente |
 | puntos_emision | Puntos de emision por establecimiento |
 | secuenciales | Secuenciales por tipo de comprobante |
-| certificados | Metadata de certificados .p12 |
-| clientes | Clientes/receptores |
+| certificados | Metadata de certificados .p12 (contrasena cifrada AES-256) |
+| clientes | Clientes/receptores con validacion RUC/Cedula |
 | productos | Catalogo con configuracion IVA/ICE |
 | comprobantes | Comprobantes electronicos emitidos |
 | comprobante_detalles | Items de cada comprobante |
@@ -135,6 +159,32 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 | sri_log | Auditoria de comunicacion con el SRI |
 | config_email | Configuracion de envio de correos |
 | ia_conversaciones | Historial de chat con la IA |
+
+---
+
+## Funcionalidades implementadas
+
+### Fase 1 - Fundacion
+- Proyecto Next.js 16 con App Router y Tailwind 4
+- Sistema de diseno Ethereal Glass (8 componentes UI)
+- Layout responsive mobile-first (Sidebar, Topbar, BottomNav)
+- Autenticacion Supabase (login, registro, recuperar, middleware)
+- Schema BD multi-tenant con RLS (15 tablas)
+- CI/CD con GitHub Actions hacia Cloud Run
+- Landing page publica
+
+### Fase 2 - Onboarding + Catalogos + Temas
+- Sistema de temas: claro, oscuro y sistema (next-themes)
+- Variables CSS para todos los componentes (sin colores hardcoded)
+- Onboarding wizard de 5 pasos (empresa, establecimiento, punto emision, certificado, resumen)
+- CRUD completo de empresa con validacion RUC Modulo 11
+- CRUD de establecimientos y puntos de emision
+- Upload y validacion de certificado .p12 con cifrado AES-256
+- CRUD de clientes con tabla paginada, busqueda, filtros e importacion CSV
+- CRUD de productos con configuracion IVA/ICE e importacion CSV
+- Validacion de identificaciones ecuatorianas (RUC Modulo 11, Cedula Modulo 10)
+- 4 subagentes Cursor con frontmatter correcto (repo-scout, sri-validator, test-writer, db-migrator)
+- Redireccion inteligente post-login (onboarding o dashboard)
 
 ---
 
@@ -158,7 +208,7 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 
 ### Requisitos
 
-- Node.js 18.18+ (desarrollo local usa v25, Docker usa v20 LTS)
+- Node.js 20+ (desarrollo local usa v25, Docker usa v20 LTS)
 - Cuenta Supabase con proyecto configurado
 
 ### Instalacion
@@ -178,6 +228,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_APP_NAME=facturIA
+ENCRYPTION_KEY=tu-clave-aes-256-de-32-caracteres
 ```
 
 ### Ejecutar
@@ -196,7 +247,7 @@ npm run lint      # Verificar codigo
 facturia/
 +-- .cursor/                  Configuracion de agentes IA
 |   +-- rules/                Reglas del proyecto (3)
-|   +-- agents/               Agentes especializados (7)
+|   +-- agents/               SubAgentes especializados (4)
 |   +-- skills/               Conocimiento reutilizable (5)
 |   +-- commands/             Workflows invocables (3)
 +-- .github/workflows/        CI/CD (3 pipelines)
@@ -205,17 +256,25 @@ facturia/
 |   +-- app/                  Rutas (App Router)
 |   |   +-- (auth)/           Login, registro, recuperar
 |   |   +-- (dashboard)/      Rutas protegidas
+|   |   |   +-- clientes/     CRUD clientes (lista, nuevo, editar, importar)
+|   |   |   +-- productos/    CRUD productos (lista, nuevo, editar, importar)
+|   |   |   +-- configuracion/ Hub + empresa, establecimientos, puntos, certificado
+|   |   |   +-- onboarding/   Wizard 5 pasos con componentes
 |   |   +-- auth/callback/    Callback de confirmacion
 |   +-- components/
-|   |   +-- ui/               8 componentes Glass
+|   |   +-- ui/               9 componentes Glass + ThemeToggle
 |   |   +-- layout/           Sidebar, Topbar, BottomNav, MobileMenu
 |   |   +-- shared/           Logo, LoadingSpinner, EmptyState
+|   |   +-- providers/        ThemeProvider
+|   |   +-- pages/            LandingPage
 |   +-- lib/
 |   |   +-- supabase/         Clientes browser y servidor
-|   |   +-- validations/      Schemas Zod
+|   |   +-- validations/      Schemas Zod (auth, empresa, cliente, producto)
 |   |   +-- utils/            Constantes, formatters, catalogos SRI
+|   |   +-- crypto/           Cifrado AES-256
+|   |   +-- sri/              Parser de certificados .p12
 |   +-- stores/               Zustand (auth, empresa, UI)
-|   +-- styles/               Tokens Ethereal Glass
+|   +-- styles/               Tokens CSS con soporte de temas
 +-- Dockerfile                Multi-stage build para Cloud Run
 +-- Plan_FactuIA/             Documentacion de planificacion
 ```
@@ -224,17 +283,24 @@ facturia/
 
 ## Agentes IA (Cursor)
 
-El proyecto incluye un equipo de 7 agentes especializados para desarrollo asistido:
+4 subagentes especializados con frontmatter YAML para Cursor 2.4+:
 
-| Agente | Rol |
-|--------|-----|
-| planner | Planificacion y diseno de features |
-| backend-dev | Server Actions, API routes, Supabase |
-| frontend-dev | React, Tailwind, Ethereal Glass UI |
-| sri-specialist | XML SRI, firma XAdES-BES, SOAP |
-| db-architect | PostgreSQL, migraciones, RLS |
-| qa-tester | Tests unitarios, integracion, E2E |
-| devops-engineer | Docker, CI/CD, Cloud Run |
+| SubAgente | Rol |
+|-----------|-----|
+| repo-scout | Exploracion del codebase, busqueda de archivos y patrones |
+| sri-validator | Validacion XML SRI, clave de acceso, catalogos tributarios |
+| test-writer | Generacion de tests unitarios, integracion y E2E |
+| db-migrator | Migraciones SQL, politicas RLS, verificacion de schema |
+
+5 skills de conocimiento procedimental:
+
+| Skill | Proposito |
+|-------|-----------|
+| supabase-rls | Patrones RLS multi-tenant |
+| xml-sri | Generacion XML comprobantes electronicos |
+| glass-ui | Sistema de diseno con soporte de temas |
+| nextjs-patterns | Patrones Next.js 16+ con App Router |
+| ci-cd-cloudrun | CI/CD GitHub Actions hacia Cloud Run |
 
 ---
 
@@ -253,7 +319,7 @@ El proyecto incluye un equipo de 7 agentes especializados para desarrollo asisti
 | Fase | Descripcion | Estado |
 |------|------------|--------|
 | **Fase 1** | Fundacion: proyecto, UI, auth, BD, CI/CD | Completada |
-| Fase 2 | Onboarding IA + CRUD catalogos | Pendiente |
+| **Fase 2** | Temas, onboarding, config empresa, catalogos clientes/productos | Completada |
 | Fase 3 | Motor de facturacion electronica | Pendiente |
 | Fase 4 | Comprobantes adicionales (NC, ND, retenciones) | Pendiente |
 | Fase 5 | Reportes IA + ATS/RDEP | Pendiente |

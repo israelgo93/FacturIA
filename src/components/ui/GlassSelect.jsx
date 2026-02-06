@@ -15,9 +15,12 @@ const GlassSelect = forwardRef(function GlassSelect({
 	return (
 		<div className={`w-full ${className}`}>
 			{label && (
-				<label className="block text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
+				<label
+					className="block text-xs font-medium uppercase tracking-wider mb-2"
+					style={{ color: 'var(--text-muted)' }}
+				>
 					{label}
-					{required && <span className="text-white/60 ml-1">*</span>}
+					{required && <span style={{ color: 'var(--text-secondary)' }} className="ml-1">*</span>}
 				</label>
 			)}
 			<div className="relative">
@@ -25,32 +28,46 @@ const GlassSelect = forwardRef(function GlassSelect({
 					ref={ref}
 					className={`
 						w-full px-4 py-2.5 pr-10 rounded-xl appearance-none
-						bg-white/[0.04] border border-white/[0.06]
-						backdrop-blur-sm text-white
+						backdrop-blur-sm
 						transition-all duration-300
-						focus:outline-none focus:bg-white/[0.06] focus:border-white/[0.15]
+						focus:outline-none
 						disabled:opacity-40 disabled:cursor-not-allowed
-						${error ? 'border-white/[0.20]' : ''}
 					`.trim()}
+					style={{
+						background: 'var(--input-bg)',
+						border: `1px solid ${error ? 'var(--input-error-border)' : 'var(--input-border)'}`,
+						color: 'var(--text-primary)',
+					}}
+					onFocus={(e) => {
+						e.target.style.background = 'var(--input-focus-bg)';
+						e.target.style.borderColor = 'var(--input-focus-border)';
+					}}
+					onBlur={(e) => {
+						e.target.style.background = 'var(--input-bg)';
+						e.target.style.borderColor = error ? 'var(--input-error-border)' : 'var(--input-border)';
+					}}
 					{...props}
 				>
-					<option value="" className="bg-[#18181b] text-white/40">
+					<option value="" style={{ background: 'var(--option-bg)', color: 'var(--option-text-muted)' }}>
 						{placeholder}
 					</option>
 					{options.map((opt) => (
 						<option
 							key={opt.value}
 							value={opt.value}
-							className="bg-[#18181b] text-white"
+							style={{ background: 'var(--option-bg)', color: 'var(--option-text)' }}
 						>
 							{opt.label}
 						</option>
 					))}
 				</select>
-				<ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25 pointer-events-none" />
+				<ChevronDown
+					className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+					style={{ color: 'var(--text-muted)' }}
+				/>
 			</div>
 			{error && (
-				<p className="mt-1.5 text-xs text-white/50">{error}</p>
+				<p className="mt-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>{error}</p>
 			)}
 		</div>
 	);

@@ -1,77 +1,199 @@
 @import "tailwindcss";
 
-@theme {
-	/* ========================================
-	   ETHEREAL GLASS — Paleta Monocromática
-	   Solo blanco y negro con efecto etéreo
-	   ======================================== */
+/* ========================================
+   MODO OSCURO (Default)
+   ======================================== */
+:root {
+	--bg-primary: #09090b;
+	--bg-secondary: #111113;
+	--bg-tertiary: #18181b;
 
-	/* Fondos */
-	--color-bg-primary: #09090b;
-	--color-bg-secondary: #111113;
-	--color-bg-tertiary: #18181b;
+	--glass-bg: rgba(255, 255, 255, 0.03);
+	--glass-hover: rgba(255, 255, 255, 0.06);
+	--glass-border: rgba(255, 255, 255, 0.06);
+	--glass-active: rgba(255, 255, 255, 0.10);
 
-	/* Glass */
-	--color-glass: rgba(255, 255, 255, 0.04);
-	--color-glass-hover: rgba(255, 255, 255, 0.07);
-	--color-glass-border: rgba(255, 255, 255, 0.08);
-	--color-glass-active: rgba(255, 255, 255, 0.10);
+	--text-primary: #fafafa;
+	--text-secondary: rgba(255, 255, 255, 0.55);
+	--text-muted: rgba(255, 255, 255, 0.30);
+	--text-disabled: rgba(255, 255, 255, 0.15);
 
-	/* Texto monocromático */
-	--color-text-primary: #fafafa;
-	--color-text-secondary: rgba(255, 255, 255, 0.55);
-	--color-text-muted: rgba(255, 255, 255, 0.30);
+	--accent-primary: #ffffff;
+	--accent-primary-light: rgba(255, 255, 255, 0.85);
 
-	/* Acento — blanco puro */
-	--color-primary: #ffffff;
-	--color-primary-light: rgba(255, 255, 255, 0.85);
-	--color-accent: #ffffff;
-	--color-accent-light: rgba(255, 255, 255, 0.70);
+	--btn-primary-bg: #ffffff;
+	--btn-primary-text: #000000;
+	--btn-primary-hover: rgba(255, 255, 255, 0.90);
 
-	/* Estados SRI — escala de grises */
-	--color-status-creado: rgba(255, 255, 255, 0.30);
-	--color-status-firmado: rgba(255, 255, 255, 0.45);
-	--color-status-enviado: rgba(255, 255, 255, 0.55);
-	--color-status-autorizado: rgba(255, 255, 255, 0.90);
-	--color-status-no-autorizado: rgba(255, 255, 255, 0.25);
-	--color-status-anulado: rgba(255, 255, 255, 0.15);
-}
+	--btn-secondary-bg: rgba(255, 255, 255, 0.06);
+	--btn-secondary-text: rgba(255, 255, 255, 0.80);
+	--btn-secondary-border: rgba(255, 255, 255, 0.08);
+	--btn-secondary-hover: rgba(255, 255, 255, 0.10);
 
-body {
-	background: #09090b;
-	min-height: 100vh;
-	color: #fafafa;
-	font-family: 'Inter', system-ui, sans-serif;
+	--btn-ghost-hover: rgba(255, 255, 255, 0.05);
+	--btn-ghost-text: rgba(255, 255, 255, 0.60);
+
+	--input-bg: rgba(255, 255, 255, 0.04);
+	--input-border: rgba(255, 255, 255, 0.06);
+	--input-focus-bg: rgba(255, 255, 255, 0.06);
+	--input-focus-border: rgba(255, 255, 255, 0.15);
+	--input-placeholder: rgba(255, 255, 255, 0.20);
+	--input-error-border: rgba(255, 255, 255, 0.20);
+
+	--modal-bg: rgba(17, 17, 19, 0.95);
+	--modal-overlay: rgba(0, 0, 0, 0.80);
+
+	--table-header-text: rgba(255, 255, 255, 0.30);
+	--table-row-hover: rgba(255, 255, 255, 0.02);
+	--table-divider: rgba(255, 255, 255, 0.03);
+
+	--shadow-glass: 0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 20px 50px -12px rgba(0, 0, 0, 0.5);
+	--shadow-glass-lg: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+
+	--scrollbar-thumb: rgba(255, 255, 255, 0.08);
+	--scrollbar-thumb-hover: rgba(255, 255, 255, 0.15);
+	--selection-bg: rgba(255, 255, 255, 0.15);
+
+	--divider: rgba(255, 255, 255, 0.05);
+
+	--topbar-bg: rgba(9, 9, 11, 0.80);
+	--bottomnav-bg: rgba(9, 9, 11, 0.90);
+	--sidebar-bg: rgba(255, 255, 255, 0.02);
+	--mobilemenu-bg: #0e0e10;
+
+	--option-bg: #18181b;
+	--option-text: rgba(255, 255, 255, 1);
+	--option-text-muted: rgba(255, 255, 255, 0.40);
+
+	--badge-active-bg: rgba(255, 255, 255, 0.12);
+	--badge-active-text: rgba(255, 255, 255, 0.80);
+	--badge-active-border: rgba(255, 255, 255, 0.15);
+	--badge-inactive-bg: rgba(255, 255, 255, 0.03);
+	--badge-inactive-text: rgba(255, 255, 255, 0.25);
+	--badge-inactive-border: rgba(255, 255, 255, 0.05);
+
+	--alert-icon-success: 0.90;
+	--alert-icon-error: 0.60;
+	--alert-icon-warning: 0.50;
+	--alert-icon-info: 0.40;
+	--alert-bg: rgba(255, 255, 255, 0.03);
+	--alert-border: rgba(255, 255, 255, 0.08);
+	--alert-title: rgba(255, 255, 255, 0.80);
+	--alert-message: rgba(255, 255, 255, 0.50);
 }
 
 /* ========================================
-   Utilidades Glass Etéreo
+   MODO CLARO
+   ======================================== */
+[data-theme="light"] {
+	--bg-primary: #fafafa;
+	--bg-secondary: #f4f4f5;
+	--bg-tertiary: #e4e4e7;
+
+	--glass-bg: rgba(0, 0, 0, 0.02);
+	--glass-hover: rgba(0, 0, 0, 0.04);
+	--glass-border: rgba(0, 0, 0, 0.07);
+	--glass-active: rgba(0, 0, 0, 0.08);
+
+	--text-primary: #09090b;
+	--text-secondary: rgba(0, 0, 0, 0.55);
+	--text-muted: rgba(0, 0, 0, 0.35);
+	--text-disabled: rgba(0, 0, 0, 0.20);
+
+	--accent-primary: #09090b;
+	--accent-primary-light: rgba(0, 0, 0, 0.80);
+
+	--btn-primary-bg: #09090b;
+	--btn-primary-text: #ffffff;
+	--btn-primary-hover: #18181b;
+
+	--btn-secondary-bg: rgba(0, 0, 0, 0.04);
+	--btn-secondary-text: rgba(0, 0, 0, 0.70);
+	--btn-secondary-border: rgba(0, 0, 0, 0.10);
+	--btn-secondary-hover: rgba(0, 0, 0, 0.07);
+
+	--btn-ghost-hover: rgba(0, 0, 0, 0.04);
+	--btn-ghost-text: rgba(0, 0, 0, 0.55);
+
+	--input-bg: rgba(0, 0, 0, 0.02);
+	--input-border: rgba(0, 0, 0, 0.10);
+	--input-focus-bg: rgba(0, 0, 0, 0.03);
+	--input-focus-border: rgba(0, 0, 0, 0.25);
+	--input-placeholder: rgba(0, 0, 0, 0.30);
+	--input-error-border: rgba(220, 38, 38, 0.50);
+
+	--modal-bg: rgba(250, 250, 250, 0.97);
+	--modal-overlay: rgba(0, 0, 0, 0.40);
+
+	--table-header-text: rgba(0, 0, 0, 0.40);
+	--table-row-hover: rgba(0, 0, 0, 0.02);
+	--table-divider: rgba(0, 0, 0, 0.05);
+
+	--shadow-glass: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
+	--shadow-glass-lg: 0 4px 24px rgba(0, 0, 0, 0.08);
+
+	--scrollbar-thumb: rgba(0, 0, 0, 0.12);
+	--scrollbar-thumb-hover: rgba(0, 0, 0, 0.20);
+	--selection-bg: rgba(0, 0, 0, 0.10);
+
+	--divider: rgba(0, 0, 0, 0.07);
+
+	--topbar-bg: rgba(250, 250, 250, 0.85);
+	--bottomnav-bg: rgba(250, 250, 250, 0.92);
+	--sidebar-bg: rgba(0, 0, 0, 0.02);
+	--mobilemenu-bg: #fafafa;
+
+	--option-bg: #f4f4f5;
+	--option-text: rgba(0, 0, 0, 0.90);
+	--option-text-muted: rgba(0, 0, 0, 0.40);
+
+	--badge-active-bg: rgba(0, 0, 0, 0.08);
+	--badge-active-text: rgba(0, 0, 0, 0.70);
+	--badge-active-border: rgba(0, 0, 0, 0.12);
+	--badge-inactive-bg: rgba(0, 0, 0, 0.03);
+	--badge-inactive-text: rgba(0, 0, 0, 0.35);
+	--badge-inactive-border: rgba(0, 0, 0, 0.06);
+
+	--alert-icon-success: 0.85;
+	--alert-icon-error: 0.70;
+	--alert-icon-warning: 0.60;
+	--alert-icon-info: 0.50;
+	--alert-bg: rgba(0, 0, 0, 0.02);
+	--alert-border: rgba(0, 0, 0, 0.08);
+	--alert-title: rgba(0, 0, 0, 0.80);
+	--alert-message: rgba(0, 0, 0, 0.55);
+}
+
+/* ========================================
+   Estilos base
+   ======================================== */
+body {
+	background: var(--bg-primary);
+	min-height: 100vh;
+	color: var(--text-primary);
+	font-family: 'Inter', system-ui, sans-serif;
+	transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* ========================================
+   Utilidades Glass
    ======================================== */
 .glass {
-	background: rgba(255, 255, 255, 0.03);
+	background: var(--glass-bg);
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
-	border: 1px solid rgba(255, 255, 255, 0.06);
+	border: 1px solid var(--glass-border);
 	border-radius: 20px;
-	box-shadow:
-		0 0 0 0.5px rgba(255, 255, 255, 0.04),
-		0 20px 50px -12px rgba(0, 0, 0, 0.5);
+	box-shadow: var(--shadow-glass);
 }
 
 .glass-hover:hover {
-	background: rgba(255, 255, 255, 0.06);
-	border-color: rgba(255, 255, 255, 0.10);
-}
-
-/* Efecto glow etéreo sutil */
-.glow {
-	box-shadow:
-		0 0 20px rgba(255, 255, 255, 0.03),
-		0 0 60px rgba(255, 255, 255, 0.01);
+	background: var(--glass-hover);
+	border-color: var(--glass-active);
 }
 
 /* ========================================
-   Scrollbar minimalista
+   Scrollbar
    ======================================== */
 ::-webkit-scrollbar {
 	width: 4px;
@@ -82,18 +204,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-	background: rgba(255, 255, 255, 0.08);
+	background: var(--scrollbar-thumb);
 	border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	background: rgba(255, 255, 255, 0.15);
+	background: var(--scrollbar-thumb-hover);
 }
 
-/* ========================================
-   Selección de texto
-   ======================================== */
 ::selection {
-	background: rgba(255, 255, 255, 0.15);
-	color: white;
+	background: var(--selection-bg);
+	color: var(--text-primary);
 }

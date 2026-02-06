@@ -1,5 +1,6 @@
 import '@/styles/globals.css';
 import { Toaster } from 'sonner';
+import ThemeProvider from '@/components/providers/ThemeProvider';
 
 export const metadata = {
 	title: 'facturIA — Facturación Electrónica con IA',
@@ -9,7 +10,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
 	return (
-		<html lang="es">
+		<html lang="es" suppressHydrationWarning>
 			<head>
 				<link rel="preconnect" href="https://fonts.googleapis.com" />
 				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -19,20 +20,22 @@ export default function RootLayout({ children }) {
 				/>
 			</head>
 			<body className="antialiased">
-				{children}
-				<Toaster
-					position="top-right"
-					richColors
-					theme="dark"
-					toastOptions={{
-						style: {
-							background: 'rgba(255, 255, 255, 0.08)',
-							backdropFilter: 'blur(16px)',
-							border: '1px solid rgba(255, 255, 255, 0.15)',
-							color: 'white',
-						},
-					}}
-				/>
+				<ThemeProvider>
+					{children}
+					<Toaster
+						position="top-right"
+						richColors
+						theme="dark"
+						toastOptions={{
+							style: {
+								background: 'var(--glass-bg)',
+								backdropFilter: 'blur(16px)',
+								border: '1px solid var(--glass-border)',
+								color: 'var(--text-primary)',
+							},
+						}}
+					/>
+				</ThemeProvider>
 			</body>
 		</html>
 	);

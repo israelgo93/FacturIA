@@ -2,12 +2,37 @@
 
 import { Loader2 } from 'lucide-react';
 
-const variants = {
-	primary: 'bg-white text-black hover:bg-white/90 border-transparent',
-	secondary: 'bg-white/[0.06] hover:bg-white/[0.10] text-white/80 border-white/[0.08]',
-	ghost: 'bg-transparent hover:bg-white/[0.05] text-white/60 border-transparent',
-	danger: 'bg-white/[0.06] hover:bg-white/[0.10] text-white/60 border-white/[0.08]',
-	accent: 'bg-white/[0.10] hover:bg-white/[0.15] text-white border-white/[0.12]',
+const variantStyles = {
+	primary: {
+		bg: 'var(--btn-primary-bg)',
+		text: 'var(--btn-primary-text)',
+		hoverBg: 'var(--btn-primary-hover)',
+		border: 'transparent',
+	},
+	secondary: {
+		bg: 'var(--btn-secondary-bg)',
+		text: 'var(--btn-secondary-text)',
+		hoverBg: 'var(--btn-secondary-hover)',
+		border: 'var(--btn-secondary-border)',
+	},
+	ghost: {
+		bg: 'transparent',
+		text: 'var(--btn-ghost-text)',
+		hoverBg: 'var(--btn-ghost-hover)',
+		border: 'transparent',
+	},
+	danger: {
+		bg: 'var(--btn-secondary-bg)',
+		text: 'var(--text-secondary)',
+		hoverBg: 'var(--btn-secondary-hover)',
+		border: 'var(--btn-secondary-border)',
+	},
+	accent: {
+		bg: 'var(--glass-active)',
+		text: 'var(--text-primary)',
+		hoverBg: 'var(--glass-hover)',
+		border: 'var(--glass-active)',
+	},
 };
 
 const sizes = {
@@ -28,6 +53,8 @@ export default function GlassButton({
 	type = 'button',
 	...props
 }) {
+	const style = variantStyles[variant] || variantStyles.primary;
+
 	return (
 		<button
 			type={type}
@@ -37,10 +64,25 @@ export default function GlassButton({
 				border backdrop-blur-sm
 				transition-all duration-300
 				disabled:opacity-40 disabled:cursor-not-allowed
-				${variants[variant] || variants.primary}
 				${sizes[size] || sizes.md}
 				${className}
 			`.trim()}
+			style={{
+				background: style.bg,
+				color: style.text,
+				borderColor: style.border,
+				'--hover-bg': style.hoverBg,
+			}}
+			onMouseEnter={(e) => {
+				if (!disabled && !loading) {
+					e.currentTarget.style.background = style.hoverBg;
+				}
+			}}
+			onMouseLeave={(e) => {
+				if (!disabled && !loading) {
+					e.currentTarget.style.background = style.bg;
+				}
+			}}
 			{...props}
 		>
 			{loading ? (

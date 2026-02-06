@@ -11,8 +11,9 @@ globs: ["**/*"]
 - UI: React 19 + Tailwind CSS 4
 - Backend: Supabase (PostgreSQL 15 + Auth + Storage)
 - Estado: Zustand 5
-- Validación: Zod 3 + React Hook Form 7
+- Validación: Zod 4 + React Hook Form 7
 - IA: Google Gemini API 2.0 Flash
+- Temas: next-themes (light/dark/system)
 - Despliegue: Google Cloud Run (Docker)
 
 ## Convenciones de Código
@@ -30,21 +31,15 @@ globs: ["**/*"]
 - Validación dual: Zod (frontend) + Server Actions (backend)
 - Nunca exponer service_role_key al cliente
 
-## Diseño UI — Ethereal Glass Monocromático
-- Estilo visual: Ethereal Glass — etéreo, minimalista, monocromático
-- Paleta: EXCLUSIVAMENTE blanco y negro (sin colores)
-- Background: negro sólido #09090b (sin gradientes)
-- Glass: white con opacidades muy bajas (0.03–0.08)
-- Texto: white con niveles de opacidad para jerarquía (0.90, 0.55, 0.30, 0.15)
-- Botón primario: fondo blanco, texto negro (invertido)
-- Labels: uppercase, tracking-wider, text-xs, white/40
+## Diseño UI — Sistema de Temas
+- Soporte de temas: claro, oscuro y sistema (next-themes)
+- Variables CSS definidas en globals.css para ambos modos
+- Componentes Glass adaptados con variables CSS (NO valores hardcoded)
+- Modo oscuro: fondo #09090b, glass blanco con baja opacidad
+- Modo claro: fondo #fafafa, glass negro con baja opacidad, bordes grises sutiles
+- Iconos: lucide-react exclusivamente
+- Notificaciones: sonner (toast)
 - Transiciones: 300ms, easing suave
-- Bordes: white/0.05–0.08, muy sutiles
-- Sombras: largas y difusas para efecto flotante
-- Iconos: lucide-react, tamaño 18px, opacidad baja
-- Notificaciones: sonner (toast) con tema glass oscuro
-- NO usar colores: ni indigo, ni cyan, ni rojo, ni verde
-- Estados SRI: diferenciados por BRILLO (opacidad del blanco), no por color
 
 ## SRI Ecuador
 - Ambiente 1 = Pruebas, Ambiente 2 = Producción

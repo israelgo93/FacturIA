@@ -36,7 +36,8 @@ export default function MobileMenu() {
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
-						className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm lg:hidden"
+						className="fixed inset-0 z-50 backdrop-blur-sm lg:hidden"
+						style={{ background: 'var(--modal-overlay)' }}
 						onClick={closeMobileMenu}
 					/>
 
@@ -45,16 +46,26 @@ export default function MobileMenu() {
 						animate={{ x: 0 }}
 						exit={{ x: '-100%' }}
 						transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-						className="fixed left-0 top-0 bottom-0 z-50 w-[260px] bg-[#0e0e10] border-r border-white/[0.05] flex flex-col lg:hidden"
+						className="fixed left-0 top-0 bottom-0 z-50 w-[260px] flex flex-col lg:hidden"
+						style={{
+							background: 'var(--mobilemenu-bg)',
+							borderRight: '1px solid var(--divider)',
+						}}
 					>
-						<div className="flex items-center justify-between px-4 h-14 border-b border-white/[0.05]">
+						<div
+							className="flex items-center justify-between px-4 h-14"
+							style={{ borderBottom: '1px solid var(--divider)' }}
+						>
 							<Logo size="md" />
 							<button
 								onClick={closeMobileMenu}
-								className="p-2 rounded-xl hover:bg-white/[0.05] transition-colors duration-300"
+								className="p-2 rounded-xl transition-colors duration-300"
+								style={{ color: 'var(--text-muted)' }}
+								onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
+								onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
 								aria-label="Cerrar menú"
 							>
-								<X className="w-4 h-4 text-white/30" />
+								<X className="w-4 h-4" />
 							</button>
 						</div>
 
@@ -69,14 +80,11 @@ export default function MobileMenu() {
 									<Link
 										key={item.href}
 										href={item.href}
-										className={`
-											flex items-center gap-3 px-3 py-2.5 rounded-xl
-											transition-all duration-300
-											${isActive
-												? 'bg-white/[0.08] text-white'
-												: 'text-white/30 hover:text-white/60 hover:bg-white/[0.04]'
-											}
-										`}
+										className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300"
+										style={{
+											background: isActive ? 'var(--glass-hover)' : 'transparent',
+											color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+										}}
 									>
 										<Icon className="w-[18px] h-[18px]" />
 										<span className="text-[13px] font-medium">{item.label}</span>
@@ -85,8 +93,11 @@ export default function MobileMenu() {
 							})}
 						</nav>
 
-						<div className="px-2.5 py-3 border-t border-white/[0.05]">
-							<button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-white/20 hover:text-white/50 hover:bg-white/[0.04] transition-all duration-300">
+						<div className="px-2.5 py-3" style={{ borderTop: '1px solid var(--divider)' }}>
+							<button
+								className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all duration-300"
+								style={{ color: 'var(--text-muted)' }}
+							>
 								<LogOut className="w-[18px] h-[18px]" />
 								<span className="text-[13px] font-medium">Cerrar sesión</span>
 							</button>

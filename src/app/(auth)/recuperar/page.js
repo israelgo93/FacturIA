@@ -12,6 +12,7 @@ import GlassInput from '@/components/ui/GlassInput';
 import GlassButton from '@/components/ui/GlassButton';
 import GlassAlert from '@/components/ui/GlassAlert';
 import Logo from '@/components/shared/Logo';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 export default function RecuperarPage() {
 	const [state, formAction, isPending] = useActionState(resetPassword, null);
@@ -20,12 +21,15 @@ export default function RecuperarPage() {
 	});
 
 	return (
-		<div className="min-h-screen flex items-center justify-center px-4 py-12">
+		<div className="min-h-screen flex items-center justify-center px-4 py-12 relative">
+			<div className="absolute top-4 right-4">
+				<ThemeToggle />
+			</div>
 			<GlassCard className="w-full max-w-md p-8">
 				<div className="flex flex-col items-center mb-8">
 					<Logo size="lg" className="mb-5" />
-					<h1 className="text-lg font-medium text-white/90">Recuperar Contraseña</h1>
-					<p className="text-xs text-white/30 mt-1">Te enviaremos un enlace para restablecerla</p>
+					<h1 className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>Recuperar Contraseña</h1>
+					<p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Te enviaremos un enlace para restablecerla</p>
 				</div>
 
 				{state?.success && (
@@ -44,7 +48,6 @@ export default function RecuperarPage() {
 						error={errors.email?.message || state?.errors?.email?.[0]}
 						{...register('email')}
 					/>
-
 					<GlassButton
 						type="submit"
 						loading={isPending}
@@ -59,7 +62,8 @@ export default function RecuperarPage() {
 				<div className="text-center mt-8">
 					<Link
 						href="/login"
-						className="inline-flex items-center gap-1.5 text-xs text-white/25 hover:text-white/50 transition-colors duration-300"
+						className="inline-flex items-center gap-1.5 text-xs transition-colors duration-300"
+						style={{ color: 'var(--text-muted)' }}
 					>
 						<ArrowLeft className="w-3.5 h-3.5" />
 						Volver al inicio de sesión

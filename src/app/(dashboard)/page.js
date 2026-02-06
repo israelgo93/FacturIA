@@ -14,33 +14,38 @@ export default function DashboardPage() {
 	return (
 		<div className="space-y-6">
 			<div>
-				<h1 className="text-xl font-medium text-white/90">Dashboard</h1>
-				<p className="text-white/25 text-xs mt-1">Resumen de tu actividad</p>
+				<h1 className="text-xl font-medium" style={{ color: 'var(--text-primary)' }}>Dashboard</h1>
+				<p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Resumen de tu actividad</p>
 			</div>
 
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 				{stats.map((stat) => (
 					<GlassCard key={stat.label} className="p-5" hover={false}>
 						<div className="flex items-center justify-between mb-3">
-							<span className="text-[10px] text-white/25 uppercase tracking-widest">{stat.label}</span>
-							<stat.icon className="w-4 h-4 text-white/15" />
+							<span
+								className="text-[10px] uppercase tracking-widest"
+								style={{ color: 'var(--text-muted)' }}
+							>
+								{stat.label}
+							</span>
+							<stat.icon className="w-4 h-4" style={{ color: 'var(--text-disabled)' }} />
 						</div>
-						<p className="text-xl font-semibold text-white/80">{stat.value}</p>
+						<p className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>{stat.value}</p>
 					</GlassCard>
 				))}
 			</div>
 
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 				<GlassCard className="p-6" hover={false}>
-					<h3 className="text-sm font-medium text-white/60 mb-4">Ventas Mensuales</h3>
-					<div className="h-48 flex items-center justify-center text-white/10 text-xs">
+					<h3 className="text-sm font-medium mb-4" style={{ color: 'var(--text-secondary)' }}>Ventas Mensuales</h3>
+					<div className="h-48 flex items-center justify-center text-xs" style={{ color: 'var(--text-disabled)' }}>
 						Gráfico de ventas se mostrará aquí
 					</div>
 				</GlassCard>
 
 				<GlassCard className="p-6" hover={false}>
-					<h3 className="text-sm font-medium text-white/60 mb-4">Actividad Reciente</h3>
-					<div className="h-48 flex items-center justify-center text-white/10 text-xs">
+					<h3 className="text-sm font-medium mb-4" style={{ color: 'var(--text-secondary)' }}>Actividad Reciente</h3>
+					<div className="h-48 flex items-center justify-center text-xs" style={{ color: 'var(--text-disabled)' }}>
 						Actividad reciente se mostrará aquí
 					</div>
 				</GlassCard>

@@ -1,33 +1,68 @@
 'use client';
 
-import { Building2, MapPin, Key, Mail, CreditCard, Users } from 'lucide-react';
+import Link from 'next/link';
+import { Building2, MapPin, Hash, FileKey } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 
-const secciones = [
-	{ title: 'Empresa', desc: 'Datos del contribuyente y régimen fiscal', icon: Building2 },
-	{ title: 'Establecimientos', desc: 'Establecimientos y puntos de emisión', icon: MapPin },
-	{ title: 'Certificado Digital', desc: 'Administra tu certificado .p12', icon: Key },
-	{ title: 'Email', desc: 'Configuración de envío de comprobantes', icon: Mail },
-	{ title: 'Plan', desc: 'Tu suscripción y facturación', icon: CreditCard },
-	{ title: 'Usuarios', desc: 'Gestiona los usuarios de tu empresa', icon: Users },
+const sections = [
+	{
+		title: 'Datos de la Empresa',
+		description: 'RUC, razón social, régimen fiscal y datos generales',
+		href: '/configuracion/empresa',
+		icon: Building2,
+	},
+	{
+		title: 'Establecimientos',
+		description: 'Gestiona los establecimientos de tu empresa',
+		href: '/configuracion/establecimientos',
+		icon: MapPin,
+	},
+	{
+		title: 'Puntos de Emisión',
+		description: 'Configura los puntos de emisión por establecimiento',
+		href: '/configuracion/puntos-emision',
+		icon: Hash,
+	},
+	{
+		title: 'Certificado Digital',
+		description: 'Sube y gestiona tu certificado de firma electrónica .p12',
+		href: '/configuracion/certificado',
+		icon: FileKey,
+	},
 ];
 
 export default function ConfiguracionPage() {
 	return (
 		<div className="space-y-6">
 			<div>
-				<h1 className="text-xl font-medium text-white/90">Configuración</h1>
-				<p className="text-white/25 text-xs mt-1">Administra tu empresa y cuenta</p>
+				<h1 className="text-xl font-medium" style={{ color: 'var(--text-primary)' }}>Configuración</h1>
+				<p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+					Administra los datos de tu empresa y configuración del sistema
+				</p>
 			</div>
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-				{secciones.map((sec) => (
-					<GlassCard key={sec.title} className="p-5 cursor-pointer">
-						<div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mb-3">
-							<sec.icon className="w-4 h-4 text-white/35" />
-						</div>
-						<h3 className="text-sm text-white/70 font-medium mb-1">{sec.title}</h3>
-						<p className="text-xs text-white/25">{sec.desc}</p>
-					</GlassCard>
+
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+				{sections.map((section) => (
+					<Link key={section.href} href={section.href}>
+						<GlassCard className="p-5 h-full">
+							<div className="flex items-start gap-4">
+								<div
+									className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+									style={{ background: 'var(--glass-hover)' }}
+								>
+									<section.icon className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
+								</div>
+								<div>
+									<h3 className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+										{section.title}
+									</h3>
+									<p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+										{section.description}
+									</p>
+								</div>
+							</div>
+						</GlassCard>
+					</Link>
 				))}
 			</div>
 		</div>

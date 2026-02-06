@@ -25,28 +25,29 @@ export default function GlassTable({
 			<div className="overflow-x-auto">
 				<table className="w-full">
 					<thead>
-						<tr className="border-b border-white/[0.06]">
+						<tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
 							{columns.map((col) => (
 								<th
 									key={col.key}
 									className={`
 										px-5 py-3.5 text-left text-[10px] font-medium
-										text-white/30 uppercase tracking-widest
+										uppercase tracking-widest
 										${col.className || ''}
 									`.trim()}
-									style={col.width ? { width: col.width } : undefined}
+									style={{ color: 'var(--table-header-text)', width: col.width || undefined }}
 								>
 									{col.label}
 								</th>
 							))}
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-white/[0.03]">
+					<tbody>
 						{data.length === 0 ? (
 							<tr>
 								<td
 									colSpan={columns.length}
-									className="px-5 py-16 text-center text-white/20 text-sm"
+									className="px-5 py-16 text-center text-sm"
+									style={{ color: 'var(--text-muted)' }}
 								>
 									{emptyMessage}
 								</td>
@@ -55,12 +56,16 @@ export default function GlassTable({
 							data.map((row, rowIdx) => (
 								<tr
 									key={row.id || rowIdx}
-									className="hover:bg-white/[0.02] transition-colors duration-300"
+									className="transition-colors duration-300"
+									style={{ borderBottom: '1px solid var(--table-divider)' }}
+									onMouseEnter={(e) => e.currentTarget.style.background = 'var(--table-row-hover)'}
+									onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
 								>
 									{columns.map((col) => (
 										<td
 											key={col.key}
-											className={`px-5 py-3.5 text-sm text-white/60 ${col.cellClassName || ''}`}
+											className={`px-5 py-3.5 text-sm ${col.cellClassName || ''}`}
+											style={{ color: 'var(--text-secondary)' }}
 										>
 											{col.render ? col.render(row[col.key], row) : row[col.key]}
 										</td>
@@ -73,29 +78,38 @@ export default function GlassTable({
 			</div>
 
 			{pagination && (
-				<div className="flex items-center justify-between px-5 py-3 border-t border-white/[0.06]">
-					<p className="text-xs text-white/25">
+				<div
+					className="flex items-center justify-between px-5 py-3"
+					style={{ borderTop: '1px solid var(--glass-border)' }}
+				>
+					<p className="text-xs" style={{ color: 'var(--text-muted)' }}>
 						{pagination.from}-{pagination.to} de {pagination.total}
 					</p>
 					<div className="flex items-center gap-1">
 						<button
 							onClick={() => onPageChange?.(pagination.page - 1)}
 							disabled={pagination.page <= 1}
-							className="p-1.5 rounded-lg hover:bg-white/[0.06] disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+							className="p-1.5 rounded-lg disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+							style={{ color: 'var(--text-muted)' }}
+							onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
+							onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
 							aria-label="Anterior"
 						>
-							<ChevronLeft className="w-3.5 h-3.5 text-white/40" />
+							<ChevronLeft className="w-3.5 h-3.5" />
 						</button>
-						<span className="text-xs text-white/30 px-2">
+						<span className="text-xs px-2" style={{ color: 'var(--text-muted)' }}>
 							{pagination.page}/{pagination.totalPages}
 						</span>
 						<button
 							onClick={() => onPageChange?.(pagination.page + 1)}
 							disabled={pagination.page >= pagination.totalPages}
-							className="p-1.5 rounded-lg hover:bg-white/[0.06] disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+							className="p-1.5 rounded-lg disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+							style={{ color: 'var(--text-muted)' }}
+							onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
+							onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
 							aria-label="Siguiente"
 						>
-							<ChevronRight className="w-3.5 h-3.5 text-white/40" />
+							<ChevronRight className="w-3.5 h-3.5" />
 						</button>
 					</div>
 				</div>

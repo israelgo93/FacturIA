@@ -43,7 +43,8 @@ export default function GlassModal({
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
-						className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+						className="absolute inset-0 backdrop-blur-sm"
+						style={{ background: 'var(--modal-overlay)' }}
 						onClick={onClose}
 					/>
 
@@ -54,24 +55,33 @@ export default function GlassModal({
 						transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
 						className={`
 							relative w-full ${sizeClasses[size] || sizeClasses.md}
-							bg-[#111113]/95 backdrop-blur-2xl
-							border border-white/[0.06] rounded-2xl
-							shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)]
+							backdrop-blur-2xl rounded-2xl
 							${className}
 						`.trim()}
+						style={{
+							background: 'var(--modal-bg)',
+							border: '1px solid var(--glass-border)',
+							boxShadow: 'var(--shadow-glass-lg)',
+						}}
 					>
 						{(title || showClose) && (
-							<div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+							<div
+								className="flex items-center justify-between px-6 py-4"
+								style={{ borderBottom: '1px solid var(--glass-border)' }}
+							>
 								{title && (
-									<h2 className="text-base font-medium text-white/90">{title}</h2>
+									<h2 className="text-base font-medium" style={{ color: 'var(--text-primary)' }}>{title}</h2>
 								)}
 								{showClose && (
 									<button
 										onClick={onClose}
-										className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors duration-300"
+										className="p-1.5 rounded-lg transition-colors duration-300"
+										style={{ color: 'var(--text-muted)' }}
+										onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
+										onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
 										aria-label="Cerrar"
 									>
-										<X className="w-4 h-4 text-white/30" />
+										<X className="w-4 h-4" />
 									</button>
 								)}
 							</div>

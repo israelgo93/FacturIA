@@ -12,6 +12,7 @@ import GlassInput from '@/components/ui/GlassInput';
 import GlassButton from '@/components/ui/GlassButton';
 import GlassAlert from '@/components/ui/GlassAlert';
 import Logo from '@/components/shared/Logo';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 export default function LoginPage() {
 	const [state, formAction, isPending] = useActionState(login, null);
@@ -20,12 +21,15 @@ export default function LoginPage() {
 	});
 
 	return (
-		<div className="min-h-screen flex items-center justify-center px-4 py-12">
+		<div className="min-h-screen flex items-center justify-center px-4 py-12 relative">
+			<div className="absolute top-4 right-4">
+				<ThemeToggle />
+			</div>
 			<GlassCard className="w-full max-w-md p-8">
 				<div className="flex flex-col items-center mb-8">
 					<Logo size="lg" className="mb-5" />
-					<h1 className="text-lg font-medium text-white/90">Iniciar Sesión</h1>
-					<p className="text-xs text-white/30 mt-1">Accede a tu cuenta de facturIA</p>
+					<h1 className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>Iniciar Sesión</h1>
+					<p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Accede a tu cuenta de facturIA</p>
 				</div>
 
 				{state?.error && (
@@ -54,7 +58,8 @@ export default function LoginPage() {
 					<div className="flex justify-end">
 						<Link
 							href="/recuperar"
-							className="text-xs text-white/30 hover:text-white/50 transition-colors duration-300"
+							className="text-xs transition-colors duration-300"
+							style={{ color: 'var(--text-muted)' }}
 						>
 							¿Olvidaste tu contraseña?
 						</Link>
@@ -71,11 +76,12 @@ export default function LoginPage() {
 					</GlassButton>
 				</form>
 
-				<p className="text-center text-xs text-white/25 mt-8">
+				<p className="text-center text-xs mt-8" style={{ color: 'var(--text-muted)' }}>
 					¿No tienes cuenta?{' '}
 					<Link
 						href="/registro"
-						className="text-white/60 hover:text-white font-medium transition-colors duration-300"
+						className="font-medium transition-colors duration-300"
+						style={{ color: 'var(--text-secondary)' }}
 					>
 						Regístrate gratis
 					</Link>
