@@ -63,4 +63,5 @@ const GlassInput = forwardRef(function GlassInput({
 	);
 });
 
+export { GlassInput };
 export default GlassInput;

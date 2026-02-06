@@ -43,9 +43,12 @@ El nombre fusiona "factura" + "IA", comunicando que la inteligencia artificial e
 | Estado global | Zustand | 5 |
 | Validacion | Zod + React Hook Form | 4 / 7 |
 | Animaciones | Framer Motion | 12 |
+| Firma XML | xml-crypto (XAdES-BES) | 6.1 |
 | Certificados | node-forge | 1.3 |
 | Cifrado | crypto-js (AES-256) | 4 |
-| IA | Google Gemini API | 2.0 Flash |
+| PDF | react-pdf/renderer | 4.3 |
+| Email | Resend | 4 |
+| IA | Google Gemini API | 3.0 Flash |
 | Despliegue | Google Cloud Run | - |
 | CI/CD | GitHub Actions | - |
 
@@ -104,7 +107,14 @@ facturia.app (Google Cloud Run)
     |       +-- /recuperar     Recuperar contrasena
     |       +-- /(dashboard)   Rutas protegidas
     |           +-- /onboarding        Wizard configuracion empresa (5 pasos)
-    |           +-- /comprobantes      Comprobantes electronicos
+    |           +-- /comprobantes      Listado y emision de comprobantes
+    |           |   +-- /nuevo             Wizard nueva factura (5 pasos + IA)
+    |           |   +-- /nota-credito      Formulario Nota de Credito
+    |           |   +-- /nota-debito       Formulario Nota de Debito
+    |           |   +-- /retencion         Formulario Comprobante de Retencion
+    |           |   +-- /guia-remision     Formulario Guia de Remision
+    |           |   +-- /liquidacion       Formulario Liquidacion de Compra
+    |           |   +-- /[id]              Detalle de comprobante
     |           +-- /clientes          CRUD clientes (tabla, busqueda, CSV)
     |           +-- /productos         CRUD productos (tabla, IVA/ICE, CSV)
     |           +-- /reportes          Reportes SRI con IA
@@ -140,7 +150,7 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 
 ## Base de datos
 
-15 tablas con RLS habilitado, 17 indices y funciones de negocio:
+19 tablas con RLS habilitado, indices optimizados y funciones de negocio:
 
 | Tabla | Proposito |
 |-------|-----------|
@@ -152,13 +162,21 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 | certificados | Metadata de certificados .p12 (contrasena cifrada AES-256) |
 | clientes | Clientes/receptores con validacion RUC/Cedula |
 | productos | Catalogo con configuracion IVA/ICE |
-| comprobantes | Comprobantes electronicos emitidos |
+| comprobantes | Comprobantes electronicos emitidos (6 tipos) |
 | comprobante_detalles | Items de cada comprobante |
-| retencion_detalles | Detalle de retenciones |
+| comprobante_impuestos | Impuestos por detalle de comprobante |
+| comprobante_pagos | Formas de pago por comprobante |
+| retencion_detalles | Detalle de retenciones por documento sustento |
+| guia_remision_destinatarios | Destinatarios de guias de remision |
+| guia_remision_detalles | Items por destinatario de guia de remision |
 | reportes_sri | ATS, RDEP y formularios generados |
 | sri_log | Auditoria de comunicacion con el SRI |
 | config_email | Configuracion de envio de correos |
 | ia_conversaciones | Historial de chat con la IA |
+
+**Vista**: `v_comprobantes_resumen` (resumen para dashboard con security_invoker)
+
+**Storage**: Bucket `certificados` (privado, RLS, max 5MB, PKCS12)
 
 ---
 
@@ -185,6 +203,61 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 - Validacion de identificaciones ecuatorianas (RUC Modulo 11, Cedula Modulo 10)
 - 4 subagentes Cursor con frontmatter correcto (repo-scout, sri-validator, test-writer, db-migrator)
 - Redireccion inteligente post-login (onboarding o dashboard)
+
+### Fase 3 - Motor de Facturacion Electronica
+- Generador de clave de acceso (49 digitos + Modulo 11)
+- XML Builder para factura electronica (v1.1.0 SRI)
+- Firma electronica XAdES-BES con certificado .p12 (node-forge + xml-crypto)
+- Cliente SOAP para Web Services SRI (Recepcion y Autorizacion)
+- Flujo completo orquestado: BORRADOR -> FIRMADO -> ENVIADO -> AUTORIZADO
+- Bucket de certificados en Supabase Storage con politicas RLS
+- Admin client con service_role para bypass de RLS en Storage
+- RIDE PDF (Representacion Impresa del Documento Electronico) con react-pdf
+- Email automatico con XML + RIDE adjuntos (Resend)
+- Wizard de factura con asistencia de IA (Gemini 3 Flash + useChat)
+- Listado de comprobantes con filtros por estado y busqueda
+- Manejo de codigo 70 SRI ("Clave de acceso en procesamiento")
+- Logging completo de comunicacion con el SRI (sri_log)
+
+### Fase 4 - Comprobantes Electronicos Adicionales
+- **5 XML Builders nuevos**: Nota de Credito (04), Nota de Debito (05), Guia de Remision (06), Comprobante de Retencion (07), Liquidacion de Compra (03)
+- **Catalogos SRI extendidos**: Retenciones Renta (303-343), Retenciones IVA (1-10), Retenciones ISD (4580), Documentos Sustento (01-48), Codigos IVA
+- **5 validadores Zod**: Schemas de validacion para cada tipo de comprobante
+- **12 Server Actions**: CRUD completo por tipo de comprobante + busqueda de documentos sustento
+- **5 formularios UI completos**: Paginas de emision para NC, ND, Retencion, Guia Remision y Liquidacion
+- **5 templates RIDE PDF**: Un template react-pdf por cada tipo de comprobante adicional
+- **Orquestador multi-tipo**: El flujo procesarComprobante() ahora soporta los 6 tipos de comprobante
+- **Selector dinamico de XML Builder y RIDE template** segun tipo de comprobante
+- **Migraciones BD**: Tablas guia_remision_destinatarios, guia_remision_detalles, campos adicionales en comprobantes
+- **Vista v_comprobantes_resumen** con security_invoker para dashboard
+- **Componente SeleccionarDocumentoSustento**: Selector reutilizable de facturas autorizadas
+- **42 tests unitarios** para los XML Builders de todos los tipos de comprobante
+- **Correccion datos empresa**: obligadoContabilidad y regimen RIMPE segun consulta RUC SRI
+
+---
+
+## Comprobantes electronicos soportados
+
+| Codigo | Tipo | Version XML | Estado |
+|--------|------|-------------|--------|
+| 01 | Factura | 1.1.0 | Completo (firma + SRI + RIDE + email) |
+| 03 | Liquidacion de Compra | 1.1.0 | XML + formulario + RIDE |
+| 04 | Nota de Credito | 1.1.0 | XML + formulario + RIDE |
+| 05 | Nota de Debito | 1.0.0 | XML + formulario + RIDE |
+| 06 | Guia de Remision | 1.0.0 | XML + formulario + RIDE |
+| 07 | Comprobante de Retencion | 2.0.0 | XML + formulario + RIDE |
+
+### Flujo de emision
+```
+1. Crear borrador (formulario UI o IA)
+2. Generar clave de acceso (49 digitos, Modulo 11)
+3. Construir XML segun tipo (XML Builder)
+4. Firmar con XAdES-BES (certificado .p12)
+5. Enviar al SRI via SOAP (RecepcionComprobantesOffline)
+6. Consultar autorizacion (AutorizacionComprobantesOffline)
+7. Generar RIDE PDF
+8. Enviar email con XML + RIDE adjuntos
+```
 
 ---
 
@@ -226,9 +299,11 @@ Crear `.env.local` en la raiz:
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
+SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_APP_NAME=facturIA
 ENCRYPTION_KEY=tu-clave-aes-256-de-32-caracteres
+RESEND_API_KEY=tu-resend-api-key
 ```
 
 ### Ejecutar
@@ -267,12 +342,14 @@ facturia/
 |   |   +-- shared/           Logo, LoadingSpinner, EmptyState
 |   |   +-- providers/        ThemeProvider
 |   |   +-- pages/            LandingPage
+|   |   +-- pdf/              Templates RIDE (Factura, NC, ND, Ret, GR, LC)
+|   |   +-- comprobantes/     Componentes compartidos (SeleccionarDocumentoSustento)
 |   +-- lib/
-|   |   +-- supabase/         Clientes browser y servidor
-|   |   +-- validations/      Schemas Zod (auth, empresa, cliente, producto)
+|   |   +-- supabase/         Clientes browser, servidor y admin (service_role)
+|   |   +-- validations/      Schemas Zod (auth, empresa, cliente, producto, comprobantes)
 |   |   +-- utils/            Constantes, formatters, catalogos SRI
 |   |   +-- crypto/           Cifrado AES-256
-|   |   +-- sri/              Parser de certificados .p12
+|   |   +-- sri/              Motor SRI: XML builders, firma XAdES-BES, SOAP, orquestador
 |   +-- stores/               Zustand (auth, empresa, UI)
 |   +-- styles/               Tokens CSS con soporte de temas
 +-- Dockerfile                Multi-stage build para Cloud Run
@@ -320,8 +397,8 @@ facturia/
 |------|------------|--------|
 | **Fase 1** | Fundacion: proyecto, UI, auth, BD, CI/CD | Completada |
 | **Fase 2** | Temas, onboarding, config empresa, catalogos clientes/productos | Completada |
-| Fase 3 | Motor de facturacion electronica | Pendiente |
-| Fase 4 | Comprobantes adicionales (NC, ND, retenciones) | Pendiente |
+| **Fase 3** | Motor de facturacion electronica (firma, SRI, RIDE, email) | Completada |
+| **Fase 4** | Comprobantes adicionales (NC, ND, Ret, GR, LC) + XML builders + RIDE | Completada |
 | Fase 5 | Reportes IA + ATS/RDEP | Pendiente |
 | Fase 6 | Dashboard analitico + suscripciones | Pendiente |
 | Fase 7 | Produccion, testing y calidad | Pendiente |

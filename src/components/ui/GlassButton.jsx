@@ -41,6 +41,7 @@ const sizes = {
 	lg: 'px-6 py-2.5 text-sm rounded-xl gap-2',
 };
 
+export { GlassButton };
 export default function GlassButton({
 	children,
 	variant = 'primary',

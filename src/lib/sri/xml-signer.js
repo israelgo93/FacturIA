@@ -21,33 +21,31 @@ export function firmarXML(xmlString, p12Buffer, p12Password) {
 	// 1. Extraer certificado y clave privada del .p12
 	const { certificate, privateKeyPem, certBase64 } = extraerCredenciales(p12Buffer, p12Password);
 
-	// 2. Crear firma XAdES-BES ENVELOPED
+	// 2. Detectar el elemento raíz del comprobante para la referencia XPath
+	const rootMatch = xmlString.match(/<(\w+)\s[^>]*id=["']comprobante["']/);
+	const rootLocalName = rootMatch ? rootMatch[1] : 'factura';
+
+	// 3. Crear firma XAdES-BES ENVELOPED
 	const sig = new SignedXml({
 		privateKey: privateKeyPem,
 		canonicalizationAlgorithm: 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315',
 		signatureAlgorithm: 'http://www.w3.org/2000/09/xmldsig#rsa-sha1',
+		getKeyInfoContent: () => {
+			return `<X509Data><X509Certificate>${certBase64}</X509Certificate></X509Data>`;
+		},
 	});
 
-	// Referencia al documento completo (enveloped)
+	// Referencia al documento completo (enveloped) usando XPath al root element
 	sig.addReference({
-		uri: '#comprobante',
+		xpath: `//*[local-name()='${rootLocalName}']`,
 		digestAlgorithm: 'http://www.w3.org/2000/09/xmldsig#sha1',
 		transforms: [
 			'http://www.w3.org/2000/09/xmldsig#enveloped-signature',
 		],
 	});
 
-	// KeyInfo con certificado X.509
-	sig.keyInfoProvider = {
-		getKeyInfo: () => {
-			return `<X509Data><X509Certificate>${certBase64}</X509Certificate></X509Data>`;
-		},
-	};
-
-	// Computar firma
-	sig.computeSignature(xmlString, {
-		location: { reference: '/*', action: 'append' },
-	});
+	// Computar firma — se inserta dentro del root element (enveloped)
+	sig.computeSignature(xmlString);
 
 	return sig.getSignedXml();
 }

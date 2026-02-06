@@ -9,6 +9,7 @@ const typeConfig = {
 	info: { icon: Info, opacityVar: '--alert-icon-info' },
 };
 
+export { GlassAlert };
 export default function GlassAlert({
 	type = 'info',
 	message,

@@ -5,12 +5,57 @@
  * Coordina: clave acceso, XML builder, firma, SOAP, logging
  */
 import { generarClaveAcceso } from './clave-acceso';
-import { buildFacturaXML } from './xml-builder';
+import {
+	buildFacturaXML,
+	buildNotaCreditoXML,
+	buildNotaDebitoXML,
+	buildRetencionXML,
+	buildGuiaRemisionXML,
+	buildLiquidacionCompraXML,
+} from './xml-builder';
 import { firmarXML } from './xml-signer';
 import { enviarComprobante, consultarAutorizacion, getWSUrl } from './soap-client';
 import { validarFactura, calcularTotalesImpuestos } from './validators';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { decrypt } from '@/lib/crypto/aes';
+
+/**
+ * Mapa de builders de XML por tipo de comprobante
+ */
+const XML_BUILDERS = {
+	'01': buildFacturaXML,
+	'03': buildLiquidacionCompraXML,
+	'04': buildNotaCreditoXML,
+	'05': buildNotaDebitoXML,
+	'06': buildGuiaRemisionXML,
+	'07': buildRetencionXML,
+};
+
+/**
+ * Nombres de los tipos de comprobante para mensajes
+ */
+const NOMBRES_COMPROBANTE = {
+	'01': 'Factura',
+	'03': 'Liquidación de Compra',
+	'04': 'Nota de Crédito',
+	'05': 'Nota de Débito',
+	'06': 'Guía de Remisión',
+	'07': 'Comprobante de Retención',
+};
+
+/**
+ * Obtiene el builder de XML según el tipo de comprobante
+ * @param {string} tipoComprobante - Código del tipo de comprobante
+ * @returns {Function} Función builder de XML
+ */
+function getXMLBuilder(tipoComprobante) {
+	const builder = XML_BUILDERS[tipoComprobante];
+	if (!builder) {
+		throw new Error(`Tipo de comprobante no soportado: ${tipoComprobante}. Tipos válidos: ${Object.keys(XML_BUILDERS).join(', ')}`);
+	}
+	return builder;
+}
 
 const MAX_REINTENTOS_AUTORIZACION = 5;
 const DELAY_REINTENTO_MS = 3000;
@@ -54,8 +99,9 @@ export async function procesarComprobante(comprobanteId) {
 		// Asignar clave al objeto para XML
 		datosXML.claveAcceso = claveAcceso;
 
-		// 5. Construir XML
-		const xmlSinFirma = buildFacturaXML(datosXML);
+		// 5. Construir XML usando el builder correspondiente al tipo
+		const xmlBuilder = getXMLBuilder(comprobante.tipo_comprobante);
+		const xmlSinFirma = xmlBuilder(datosXML);
 
 		// 6. Obtener certificado y firmar
 		const { p12Buffer, p12Password } = await obtenerCertificado(supabase, comprobante.empresa_id);
@@ -86,8 +132,17 @@ export async function procesarComprobante(comprobanteId) {
 		});
 
 		if (respuestaRecepcion.estado === 'DEVUELTA') {
-			await actualizarComprobante(supabase, comprobanteId, { estado: 'DEV' });
-			return { estado: 'DEV', mensajes: respuestaRecepcion.mensajes, claveAcceso };
+			// Código 70: "CLAVE DE ACCESO EN PROCESAMIENTO" — el SRI ya tiene el comprobante
+			// En este caso, no es un rechazo real, debemos consultar autorización
+			const esEnProcesamiento = respuestaRecepcion.mensajes?.some(
+				(m) => m.codigo === '70' || m.mensaje?.includes('EN PROCESAMIENTO')
+			);
+
+			if (!esEnProcesamiento) {
+				await actualizarComprobante(supabase, comprobanteId, { estado: 'DEV' });
+				return { estado: 'DEV', mensajes: respuestaRecepcion.mensajes, claveAcceso };
+			}
+			// Si está en procesamiento, continuar con la consulta de autorización
 		}
 
 		// Actualizar estado: ENVIADO
@@ -155,7 +210,12 @@ async function obtenerComprobanteCompleto(supabase, id) {
 				*,
 				impuestos:comprobante_impuestos(*)
 			),
-			pagos:comprobante_pagos(*)
+			pagos:comprobante_pagos(*),
+			retencion_detalles(*),
+			destinatarios:guia_remision_destinatarios(
+				*,
+				detalles:guia_remision_detalles(*)
+			)
 		`)
 		.eq('id', id)
 		.single();
@@ -186,8 +246,19 @@ async function obtenerCertificado(supabase, empresaId) {
 		throw new Error('No se encontró certificado digital activo para la empresa');
 	}
 
+	// Usar admin client (service_role) para descargar el certificado,
+	// así evitamos problemas de RLS en Storage.
+	// Si no hay service_role key, fallback al client regular (depende de RLS).
+	let storageClient = supabase;
+	try {
+		storageClient = createAdminClient();
+	} catch {
+		// Si no hay service_role key configurada, usar el client regular
+		console.warn('SUPABASE_SERVICE_ROLE_KEY no configurada. Usando client regular para descargar certificado.');
+	}
+
 	// Descargar .p12 de Storage
-	const { data: fileData, error: downloadError } = await supabase.storage
+	const { data: fileData, error: downloadError } = await storageClient.storage
 		.from('certificados')
 		.download(cert.storage_path);
 
@@ -204,6 +275,61 @@ async function obtenerCertificado(supabase, empresaId) {
 }
 
 function prepararDatosXML(comp) {
+	const tipoComprobante = comp.tipo_comprobante;
+	
+	// Datos base comunes a todos los comprobantes
+	const datosBase = {
+		ambiente: String(comp.ambiente),
+		tipoEmision: String(comp.tipo_emision || 1),
+		tipoComprobante: tipoComprobante,
+		claveAcceso: '', // Se asigna después
+		secuencial: comp.secuencial,
+		fechaEmision: comp.fecha_emision,
+		moneda: comp.moneda || 'DOLAR',
+		emisor: {
+			ruc: comp.empresa.ruc,
+			razonSocial: comp.empresa.razon_social,
+			nombreComercial: comp.empresa.nombre_comercial,
+			direccion: comp.empresa.direccion_matriz,
+			obligadoContabilidad: comp.empresa.obligado_contabilidad,
+			contribuyenteEspecial: comp.empresa.contribuyente_especial,
+		contribuyenteRimpe: comp.empresa.regimen_fiscal?.startsWith('RIMPE')
+			? 'CONTRIBUYENTE RÉGIMEN RIMPE'
+			: null,
+			agenteRetencion: comp.empresa.agente_retencion,
+		},
+		establecimiento: {
+			codigo: comp.establecimiento.codigo,
+			direccion: comp.establecimiento.direccion,
+		},
+		puntoEmision: {
+			codigo: comp.punto_emision.codigo,
+		},
+		infoAdicional: Array.isArray(comp.info_adicional) ? comp.info_adicional : [],
+	};
+
+	// Preparar según tipo de comprobante
+	switch (tipoComprobante) {
+		case '01': // Factura
+		case '03': // Liquidación de Compra
+			return prepararDatosFacturaOLC(comp, datosBase);
+		case '04': // Nota de Crédito
+			return prepararDatosNotaCredito(comp, datosBase);
+		case '05': // Nota de Débito
+			return prepararDatosNotaDebito(comp, datosBase);
+		case '06': // Guía de Remisión
+			return prepararDatosGuiaRemision(comp, datosBase);
+		case '07': // Retención
+			return prepararDatosRetencion(comp, datosBase);
+		default:
+			throw new Error(`Tipo de comprobante no soportado: ${tipoComprobante}`);
+	}
+}
+
+/**
+ * Prepara datos para Factura (01) o Liquidación de Compra (03)
+ */
+function prepararDatosFacturaOLC(comp, datosBase) {
 	const detallesConImpuestos = comp.detalles.map((d) => ({
 		codigoPrincipal: d.codigo_principal,
 		codigoAuxiliar: null,
@@ -222,39 +348,8 @@ function prepararDatosXML(comp) {
 		})),
 	}));
 
-	return {
-		ambiente: String(comp.ambiente),
-		tipoEmision: String(comp.tipo_emision || 1),
-		tipoComprobante: comp.tipo_comprobante,
-		claveAcceso: '', // Se asigna después
-		secuencial: comp.secuencial,
-		fechaEmision: comp.fecha_emision,
-		moneda: comp.moneda || 'DOLAR',
-		emisor: {
-			ruc: comp.empresa.ruc,
-			razonSocial: comp.empresa.razon_social,
-			nombreComercial: comp.empresa.nombre_comercial,
-			direccion: comp.empresa.direccion_matriz,
-			obligadoContabilidad: comp.empresa.obligado_contabilidad,
-			contribuyenteEspecial: comp.empresa.contribuyente_especial,
-			contribuyenteRimpe: comp.empresa.regimen_fiscal === 'RIMPE_EMPRENDEDOR'
-				? 'CONTRIBUYENTE RÉGIMEN RIMPE'
-				: null,
-			agenteRetencion: comp.empresa.agente_retencion,
-		},
-		establecimiento: {
-			codigo: comp.establecimiento.codigo,
-			direccion: comp.establecimiento.direccion,
-		},
-		puntoEmision: {
-			codigo: comp.punto_emision.codigo,
-		},
-		comprador: {
-			tipoIdentificacion: comp.tipo_identificacion_comprador,
-			identificacion: comp.identificacion_comprador,
-			razonSocial: comp.razon_social_comprador,
-			direccion: comp.direccion_comprador,
-		},
+	const datos = {
+		...datosBase,
 		detalles: detallesConImpuestos,
 		totales: {
 			totalSinImpuestos: Number(comp.subtotal_sin_impuestos),
@@ -269,7 +364,251 @@ function prepararDatosXML(comp) {
 			plazo: p.plazo,
 			unidadTiempo: p.unidad_tiempo,
 		})),
-		infoAdicional: Array.isArray(comp.info_adicional) ? comp.info_adicional : [],
+	};
+
+	// Factura usa comprador
+	if (comp.tipo_comprobante === '01') {
+		datos.comprador = {
+			tipoIdentificacion: comp.tipo_identificacion_comprador,
+			identificacion: comp.identificacion_comprador,
+			razonSocial: comp.razon_social_comprador,
+			direccion: comp.direccion_comprador,
+		};
+	}
+	// Liquidación de Compra usa proveedor
+	else if (comp.tipo_comprobante === '03') {
+		datos.proveedor = {
+			tipoIdentificacion: comp.tipo_identificacion_proveedor,
+			identificacion: comp.identificacion_proveedor,
+			razonSocial: comp.razon_social_proveedor,
+			direccion: comp.direccion_proveedor,
+		};
+	}
+
+	return datos;
+}
+
+/**
+ * Prepara datos para Nota de Crédito (04)
+ */
+function prepararDatosNotaCredito(comp, datosBase) {
+	const detallesConImpuestos = comp.detalles.map((d) => ({
+		codigoPrincipal: d.codigo_principal,
+		codigoAdicional: null,
+		descripcion: d.descripcion,
+		cantidad: Number(d.cantidad),
+		precioUnitario: Number(d.precio_unitario),
+		descuento: Number(d.descuento || 0),
+		precioTotalSinImpuesto: Number(d.precio_total_sin_impuesto),
+		impuestos: (d.impuestos || []).map((i) => ({
+			codigo: i.codigo,
+			codigoPorcentaje: i.codigo_porcentaje,
+			tarifa: Number(i.tarifa),
+			baseImponible: Number(i.base_imponible),
+			valor: Number(i.valor),
+		})),
+	}));
+
+	return {
+		...datosBase,
+		comprador: {
+			tipoIdentificacion: comp.tipo_identificacion_comprador,
+			identificacion: comp.identificacion_comprador,
+			razonSocial: comp.razon_social_comprador,
+			direccion: comp.direccion_comprador,
+		},
+		docSustento: {
+			tipo: comp.doc_sustento_tipo,
+			numero: comp.doc_sustento_numero,
+			fecha: comp.doc_sustento_fecha,
+		},
+		motivo: comp.motivo_modificacion,
+		detalles: detallesConImpuestos,
+		totales: {
+			totalSinImpuestos: Number(comp.subtotal_sin_impuestos),
+			valorModificacion: Number(comp.importe_total),
+			impuestos: calcularTotalesImpuestos(detallesConImpuestos),
+		},
+	};
+}
+
+/**
+ * Prepara datos para Nota de Débito (05)
+ */
+function prepararDatosNotaDebito(comp, datosBase) {
+	// Los motivos de la ND vienen de los detalles
+	const motivos = comp.detalles.map((d) => ({
+		razon: d.descripcion,
+		valor: Number(d.precio_total_sin_impuesto),
+	}));
+
+	// Calcular impuestos desde los detalles
+	const impuestos = [];
+	for (const d of comp.detalles) {
+		for (const i of (d.impuestos || [])) {
+			const key = `${i.codigo}-${i.codigo_porcentaje}`;
+			const existing = impuestos.find((imp) => `${imp.codigo}-${imp.codigoPorcentaje}` === key);
+			if (existing) {
+				existing.baseImponible += Number(i.base_imponible);
+				existing.valor += Number(i.valor);
+			} else {
+				impuestos.push({
+					codigo: i.codigo,
+					codigoPorcentaje: i.codigo_porcentaje,
+					tarifa: Number(i.tarifa),
+					baseImponible: Number(i.base_imponible),
+					valor: Number(i.valor),
+				});
+			}
+		}
+	}
+
+	return {
+		...datosBase,
+		comprador: {
+			tipoIdentificacion: comp.tipo_identificacion_comprador,
+			identificacion: comp.identificacion_comprador,
+			razonSocial: comp.razon_social_comprador,
+			direccion: comp.direccion_comprador,
+		},
+		docSustento: {
+			tipo: comp.doc_sustento_tipo,
+			numero: comp.doc_sustento_numero,
+			fecha: comp.doc_sustento_fecha,
+		},
+		motivos: motivos,
+		totales: {
+			totalSinImpuestos: Number(comp.subtotal_sin_impuestos),
+			valorTotal: Number(comp.importe_total),
+			impuestos: impuestos,
+		},
+		pagos: (comp.pagos || []).map((p) => ({
+			formaPago: p.forma_pago,
+			total: Number(p.total),
+			plazo: p.plazo,
+			unidadTiempo: p.unidad_tiempo,
+		})),
+	};
+}
+
+/**
+ * Prepara datos para Guía de Remisión (06)
+ */
+function prepararDatosGuiaRemision(comp, datosBase) {
+	// Los destinatarios vienen de la tabla guia_remision_destinatarios
+	const destinatarios = (comp.destinatarios || []).map((dest) => ({
+		identificacion: dest.identificacion_destinatario,
+		razonSocial: dest.razon_social_destinatario,
+		direccion: dest.direccion_destinatario,
+		motivoTraslado: dest.motivo_traslado,
+		ruta: dest.ruta,
+		codDocSustento: dest.cod_doc_sustento,
+		numDocSustento: dest.num_doc_sustento,
+		numAutDocSustento: dest.num_autorizacion_doc_sustento,
+		fechaEmisionDocSustento: dest.fecha_emision_doc_sustento,
+		codEstabDestino: dest.cod_estab_destino,
+		items: (dest.detalles || []).map((item) => ({
+			codigoInterno: item.codigo_interno,
+			codigoAdicional: item.codigo_adicional,
+			descripcion: item.descripcion,
+			cantidad: Number(item.cantidad),
+		})),
+	}));
+
+	return {
+		...datosBase,
+		dirPartida: comp.dir_partida,
+		fechaIniTransporte: comp.fecha_inicio_transporte,
+		fechaFinTransporte: comp.fecha_fin_transporte,
+		placa: comp.placa,
+		transportista: {
+			tipoIdentificacion: comp.tipo_identificacion_transportista,
+			identificacion: comp.ruc_transportista,
+			razonSocial: comp.razon_social_transportista,
+		},
+		destinatarios: destinatarios,
+	};
+}
+
+/**
+ * Prepara datos para Comprobante de Retención (07)
+ */
+function prepararDatosRetencion(comp, datosBase) {
+	// Los documentos sustento vienen de la tabla retencion_detalles agrupados
+	const docsMap = new Map();
+	
+	for (const det of (comp.retencion_detalles || [])) {
+		const key = `${det.cod_doc_sustento}-${det.num_doc_sustento}`;
+		
+		if (!docsMap.has(key)) {
+			docsMap.set(key, {
+				codSustento: det.cod_sustento,
+				codDocSustento: det.cod_doc_sustento,
+				numDocSustento: det.num_doc_sustento,
+				fechaEmision: det.fecha_emision_doc_sustento,
+				fechaRegistro: det.fecha_registro_contable,
+				numAutorizacion: det.num_aut_doc_sustento,
+				pagoLocExt: det.pago_loc_ext || '01',
+				totalSinImpuestos: Number(det.total_sin_impuestos || 0),
+				importeTotal: Number(det.importe_total || 0),
+				impuestos: [],
+				retenciones: [],
+				pagos: [],
+			});
+		}
+		
+		const doc = docsMap.get(key);
+		
+		// Agregar retención
+		doc.retenciones.push({
+			codigoImpuesto: det.codigo_impuesto,
+			codigoRetencion: det.codigo_retencion,
+			baseImponible: Number(det.base_imponible),
+			porcentaje: Number(det.porcentaje_retener),
+			valorRetenido: Number(det.valor_retenido),
+		});
+		
+		// Agregar pago si existe
+		if (det.forma_pago) {
+			const existingPago = doc.pagos.find((p) => p.formaPago === det.forma_pago);
+			if (!existingPago) {
+				doc.pagos.push({
+					formaPago: det.forma_pago,
+					total: Number(det.base_imponible),
+				});
+			}
+		}
+	}
+
+	// Agregar impuestos del documento (IVA calculado)
+	for (const doc of docsMap.values()) {
+		// Impuesto IVA del documento
+		const baseIVA = doc.retenciones
+			.filter((r) => r.codigoImpuesto === '2')
+			.reduce((sum, r) => sum + r.baseImponible, 0);
+		
+		if (baseIVA > 0) {
+			doc.impuestos.push({
+				codigo: '2',
+				codigoPorcentaje: '2',
+				baseImponible: baseIVA,
+				tarifa: 15,
+				valorImpuesto: baseIVA * 0.15,
+			});
+		}
+	}
+
+	return {
+		...datosBase,
+		periodoFiscal: comp.periodo_fiscal,
+		tipoSujetoRetenido: comp.tipo_sujeto_retenido,
+		parteRelacionada: 'NO',
+		sujetoRetenido: {
+			tipoIdentificacion: comp.tipo_identificacion_comprador,
+			identificacion: comp.identificacion_comprador,
+			razonSocial: comp.razon_social_comprador,
+		},
+		documentosSustento: Array.from(docsMap.values()),
 	};
 }
 

@@ -8,6 +8,7 @@ const variants = {
 	ghost: 'glass-ghost',
 };
 
+export { GlassCard };
 export default function GlassCard({
 	children,
 	variant = 'default',
