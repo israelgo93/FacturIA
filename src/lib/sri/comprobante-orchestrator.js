@@ -57,8 +57,8 @@ function getXMLBuilder(tipoComprobante) {
 	return builder;
 }
 
-const MAX_REINTENTOS_AUTORIZACION = 5;
-const DELAY_REINTENTO_MS = 3000;
+const MAX_REINTENTOS_AUTORIZACION = 10;
+const DELAY_REINTENTO_MS = 5000;
 
 /**
  * Procesa un comprobante completo: Firma → Envío → Autorización

@@ -43,8 +43,8 @@ El nombre fusiona "factura" + "IA", comunicando que la inteligencia artificial e
 | Estado global | Zustand | 5 |
 | Validacion | Zod + React Hook Form | 4 / 7 |
 | Animaciones | Framer Motion | 12 |
-| Firma XML | xml-crypto (XAdES-BES) | 6.1 |
-| Certificados | node-forge | 1.3 |
+| Firma XML | XAdES-BES manual (crypto + node-forge) | - |
+| Certificados | node-forge (PKCS#12) | 1.3 |
 | Cifrado | crypto-js (AES-256) | 4 |
 | PDF | react-pdf/renderer | 4.3 |
 | Email | Resend | 4 |
@@ -207,9 +207,15 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 ### Fase 3 - Motor de Facturacion Electronica
 - Generador de clave de acceso (49 digitos + Modulo 11)
 - XML Builder para factura electronica (v1.1.0 SRI)
-- Firma electronica XAdES-BES con certificado .p12 (node-forge + xml-crypto)
+- Firma electronica XAdES-BES completa (node-forge + crypto nativo, sin xml-crypto)
+  - QualifyingProperties con SignedProperties (SigningTime, SigningCertificate, DataObjectFormat)
+  - Canonicalizacion C14N 1.0 con namespaces heredados
+  - Doble referencia: documento + SignedProperties
+  - RSA-SHA1 con KeyInfo completo (X509Data + RSAKeyValue)
 - Cliente SOAP para Web Services SRI (Recepcion y Autorizacion)
 - Flujo completo orquestado: BORRADOR -> FIRMADO -> ENVIADO -> AUTORIZADO
+- Reintentos de autorizacion configurables (10 intentos, 5s entre cada uno)
+- Server Action reConsultarAutorizacion() para comprobantes en estado PPR
 - Bucket de certificados en Supabase Storage con politicas RLS
 - Admin client con service_role para bypass de RLS en Storage
 - RIDE PDF (Representacion Impresa del Documento Electronico) con react-pdf
@@ -218,6 +224,7 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 - Listado de comprobantes con filtros por estado y busqueda
 - Manejo de codigo 70 SRI ("Clave de acceso en procesamiento")
 - Logging completo de comunicacion con el SRI (sri_log)
+- **Factura autorizada por el SRI en ambiente de pruebas** (verificado 6/Feb/2026)
 
 ### Fase 4 - Comprobantes Electronicos Adicionales
 - **5 XML Builders nuevos**: Nota de Credito (04), Nota de Debito (05), Guia de Remision (06), Comprobante de Retencion (07), Liquidacion de Compra (03)
@@ -240,24 +247,60 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 
 | Codigo | Tipo | Version XML | Estado |
 |--------|------|-------------|--------|
-| 01 | Factura | 1.1.0 | Completo (firma + SRI + RIDE + email) |
-| 03 | Liquidacion de Compra | 1.1.0 | XML + formulario + RIDE |
-| 04 | Nota de Credito | 1.1.0 | XML + formulario + RIDE |
-| 05 | Nota de Debito | 1.0.0 | XML + formulario + RIDE |
-| 06 | Guia de Remision | 1.0.0 | XML + formulario + RIDE |
-| 07 | Comprobante de Retencion | 2.0.0 | XML + formulario + RIDE |
+| 01 | Factura | 1.1.0 | **AUTORIZADO por SRI** (firma + envio + RIDE + email) |
+| 03 | Liquidacion de Compra | 1.1.0 | XML + formulario + RIDE (pendiente envio SRI) |
+| 04 | Nota de Credito | 1.1.0 | XML + formulario + RIDE (pendiente envio SRI) |
+| 05 | Nota de Debito | 1.0.0 | XML + formulario + RIDE (pendiente envio SRI) |
+| 06 | Guia de Remision | 1.0.0 | XML + formulario + RIDE (pendiente envio SRI) |
+| 07 | Comprobante de Retencion | 2.0.0 | XML + formulario + RIDE (pendiente envio SRI) |
 
 ### Flujo de emision
 ```
 1. Crear borrador (formulario UI o IA)
 2. Generar clave de acceso (49 digitos, Modulo 11)
-3. Construir XML segun tipo (XML Builder)
+3. Construir XML segun tipo (XML Builder con fast-xml-parser)
 4. Firmar con XAdES-BES (certificado .p12)
 5. Enviar al SRI via SOAP (RecepcionComprobantesOffline)
-6. Consultar autorizacion (AutorizacionComprobantesOffline)
-7. Generar RIDE PDF
-8. Enviar email con XML + RIDE adjuntos
+6. Consultar autorizacion con reintentos (AutorizacionComprobantesOffline, 10x5s)
+7. Generar RIDE PDF (react-pdf/renderer)
+8. Enviar email con XML + RIDE adjuntos (Resend)
 ```
+
+### Firma Electronica XAdES-BES
+
+El sistema implementa firma XAdES-BES (ETSI TS 101 903) conforme a la Ficha Tecnica del SRI Ecuador. La implementacion esta en `src/lib/sri/xml-signer.js` y realiza los siguientes pasos:
+
+**1. Extraccion de credenciales (PKCS#12)**
+- Se descarga el archivo `.p12` desde Supabase Storage usando el admin client (service_role)
+- Se descifra la contrasena con AES-256
+- Se extraen el certificado X.509, la clave privada RSA y la cadena en Base64 usando `node-forge`
+
+**2. Digest del documento (C14N 1.0)**
+- Se remueve la declaracion `<?xml?>` del comprobante
+- Se expanden self-closing tags (`<tag/>` a `<tag></tag>`)
+- Se computa SHA-1 del XML canonicalizado
+
+**3. Construccion de SignedProperties (XAdES)**
+- `SigningTime`: fecha/hora ISO de la firma
+- `SigningCertificate`: digest SHA-1 del certificado DER + IssuerSerial (DN RFC 2253 + serial decimal)
+- `DataObjectFormat`: referencia al comprobante con MimeType `text/xml`
+- Se incluyen namespaces heredados (`xmlns:ds`, `xmlns:etsi`) para C14N correcto
+
+**4. SignedInfo con doble referencia**
+- **Referencia 1**: `URI="#comprobante"` con transform `enveloped-signature` (digest del documento)
+- **Referencia 2**: `URI="#SignedProperties-{id}"` con `Type="http://uri.etsi.org/01903#SignedProperties"` (digest de las propiedades)
+
+**5. Firma RSA-SHA1**
+- Se canonicaliza el SignedInfo con namespaces heredados del Signature padre
+- Se firma con `crypto.createSign('RSA-SHA1')` usando la clave privada PEM
+
+**6. Ensamblaje de la firma**
+- `ds:Signature` con `xmlns:ds` y `xmlns:etsi`
+- `ds:KeyInfo` con `X509Certificate` y `RSAKeyValue` (Modulus + Exponent)
+- `ds:Object` con `etsi:QualifyingProperties` conteniendo las SignedProperties
+- Se inserta como ultimo hijo del elemento raiz del comprobante (enveloped)
+
+**Resultado verificado**: Factura 001-001-000000001 autorizada por el SRI en ambiente de pruebas (6 de febrero de 2026).
 
 ---
 
@@ -349,7 +392,7 @@ facturia/
 |   |   +-- validations/      Schemas Zod (auth, empresa, cliente, producto, comprobantes)
 |   |   +-- utils/            Constantes, formatters, catalogos SRI
 |   |   +-- crypto/           Cifrado AES-256
-|   |   +-- sri/              Motor SRI: XML builders, firma XAdES-BES, SOAP, orquestador
+|   |   +-- sri/              Motor SRI: XML builders, firma XAdES-BES (C14N+RSA-SHA1), SOAP, orquestador
 |   +-- stores/               Zustand (auth, empresa, UI)
 |   +-- styles/               Tokens CSS con soporte de temas
 +-- Dockerfile                Multi-stage build para Cloud Run

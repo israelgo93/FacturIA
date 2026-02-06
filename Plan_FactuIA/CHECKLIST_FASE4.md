@@ -11,13 +11,14 @@
 ## Pre-requisitos (Fase 3 Completada)
 - [x] Generador clave de acceso 49 digitos + Modulo 11
 - [x] XML Builder factura v1.1.0
-- [x] Firma XAdES-BES con .p12
-- [x] Cliente SOAP WS Recepcion + Autorizacion SRI
-- [x] Flujo completo orquestado (BORRADOR → AUTORIZADO)
+- [x] Firma XAdES-BES completa con .p12 (QualifyingProperties + SignedProperties + C14N 1.0)
+- [x] Cliente SOAP WS Recepcion + Autorizacion SRI (con debug logging)
+- [x] Flujo completo orquestado (BORRADOR → FIRMADO → ENVIADO → AUTORIZADO)
 - [x] RIDE PDF (representacion impresa)
 - [x] Email automatico XML + RIDE (Resend)
 - [x] Wizard factura con IA (Gemini 3 Flash + useChat)
 - [x] Listado comprobantes con filtros y estados
+- [x] Re-consulta de autorizacion para comprobantes en estado PPR
 
 ---
 
@@ -271,7 +272,7 @@
 
 - [x] `npm run build` exitoso sin errores
 - [ ] `npm test` — Todos los tests pasando
-- [x] Factura: XML firmado + enviado al SRI pruebas (estado PPR - En Procesamiento)
+- [x] **Factura: AUTORIZADA por el SRI** (001-001-000000001, clave: 0502202601139193661800110010010000000011891281910)
 - [ ] Nota de Credito: XML valido + autorizacion SRI pruebas
 - [ ] Nota de Debito: XML valido + autorizacion SRI pruebas
 - [ ] Retencion: XML valido + autorizacion SRI pruebas
@@ -279,6 +280,9 @@
 - [ ] Liquidacion de Compra: XML valido + autorizacion SRI pruebas
 - [x] Security advisors verificados
 - [x] Datos empresa corregidos vs consulta RUC SRI (obligadoContabilidad, regimenRIMPE)
+- [x] Firma XAdES-BES reescrita: QualifyingProperties, SignedProperties, C14N 1.0, RSA-SHA1
+- [x] Cliente SOAP con logging de respuestas SRI y reintentos (10x5s)
+- [x] Server Action `reConsultarAutorizacion()` para comprobantes en estado PPR
 - [ ] Deploy staging exitoso
 
 ---

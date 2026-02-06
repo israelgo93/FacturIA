@@ -72,15 +72,27 @@ export async function consultarAutorizacion(claveAcceso, ambiente = '1') {
 			claveAccesoComprobante: claveAcceso,
 		});
 
-		const autorizacion = result?.RespuestaAutorizacionComprobante
-			?.autorizaciones?.autorizacion?.[0];
-
 		const tiempoMs = Date.now() - startTime;
 
-		if (!autorizacion) {
+		// Debug: log de la respuesta completa del SRI
+		console.log('[SRI-AUTH] Respuesta completa:', JSON.stringify(result, null, 2));
+
+		const respuesta = result?.RespuestaAutorizacionComprobante;
+		const numComprobantes = respuesta?.numeroComprobantes;
+		const autorizaciones = respuesta?.autorizaciones;
+
+		console.log('[SRI-AUTH] numeroComprobantes:', numComprobantes);
+		console.log('[SRI-AUTH] autorizaciones keys:', autorizaciones ? Object.keys(autorizaciones) : 'null');
+
+		// Intentar obtener la autorizacion de multiples formas
+		let autorizacion = autorizaciones?.autorizacion?.[0]
+			|| autorizaciones?.autorizacion
+			|| null;
+
+		if (!autorizacion || (numComprobantes === '0')) {
 			return {
 				estado: 'SIN_RESPUESTA',
-				mensajes: [{ tipo: 'ERROR', mensaje: 'No se obtuvo respuesta del SRI' }],
+				mensajes: [{ tipo: 'INFO', mensaje: `Comprobante aun en procesamiento. numeroComprobantes: ${numComprobantes}` }],
 				tiempoMs,
 			};
 		}
@@ -98,6 +110,7 @@ export async function consultarAutorizacion(claveAcceso, ambiente = '1') {
 			tiempoMs,
 		};
 	} catch (error) {
+		console.error('[SRI-AUTH] Error consultando autorizacion:', error.message);
 		return {
 			estado: 'ERROR_CONEXION',
 			mensajes: [{ tipo: 'ERROR', mensaje: error.message }],

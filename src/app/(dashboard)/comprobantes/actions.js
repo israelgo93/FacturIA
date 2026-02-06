@@ -7,6 +7,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { obtenerSiguienteSecuencial, generarNumeroCompleto } from '@/lib/sri/secuencial-manager';
 import { procesarComprobante as procesarComprobanteMotor } from '@/lib/sri/comprobante-orchestrator';
+import { consultarAutorizacion, getWSUrl } from '@/lib/sri/soap-client';
 
 /**
  * Crea un borrador de comprobante (factura)
@@ -962,6 +963,55 @@ export async function crearLiquidacionCompra(formData) {
 // =============================================
 // Función auxiliar para insertar detalles
 // =============================================
+
+/**
+ * Re-consulta la autorización de un comprobante en estado PPR (En Procesamiento)
+ */
+export async function reConsultarAutorizacion(comprobanteId) {
+	const supabase = await createClient();
+
+	const { data: { user } } = await supabase.auth.getUser();
+	if (!user) return { error: 'No autenticado' };
+
+	const { data: comp, error } = await supabase
+		.from('comprobantes')
+		.select('id, clave_acceso, estado, ambiente, empresa_id')
+		.eq('id', comprobanteId)
+		.single();
+
+	if (error || !comp) return { error: 'Comprobante no encontrado' };
+	if (!comp.clave_acceso) return { error: 'El comprobante no tiene clave de acceso' };
+
+	const ambiente = String(comp.ambiente);
+	const autorizacion = await consultarAutorizacion(comp.clave_acceso, ambiente);
+
+	// Registrar en log
+	await supabase.from('sri_log').insert({
+		empresa_id: comp.empresa_id,
+		comprobante_id: comprobanteId,
+		tipo_operacion: 'AUTORIZACION',
+		url_servicio: getWSUrl(ambiente, 'autorizacion'),
+		estado_respuesta: autorizacion.estado,
+		mensajes_error: autorizacion.mensajes,
+		duracion_ms: autorizacion.tiempoMs,
+	});
+
+	if (autorizacion.estado === 'AUTORIZADO') {
+		await supabase.from('comprobantes').update({
+			estado: 'AUT',
+			numero_autorizacion: autorizacion.numeroAutorizacion,
+			fecha_autorizacion: autorizacion.fechaAutorizacion,
+			xml_autorizado: autorizacion.xmlAutorizado,
+		}).eq('id', comprobanteId);
+
+		return { data: { estado: 'AUT', autorizacion } };
+	} else if (autorizacion.estado === 'NO AUTORIZADO') {
+		await supabase.from('comprobantes').update({ estado: 'NAT' }).eq('id', comprobanteId);
+		return { data: { estado: 'NAT', mensajes: autorizacion.mensajes } };
+	}
+
+	return { data: { estado: autorizacion.estado, mensajes: autorizacion.mensajes } };
+}
 
 async function insertarDetallesComprobante(supabase, comprobanteId, empresaId, detalles) {
 	for (let i = 0; i < detalles.length; i++) {
