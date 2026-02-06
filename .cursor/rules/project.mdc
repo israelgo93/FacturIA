@@ -6,7 +6,7 @@ globs: ["**/*"]
 # facturIA — Reglas del Proyecto
 
 ## Stack Tecnológico
-- Framework: Next.js 15.5+ con App Router
+- Framework: Next.js 16+ con App Router
 - Lenguaje: JavaScript (ES2024) — NO TypeScript
 - UI: React 19 + Tailwind CSS 4
 - Backend: Supabase (PostgreSQL 15 + Auth + Storage)

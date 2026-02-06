@@ -4,7 +4,7 @@
 	"description": "Facturación Electrónica con Inteligencia Artificial",
 	"start_url": "/",
 	"display": "standalone",
-	"background_color": "#0f0c29",
-	"theme_color": "#6366f1",
+	"background_color": "#09090b",
+	"theme_color": "#ffffff",
 	"icons": []
 }

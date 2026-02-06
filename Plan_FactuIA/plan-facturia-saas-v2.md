@@ -1,3 +1,5 @@
+> **NOTA:** Este documento es el plan tecnico original de referencia. El sistema de diseno fue actualizado a **Ethereal Glass Monocromatico** (solo blanco y negro). Las referencias a colores (Indigo, Cyan, etc.) en este documento ya no aplican. Consultar `.cursor/rules/project.mdc` para las reglas vigentes.
+
 # facturIA — Plataforma SaaS de Facturación Electrónica con IA
 ## Plan Técnico Integral v2.0
 

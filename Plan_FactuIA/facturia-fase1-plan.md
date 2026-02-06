@@ -1,3 +1,5 @@
+> **NOTA:** Este documento es el plan original de la Fase 1. El sistema de diseno fue actualizado a **Ethereal Glass Monocromatico** (solo blanco y negro). Las referencias a colores y la version Next.js 15.5 en este documento son historicas. La implementacion real usa Next.js 16+ y paleta B&W. Consultar `.cursor/rules/project.mdc` para las reglas vigentes.
+
 # facturIA — Fase 1: Fundación + Equipo de Agentes IA en Cursor
 ## Plan de Implementación Detallado + Configuración de Agentes, SubAgentes y Skills
 

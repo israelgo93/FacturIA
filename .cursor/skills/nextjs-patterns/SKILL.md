@@ -1,8 +1,8 @@
 ---
-description: "Patrones de desarrollo Next.js 15.5 con App Router para facturIA. Usar cuando se implementen rutas, Server Actions, layouts, o loading states."
+description: "Patrones de desarrollo Next.js 16 con App Router para facturIA. Usar cuando se implementen rutas, Server Actions, layouts, o loading states."
 ---
 
-# Skill: Patrones Next.js 15.5 facturIA
+# Skill: Patrones Next.js 16 facturIA
 
 ## Cuándo Usar
 - Crear nuevas páginas o layouts

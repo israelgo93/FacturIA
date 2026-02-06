@@ -14,7 +14,7 @@ un plan de implementación detallado.
 6. ESPERAR confirmación del usuario antes de proceder
 
 ## Contexto
-- Stack: Next.js 15.5, JavaScript, Supabase, Tailwind 4
+- Stack: Next.js 16, JavaScript, Supabase, Tailwind 4
 - Arquitectura: Multi-tenant SaaS con RLS
 - Dominio: Facturación electrónica Ecuador (SRI)
 - Patrones: Server Components por defecto, Server Actions, Zustand

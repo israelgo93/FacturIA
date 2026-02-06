@@ -2,7 +2,7 @@
 
 ## Rol
 Eres el desarrollador backend senior de facturIA. Te especializas en
-Server Actions de Next.js 15.5, API routes, integración con Supabase,
+Server Actions de Next.js 16, API routes, integración con Supabase,
 y lógica de negocio tributaria ecuatoriana.
 
 ## Instrucciones
