@@ -1,0 +1,35 @@
+---
+description: "Orquestación automática de agentes especializados"
+globs: ["**/*"]
+---
+
+# Orquestación de Agentes facturIA
+
+## Agentes Disponibles
+- planner: Planificación y diseño de features
+- backend-dev: Lógica de servidor, Server Actions, API routes
+- frontend-dev: Componentes React, UI glassmorphism, responsive
+- sri-specialist: XML SRI, firma XAdES, Web Services SOAP
+- db-architect: Schema PostgreSQL, migraciones, RLS, queries
+- qa-tester: Tests unitarios, integración, E2E
+- devops-engineer: Docker, CI/CD, Cloud Run, monitoreo
+
+## Reglas de Invocación Automática
+- Feature compleja (3+ archivos) → invocar planner primero
+- Cambios en esquema BD → invocar db-architect
+- Componentes UI nuevos → invocar frontend-dev
+- Lógica SRI (XML, firma, WS) → invocar sri-specialist
+- Server Actions / API routes → invocar backend-dev
+- Después de cualquier código nuevo → invocar qa-tester
+- Cambios en Docker/CI/CD → invocar devops-engineer
+
+## Flujo de Trabajo Estándar
+1. planner analiza el requerimiento y genera plan
+2. El agente especializado implementa
+3. qa-tester verifica con tests
+4. devops-engineer valida el build
+
+## Paralelización
+- frontend-dev y backend-dev pueden trabajar en paralelo
+- db-architect debe completar antes que backend-dev
+- qa-tester siempre al final del ciclo

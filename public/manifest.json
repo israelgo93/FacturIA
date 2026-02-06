@@ -1,0 +1,10 @@
+{
+	"name": "facturIA",
+	"short_name": "facturIA",
+	"description": "Facturación Electrónica con Inteligencia Artificial",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#0f0c29",
+	"theme_color": "#6366f1",
+	"icons": []
+}

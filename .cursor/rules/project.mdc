@@ -1,0 +1,54 @@
+---
+description: "Reglas globales del proyecto facturIA SaaS"
+globs: ["**/*"]
+---
+
+# facturIA — Reglas del Proyecto
+
+## Stack Tecnológico
+- Framework: Next.js 15.5+ con App Router
+- Lenguaje: JavaScript (ES2024) — NO TypeScript
+- UI: React 19 + Tailwind CSS 4
+- Backend: Supabase (PostgreSQL 15 + Auth + Storage)
+- Estado: Zustand 5
+- Validación: Zod 3 + React Hook Form 7
+- IA: Google Gemini API 2.0 Flash
+- Despliegue: Google Cloud Run (Docker)
+
+## Convenciones de Código
+- Usar `'use server'` para Server Actions
+- Usar `'use client'` solo cuando sea necesario
+- Preferir Server Components por defecto
+- Nombres de archivos: kebab-case para rutas, PascalCase para componentes
+- Funciones: camelCase
+- Constantes: UPPER_SNAKE_CASE
+- Comentarios en español para lógica de negocio
+
+## Arquitectura
+- Multi-tenant: SIEMPRE filtrar por empresa_id
+- RLS obligatorio en TODAS las tablas
+- Validación dual: Zod (frontend) + Server Actions (backend)
+- Nunca exponer service_role_key al cliente
+
+## Diseño UI — Ethereal Glass Monocromático
+- Estilo visual: Ethereal Glass — etéreo, minimalista, monocromático
+- Paleta: EXCLUSIVAMENTE blanco y negro (sin colores)
+- Background: negro sólido #09090b (sin gradientes)
+- Glass: white con opacidades muy bajas (0.03–0.08)
+- Texto: white con niveles de opacidad para jerarquía (0.90, 0.55, 0.30, 0.15)
+- Botón primario: fondo blanco, texto negro (invertido)
+- Labels: uppercase, tracking-wider, text-xs, white/40
+- Transiciones: 300ms, easing suave
+- Bordes: white/0.05–0.08, muy sutiles
+- Sombras: largas y difusas para efecto flotante
+- Iconos: lucide-react, tamaño 18px, opacidad baja
+- Notificaciones: sonner (toast) con tema glass oscuro
+- NO usar colores: ni indigo, ni cyan, ni rojo, ni verde
+- Estados SRI: diferenciados por BRILLO (opacidad del blanco), no por color
+
+## SRI Ecuador
+- Ambiente 1 = Pruebas, Ambiente 2 = Producción
+- Clave de acceso: 49 dígitos con Módulo 11
+- Firma: XAdES-BES con RSA-SHA1
+- XML: UTF-8, sin espacios entre caracteres en campos alfanuméricos
+- Secuenciales: 9 dígitos, rellenar con ceros a la izquierda

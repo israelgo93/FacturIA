@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+	/* ========================================
+	   ETHEREAL GLASS — Paleta Monocromática
+	   Solo blanco y negro con efecto etéreo
+	   ======================================== */
+
+	/* Fondos */
+	--color-bg-primary: #09090b;
+	--color-bg-secondary: #111113;
+	--color-bg-tertiary: #18181b;
+
+	/* Glass */
+	--color-glass: rgba(255, 255, 255, 0.04);
+	--color-glass-hover: rgba(255, 255, 255, 0.07);
+	--color-glass-border: rgba(255, 255, 255, 0.08);
+	--color-glass-active: rgba(255, 255, 255, 0.10);
+
+	/* Texto monocromático */
+	--color-text-primary: #fafafa;
+	--color-text-secondary: rgba(255, 255, 255, 0.55);
+	--color-text-muted: rgba(255, 255, 255, 0.30);
+
+	/* Acento — blanco puro */
+	--color-primary: #ffffff;
+	--color-primary-light: rgba(255, 255, 255, 0.85);
+	--color-accent: #ffffff;
+	--color-accent-light: rgba(255, 255, 255, 0.70);
+
+	/* Estados SRI — escala de grises */
+	--color-status-creado: rgba(255, 255, 255, 0.30);
+	--color-status-firmado: rgba(255, 255, 255, 0.45);
+	--color-status-enviado: rgba(255, 255, 255, 0.55);
+	--color-status-autorizado: rgba(255, 255, 255, 0.90);
+	--color-status-no-autorizado: rgba(255, 255, 255, 0.25);
+	--color-status-anulado: rgba(255, 255, 255, 0.15);
+}
+
+body {
+	background: #09090b;
+	min-height: 100vh;
+	color: #fafafa;
+	font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* ========================================
+   Utilidades Glass Etéreo
+   ======================================== */
+.glass {
+	background: rgba(255, 255, 255, 0.03);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	border-radius: 20px;
+	box-shadow:
+		0 0 0 0.5px rgba(255, 255, 255, 0.04),
+		0 20px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.glass-hover:hover {
+	background: rgba(255, 255, 255, 0.06);
+	border-color: rgba(255, 255, 255, 0.10);
+}
+
+/* Efecto glow etéreo sutil */
+.glow {
+	box-shadow:
+		0 0 20px rgba(255, 255, 255, 0.03),
+		0 0 60px rgba(255, 255, 255, 0.01);
+}
+
+/* ========================================
+   Scrollbar minimalista
+   ======================================== */
+::-webkit-scrollbar {
+	width: 4px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.08);
+	border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(255, 255, 255, 0.15);
+}
+
+/* ========================================
+   Selección de texto
+   ======================================== */
+::selection {
+	background: rgba(255, 255, 255, 0.15);
+	color: white;
+}

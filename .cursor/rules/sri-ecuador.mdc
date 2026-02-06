@@ -1,0 +1,58 @@
+---
+description: "Normativa técnica del SRI para comprobantes electrónicos"
+globs: ["src/**/*sri*", "src/**/*xml*", "src/**/*firma*", "src/app/api/sri/**"]
+---
+
+# Normativa SRI Ecuador — Comprobantes Electrónicos
+
+## Tipos de Comprobantes (Tabla 3)
+| Código | Tipo |
+|--------|------|
+| 01 | Factura |
+| 04 | Nota de Crédito |
+| 05 | Nota de Débito |
+| 06 | Guía de Remisión |
+| 07 | Comprobante de Retención |
+| 08 | Liquidación de Compra |
+
+## Clave de Acceso (49 dígitos)
+Posición: [1-8] Fecha ddmmaaaa | [9-10] TipDoc | [11-23] RUC | [24] Ambiente |
+[25-30] Serie | [31-39] Secuencial | [40-47] CódNum | [48] TipoEmisión | [49] Módulo11
+
+## Web Services SRI
+- Pruebas Recepción: https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl
+- Pruebas Autorización: https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+- Producción Recepción: https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl
+- Producción Autorización: https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+
+## Tarifas IVA vigentes (Tabla 17)
+| Código | Tarifa |
+|--------|--------|
+| 0 | 0% |
+| 2 | 12% |
+| 3 | 14% |
+| 4 | 15% |
+| 5 | 5% |
+| 6 | No objeto |
+| 7 | Exento |
+| 8 | Diferenciado |
+| 10 | 13% |
+
+## Firma Electrónica
+- Estándar: XAdES-BES v1.3.2
+- Algoritmo: RSA-SHA1, 2048 bits
+- Archivo: PKCS#12 (.p12)
+- Codificación: UTF-8
+- Tipo: ENVELOPED
+
+## Estados del Comprobante
+- PPR: En procesamiento
+- AUT: Autorizado
+- NAT: No autorizado
+
+## Reglas de Validación
+- RUC: 13 dígitos, validar con algoritmo módulo 10/11
+- Cédula: 10 dígitos, validar con módulo 10
+- Consumidor final: identificación 9999999999999 con tipo 07
+- Secuenciales: 9 dígitos, completar con ceros
+- Fechas en XML: formato dd/mm/aaaa
