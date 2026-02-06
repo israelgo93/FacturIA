@@ -249,3 +249,116 @@ export function getLabelTipoComprobante(codigo) {
 	const tipo = TIPOS_COMPROBANTE.find((t) => t.value === codigo);
 	return tipo ? tipo.label : codigo;
 }
+
+// =============================================
+// CATÁLOGOS FASE 5: ATS — Tablas del Catálogo ATS del SRI
+// =============================================
+
+// Tabla 2 ATS: Tipo de identificación del proveedor (compras)
+export const TIPO_ID_PROVEEDOR_ATS = [
+	{ value: '01', label: 'RUC' },
+	{ value: '02', label: 'Cédula' },
+	{ value: '03', label: 'Pasaporte' },
+];
+
+// Tabla 4 ATS: Tipo de comprobante para compras
+export const TIPO_COMPROBANTE_ATS = [
+	{ value: '01', label: 'Factura' },
+	{ value: '02', label: 'Nota de Venta - RISE' },
+	{ value: '03', label: 'Liquidación de Compra' },
+	{ value: '04', label: 'Nota de Crédito' },
+	{ value: '05', label: 'Nota de Débito' },
+	{ value: '09', label: 'Tiquete de máquina registradora' },
+	{ value: '11', label: 'Pasajes expedidos por transporte' },
+	{ value: '12', label: 'Inst. del Estado / servicio público' },
+	{ value: '15', label: 'Comprobante de venta Inst. Financieras' },
+	{ value: '16', label: 'DAU / DAV' },
+	{ value: '18', label: 'Documentos autorizados SRI' },
+	{ value: '19', label: 'Comprobante de pago cuotas / aportes' },
+	{ value: '20', label: 'Documentos del Estado (agua, luz, teléfono)' },
+	{ value: '21', label: 'Carta de porte aéreo' },
+	{ value: '41', label: 'Comprobante de venta con reembolso' },
+	{ value: '43', label: 'Liquidación compra de bienes muebles usados' },
+	{ value: '45', label: 'Liquidación por prestaciones seguros' },
+	{ value: '47', label: 'Nota de crédito por reembolso' },
+	{ value: '48', label: 'Nota de débito por reembolso' },
+];
+
+// Tabla 5 ATS: Código de sustento tributario (completa)
+export const COD_SUSTENTO_ATS = [
+	{ value: '01', label: 'Crédito Trib. IVA - adq. bienes/servicios diferente de activos fijos' },
+	{ value: '02', label: 'Costo/Gasto IVA - adq. locales bienes que NO serán comercializados' },
+	{ value: '03', label: 'Activos fijos (crédito tributario / costo)' },
+	{ value: '04', label: 'Gasto - adq. servicios' },
+	{ value: '05', label: 'Gasto - adq. bienes muebles que serán comercializados' },
+	{ value: '06', label: 'Reembolso como intermediario' },
+	{ value: '07', label: 'Sustento de retención presuntiva' },
+	{ value: '08', label: 'Adquisiciones a contribuyentes RISE' },
+	{ value: '09', label: 'DAU / DAV' },
+	{ value: '10', label: 'Reembolso como mandante / constituente' },
+	{ value: '11', label: 'Gasto con retención en la fuente sin aplicar resolución contable' },
+	{ value: '12', label: 'Impuestos y retenciones presuntivos' },
+	{ value: '14', label: 'Pagos con convenio de doble tributación' },
+	{ value: '15', label: 'Pagos sin convenio de doble tributación' },
+];
+
+// Tabla 13 ATS: Forma de pago
+export const FORMA_PAGO_ATS = [
+	{ value: '01', label: 'Sin utilización del sistema financiero' },
+	{ value: '02', label: 'Cheque propio' },
+	{ value: '03', label: 'Cheque de terceros' },
+	{ value: '04', label: 'Cheque certificado' },
+	{ value: '05', label: 'Cheque de gerencia' },
+	{ value: '06', label: 'Débito de cuenta' },
+	{ value: '07', label: 'Transferencia de fondos' },
+	{ value: '08', label: 'Nota de crédito bancaria' },
+	{ value: '09', label: 'Tarjeta prepago' },
+	{ value: '10', label: 'Pago con tarjeta de crédito no bancaria' },
+	{ value: '15', label: 'Compensación de deudas' },
+	{ value: '16', label: 'Tarjeta de débito' },
+	{ value: '17', label: 'Dinero electrónico' },
+	{ value: '18', label: 'Tarjeta prepago' },
+	{ value: '19', label: 'Tarjeta de crédito' },
+	{ value: '20', label: 'Otros con utilización del sistema financiero' },
+	{ value: '21', label: 'Endoso de títulos' },
+];
+
+// Tipo identificación ventas ATS
+export const TIPO_ID_CLIENTE_VENTAS_ATS = [
+	{ value: '04', label: 'RUC' },
+	{ value: '05', label: 'Cédula' },
+	{ value: '06', label: 'Pasaporte' },
+	{ value: '07', label: 'Consumidor Final' },
+	{ value: '08', label: 'Identificación del exterior' },
+	{ value: '09', label: 'Placa' },
+];
+
+/**
+ * Obtiene la etiqueta de un tipo de ID proveedor ATS
+ * @param {string} codigo
+ * @returns {string}
+ */
+export function getLabelTipoIdProveedorATS(codigo) {
+	const tipo = TIPO_ID_PROVEEDOR_ATS.find((t) => t.value === codigo);
+	return tipo ? tipo.label : codigo;
+}
+
+/**
+ * Obtiene la etiqueta de un código de sustento ATS
+ * @param {string} codigo
+ * @returns {string}
+ */
+export function getLabelCodSustentoATS(codigo) {
+	const cs = COD_SUSTENTO_ATS.find((c) => c.value === codigo);
+	return cs ? cs.label : codigo;
+}
+
+/**
+ * Obtiene la etiqueta de una forma de pago ATS
+ * @param {string} codigo
+ * @returns {string}
+ */
+export function getLabelFormaPagoATS(codigo) {
+	const fp = FORMA_PAGO_ATS.find((f) => f.value === codigo);
+	return fp ? fp.label : codigo;
+}

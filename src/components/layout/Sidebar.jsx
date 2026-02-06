@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
 	LayoutDashboard, FileText, Users, Package,
 	BarChart3, Settings, ChevronLeft, ChevronRight, LogOut,
+	ShoppingCart, UserCheck,
 } from 'lucide-react';
 import { useUIStore } from '@/stores/useUIStore';
 import Logo from '@/components/shared/Logo';
@@ -14,6 +15,8 @@ const navItems = [
 	{ label: 'Comprobantes', href: '/comprobantes', icon: FileText },
 	{ label: 'Clientes', href: '/clientes', icon: Users },
 	{ label: 'Productos', href: '/productos', icon: Package },
+	{ label: 'Compras', href: '/compras', icon: ShoppingCart },
+	{ label: 'Empleados', href: '/empleados', icon: UserCheck },
 	{ label: 'Reportes', href: '/reportes', icon: BarChart3 },
 	{ label: 'Configuración', href: '/configuracion', icon: Settings },
 ];
