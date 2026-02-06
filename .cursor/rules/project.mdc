@@ -12,8 +12,12 @@ globs: ["**/*"]
 - Backend: Supabase (PostgreSQL 15 + Auth + Storage)
 - Estado: Zustand 5
 - Validación: Zod 4 + React Hook Form 7
-- IA: Google Gemini API 2.0 Flash
+- IA: Google Gemini 3 Flash (`gemini-3-flash-preview`) via @google/genai + Vercel AI SDK (@ai-sdk/google)
 - Temas: next-themes (light/dark/system)
+- XML/Firma: fast-xml-parser + node-forge + xml-crypto
+- SOAP SRI: soap (cliente SOAP para WS del SRI)
+- PDF: @react-pdf/renderer + pdf-lib
+- Email: resend
 - Despliegue: Google Cloud Run (Docker)
 
 ## Convenciones de Código

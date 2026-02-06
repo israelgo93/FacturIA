@@ -10,6 +10,7 @@ const GlassSelect = forwardRef(function GlassSelect({
 	error,
 	className = '',
 	required = false,
+	children,
 	...props
 }, ref) {
 	return (
@@ -48,18 +49,24 @@ const GlassSelect = forwardRef(function GlassSelect({
 					}}
 					{...props}
 				>
-					<option value="" style={{ background: 'var(--option-bg)', color: 'var(--option-text-muted)' }}>
-						{placeholder}
-					</option>
-					{options.map((opt) => (
-						<option
-							key={opt.value}
-							value={opt.value}
-							style={{ background: 'var(--option-bg)', color: 'var(--option-text)' }}
-						>
-							{opt.label}
-						</option>
-					))}
+					{children ? (
+						children
+					) : (
+						<>
+							<option value="" style={{ background: 'var(--option-bg)', color: 'var(--option-text-muted)' }}>
+								{placeholder}
+							</option>
+							{options.map((opt) => (
+								<option
+									key={opt.value}
+									value={opt.value}
+									style={{ background: 'var(--option-bg)', color: 'var(--option-text)' }}
+								>
+									{opt.label}
+								</option>
+							))}
+						</>
+					)}
 				</select>
 				<ChevronDown
 					className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
