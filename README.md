@@ -47,8 +47,11 @@ El nombre fusiona "factura" + "IA", comunicando que la inteligencia artificial e
 | Certificados | node-forge (PKCS#12) | 1.3 |
 | Cifrado | crypto-js (AES-256) | 4 |
 | PDF | react-pdf/renderer | 4.3 |
-| Email | Resend | 4 |
-| IA | Google Gemini API | 3.0 Flash |
+| Excel | SheetJS (xlsx) | 0.18 |
+| Email | Resend | 6 |
+| IA | Google Gemini API (ai SDK + @ai-sdk/google) | 3.0 Flash |
+| Chat IA | Vercel AI SDK (@ai-sdk/react) | 3.x |
+| Graficos | Recharts | 3.7 |
 | Despliegue | Google Cloud Run | - |
 | CI/CD | GitHub Actions | - |
 
@@ -56,7 +59,7 @@ El nombre fusiona "factura" + "IA", comunicando que la inteligencia artificial e
 
 ## Sistema de diseno
 
-**Ethereal Glass** — un estilo visual etereo y minimalista con soporte de temas claro, oscuro y sistema.
+**Ethereal Glass** -- un estilo visual etereo y minimalista con soporte de temas claro, oscuro y sistema.
 
 ### Modo oscuro (default)
 ```
@@ -114,10 +117,18 @@ facturia.app (Google Cloud Run)
     |           |   +-- /retencion         Formulario Comprobante de Retencion
     |           |   +-- /guia-remision     Formulario Guia de Remision
     |           |   +-- /liquidacion       Formulario Liquidacion de Compra
-    |           |   +-- /[id]              Detalle de comprobante
+    |           |   +-- /[id]              Detalle de comprobante (RIDE, XML, email)
     |           +-- /clientes          CRUD clientes (tabla, busqueda, CSV)
     |           +-- /productos         CRUD productos (tabla, IVA/ICE, CSV)
-    |           +-- /reportes          Reportes SRI con IA
+    |           +-- /compras           Registro compras recibidas (ATS)
+    |           +-- /empleados         CRUD empleados (RDEP)
+    |           +-- /reportes          Hub de reportes SRI con IA
+    |           |   +-- /ats               Anexo Transaccional Simplificado
+    |           |   +-- /rdep              Relacion Dependencia
+    |           |   +-- /iva               Formulario 104 IVA
+    |           |   +-- /retenciones       Formulario 103 Retenciones
+    |           |   +-- /ventas            Reporte de ventas
+    |           |   +-- /analisis          Chat IA tributario (streaming)
     |           +-- /configuracion     Hub de configuracion
     |               +-- /empresa           Datos del contribuyente
     |               +-- /establecimientos  CRUD establecimientos
@@ -125,11 +136,11 @@ facturia.app (Google Cloud Run)
     |               +-- /certificado       Upload y gestion .p12
     |
     +-- Supabase
-    |       +-- PostgreSQL 15 (15 tablas, RLS multi-tenant)
+    |       +-- PostgreSQL 15 (23 tablas, RLS multi-tenant)
     |       +-- Auth (email/password, refresh tokens)
     |       +-- Storage (certificados .p12, cifrado AES-256)
     |
-    +-- Google Gemini API (IA tributaria)
+    +-- Google Gemini API (IA tributaria, chat streaming)
     |
     +-- SRI Ecuador (Web Services SOAP)
 ```
@@ -150,7 +161,7 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 
 ## Base de datos
 
-19 tablas con RLS habilitado, indices optimizados y funciones de negocio:
+23 tablas con RLS habilitado, indices optimizados y funciones de negocio:
 
 | Tabla | Proposito |
 |-------|-----------|
@@ -173,73 +184,154 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 | sri_log | Auditoria de comunicacion con el SRI |
 | config_email | Configuracion de envio de correos |
 | ia_conversaciones | Historial de chat con la IA |
+| compras_recibidas | Registro de compras/gastos de proveedores (ATS) |
+| compras_recibidas_retenciones | Retenciones asociadas a compras recibidas |
+| empleados | Empleados en relacion de dependencia (RDEP) |
+| empleados_ingresos_anuales | Ingresos anuales por empleado (RDEP) |
 
 **Vista**: `v_comprobantes_resumen` (resumen para dashboard con security_invoker)
+
+**Funcion**: `calcular_total_ventas_periodo()` (ventas autorizadas por periodo)
 
 **Storage**: Bucket `certificados` (privado, RLS, max 5MB, PKCS12)
 
 ---
 
-## Funcionalidades implementadas
+## Fases de desarrollo (detalle)
 
-### Fase 1 - Fundacion
-- Proyecto Next.js 16 con App Router y Tailwind 4
-- Sistema de diseno Ethereal Glass (8 componentes UI)
-- Layout responsive mobile-first (Sidebar, Topbar, BottomNav)
-- Autenticacion Supabase (login, registro, recuperar, middleware)
-- Schema BD multi-tenant con RLS (15 tablas)
-- CI/CD con GitHub Actions hacia Cloud Run
-- Landing page publica
+### Fase 1 - Fundacion (Completada)
 
-### Fase 2 - Onboarding + Catalogos + Temas
-- Sistema de temas: claro, oscuro y sistema (next-themes)
-- Variables CSS para todos los componentes (sin colores hardcoded)
-- Onboarding wizard de 5 pasos (empresa, establecimiento, punto emision, certificado, resumen)
+Infraestructura base del proyecto con autenticacion, base de datos y despliegue continuo.
+
+- Proyecto Next.js 16 con App Router y Tailwind CSS 4
+- Sistema de diseno Ethereal Glass (9 componentes UI reutilizables)
+- Layout responsive mobile-first (Sidebar colapsable, Topbar, BottomNav mobile)
+- Autenticacion completa con Supabase Auth (login, registro, recuperar contrasena, middleware)
+- Schema de base de datos multi-tenant con Row Level Security (15 tablas iniciales)
+- CI/CD con GitHub Actions: pipeline CI en pull requests, deploy staging en `develop`, deploy produccion en `main`
+- Dockerfile multi-stage optimizado para Cloud Run (standalone output de Next.js)
+- Landing page publica con deteccion automatica de sesion
+
+### Fase 2 - Onboarding, Catalogos y Temas (Completada)
+
+Configuracion inicial de la empresa y gestion de catalogos maestros.
+
+- Sistema de temas: claro, oscuro y automatico del sistema (next-themes)
+- Variables CSS para todos los componentes UI (sin colores hardcoded)
+- Onboarding wizard de 5 pasos (datos empresa, establecimiento, punto de emision, certificado digital, resumen)
 - CRUD completo de empresa con validacion RUC Modulo 11
 - CRUD de establecimientos y puntos de emision
-- Upload y validacion de certificado .p12 con cifrado AES-256
-- CRUD de clientes con tabla paginada, busqueda, filtros e importacion CSV
-- CRUD de productos con configuracion IVA/ICE e importacion CSV
+- Upload y validacion de certificado .p12 con cifrado AES-256 en Supabase Storage
+- CRUD de clientes con tabla paginada, busqueda global, filtros por tipo e importacion CSV masiva
+- CRUD de productos con configuracion IVA/ICE por producto e importacion CSV masiva
 - Validacion de identificaciones ecuatorianas (RUC Modulo 11, Cedula Modulo 10)
-- 4 subagentes Cursor con frontmatter correcto (repo-scout, sri-validator, test-writer, db-migrator)
-- Redireccion inteligente post-login (onboarding o dashboard)
+- 4 subagentes Cursor especializados (repo-scout, sri-validator, test-writer, db-migrator)
+- 5 skills de conocimiento procedimental (supabase-rls, xml-sri, glass-ui, nextjs-patterns, ci-cd-cloudrun)
+- Redireccion inteligente post-login (onboarding pendiente o dashboard)
 
-### Fase 3 - Motor de Facturacion Electronica
-- Generador de clave de acceso (49 digitos + Modulo 11)
-- XML Builder para factura electronica (v1.1.0 SRI)
-- Firma electronica XAdES-BES completa (node-forge + crypto nativo, sin xml-crypto)
+### Fase 3 - Motor de Facturacion Electronica (Completada)
+
+Motor completo de emision de facturas con firma digital, comunicacion SRI, RIDE y email.
+
+- Generador de clave de acceso de 49 digitos con digito verificador Modulo 11
+- XML Builder para factura electronica (version 1.1.0 conforme a Ficha Tecnica SRI)
+- Firma electronica XAdES-BES completa con node-forge y crypto nativo:
   - QualifyingProperties con SignedProperties (SigningTime, SigningCertificate, DataObjectFormat)
   - Canonicalizacion C14N 1.0 con namespaces heredados
   - Doble referencia: documento + SignedProperties
   - RSA-SHA1 con KeyInfo completo (X509Data + RSAKeyValue)
-- Cliente SOAP para Web Services SRI (Recepcion y Autorizacion)
-- Flujo completo orquestado: BORRADOR -> FIRMADO -> ENVIADO -> AUTORIZADO
-- Reintentos de autorizacion configurables (10 intentos, 5s entre cada uno)
-- Server Action reConsultarAutorizacion() para comprobantes en estado PPR
-- Bucket de certificados en Supabase Storage con politicas RLS
-- Admin client con service_role para bypass de RLS en Storage
-- RIDE PDF (Representacion Impresa del Documento Electronico) con react-pdf
-- Email automatico con XML + RIDE adjuntos (Resend)
-- Wizard de factura con asistencia de IA (Gemini 3 Flash + useChat)
-- Listado de comprobantes con filtros por estado y busqueda
-- Manejo de codigo 70 SRI ("Clave de acceso en procesamiento")
-- Logging completo de comunicacion con el SRI (sri_log)
+- Cliente SOAP para Web Services SRI (RecepcionComprobantesOffline y AutorizacionComprobantesOffline)
+- Flujo de emision orquestado: BORRADOR -> FIRMADO -> ENVIADO -> AUTORIZADO
+- Reintentos de autorizacion configurables (10 intentos, 5 segundos entre cada uno)
+- Server Action reConsultarAutorizacion() para comprobantes en estado PPR (procesamiento)
+- Bucket de certificados en Supabase Storage con politicas RLS por empresa
+- Admin client con service_role para bypass de RLS en operaciones de Storage
+- RIDE PDF con react-pdf (Representacion Impresa del Documento Electronico)
+- Email automatico con XML + RIDE adjuntos usando Resend
+- Wizard de factura con asistencia de IA (Google Gemini 3 Flash + useChat)
+- Listado de comprobantes con filtros por estado, busqueda y paginacion
+- Manejo del codigo 70 del SRI ("Clave de acceso en procesamiento")
+- Logging completo de comunicacion con el SRI en tabla sri_log
 - **Factura autorizada por el SRI en ambiente de pruebas** (verificado 6/Feb/2026)
 
-### Fase 4 - Comprobantes Electronicos Adicionales
-- **5 XML Builders nuevos**: Nota de Credito (04), Nota de Debito (05), Guia de Remision (06), Comprobante de Retencion (07), Liquidacion de Compra (03)
-- **Catalogos SRI extendidos**: Retenciones Renta (303-343), Retenciones IVA (1-10), Retenciones ISD (4580), Documentos Sustento (01-48), Codigos IVA
-- **5 validadores Zod**: Schemas de validacion para cada tipo de comprobante
-- **12 Server Actions**: CRUD completo por tipo de comprobante + busqueda de documentos sustento
-- **5 formularios UI completos**: Paginas de emision para NC, ND, Retencion, Guia Remision y Liquidacion
-- **5 templates RIDE PDF**: Un template react-pdf por cada tipo de comprobante adicional
-- **Orquestador multi-tipo**: El flujo procesarComprobante() ahora soporta los 6 tipos de comprobante
-- **Selector dinamico de XML Builder y RIDE template** segun tipo de comprobante
-- **Migraciones BD**: Tablas guia_remision_destinatarios, guia_remision_detalles, campos adicionales en comprobantes
-- **Vista v_comprobantes_resumen** con security_invoker para dashboard
-- **Componente SeleccionarDocumentoSustento**: Selector reutilizable de facturas autorizadas
-- **42 tests unitarios** para los XML Builders de todos los tipos de comprobante
-- **Correccion datos empresa**: obligadoContabilidad y regimen RIMPE segun consulta RUC SRI
+### Fase 4 - Comprobantes Electronicos Adicionales (Completada)
+
+Soporte completo para los 6 tipos de comprobantes electronicos del SRI Ecuador.
+
+- 5 XML Builders nuevos: Nota de Credito (04), Nota de Debito (05), Guia de Remision (06), Comprobante de Retencion (07), Liquidacion de Compra (03)
+- Catalogos SRI extendidos: Retenciones Renta (303-343), Retenciones IVA (1-10), Retenciones ISD (4580), Documentos Sustento (01-48), Codigos IVA
+- 5 schemas de validacion Zod: uno para cada tipo de comprobante adicional
+- 12 Server Actions: CRUD completo por tipo de comprobante + busqueda de documentos sustento
+- 5 formularios UI completos: paginas de emision para NC, ND, Retencion, Guia Remision y Liquidacion
+- 5 templates RIDE PDF: un template react-pdf por cada tipo de comprobante adicional
+- Orquestador multi-tipo: procesarComprobante() ahora soporta los 6 tipos
+- Selector dinamico de XML Builder y RIDE template segun tipo de comprobante
+- Migraciones BD: tablas guia_remision_destinatarios, guia_remision_detalles, campos adicionales en comprobantes
+- Vista v_comprobantes_resumen con security_invoker para dashboard
+- Componente SeleccionarDocumentoSustento: selector reutilizable de facturas autorizadas
+- 42 tests unitarios para los XML Builders de todos los tipos de comprobante
+- Correccion datos empresa: obligadoContabilidad y regimen RIMPE segun consulta RUC SRI
+
+### Fase 5 - Reportes IA, ATS y RDEP (Completada)
+
+Generacion automatica de reportes tributarios con analisis de Inteligencia Artificial.
+
+**Base de datos (4 tablas nuevas, 1 funcion, 5 indices)**
+- Tabla compras_recibidas: registro de compras y gastos de proveedores para ATS
+- Tabla compras_recibidas_retenciones: retenciones en compras recibidas
+- Tabla empleados: empleados en relacion de dependencia para RDEP
+- Tabla empleados_ingresos_anuales: ingresos anuales por empleado
+- Funcion calcular_total_ventas_periodo() para consulta de ventas autorizadas
+- Indices de rendimiento en empresa+periodo, proveedor, compra_id
+- RLS habilitado en las 4 tablas nuevas con triggers updated_at
+
+**Catalogos y utilidades**
+- Catalogos ATS completos: Tipo ID Proveedor (Tabla 2), Tipo Comprobante (Tabla 4), Codigo Sustento (Tabla 5), Forma Pago (Tabla 13)
+- Modulo de vencimientos tributarios: calculo por noveno digito del RUC con estados (normal, proximo, urgente, vencido)
+- Funciones helper: calcularVencimiento(), diasParaVencimiento(), infoVencimiento()
+
+**CRUD Compras y Empleados**
+- CRUD compras recibidas con todos los campos ATS (tipo ID, codigo sustento, forma pago, bases imponibles, IVA, ICE, parte relacionada)
+- CRUD empleados con tipos de contrato (indefinido, fijo, eventual, ocasional) e ingresos anuales
+- Listados con GlassTable, busqueda, paginacion y modales de registro
+
+**Motor de reportes (6 consolidadores/builders)**
+- Consolidador ATS: recopila compras, ventas por establecimiento, resumen (excluye compras con retencion electronica)
+- Constructor XML ATS compatible con at.xsd: modulo compras (codSustento, tpIdProv, bases, retenciones AIR/IVA), ventas por establecimiento, formas de pago
+- Constructor XML RDEP compatible con RDEP.xsd: periodos de trabajo, ingresos gravados, IESS, gastos personales
+- Consolidador Formulario 104 IVA: casilleros oficiales (ventas gravadas, tarifa 0, no objeto, exentas, credito tributario, liquidacion)
+- Consolidador Formulario 103 Retenciones: agrupacion por codigo de retencion, combina retenciones electronicas y manuales
+- Generador Reporte de Ventas: detalle y resumen (facturas, NC, ND autorizados, ventas brutas/netas, IVA)
+
+**Exportacion Excel**
+- Dependencia xlsx (SheetJS) integrada
+- Exportadores: ATS Excel (hojas Resumen + Compras), Form 104, Form 103, Ventas (detalle + resumen)
+
+**Inteligencia Artificial**
+- Motor de analisis tributario: deteccion algoritmica de anomalias (vencimientos, consistencia IVA, retenciones faltantes, bancarizacion)
+- Analisis avanzado con Google Gemini 3 Flash (con fallback automatico si falla la API)
+- API route de chat streaming con Vercel AI SDK: contexto fiscal automatico del periodo
+- Prompts especializados en tributacion ecuatoriana (system prompt con datos de empresa + reglas SRI)
+- Chat IA en tiempo real con selector de periodo y contexto fiscal dinamico
+
+**Paginas UI (8 nuevas)**
+- Hub de reportes con 6 cards de acceso rapido
+- Pagina ATS: selector periodo, generar/descargar XML y Excel, resumen con metricas
+- Pagina RDEP: selector anio, generar/descargar XML, previsualizacion
+- Pagina Form 104 IVA: casilleros oficiales con formato, liquidacion con colores, exportar Excel
+- Pagina Form 103 Retenciones: tablas renta e IVA, total a pagar, exportar Excel
+- Pagina Ventas: cards resumen, tabla detalle, exportar Excel
+- Pagina Analisis IA: chat streaming con Gemini, selector periodo
+- Pagina Compras: listado con modal de registro
+- Pagina Empleados: listado con modal de registro
+
+**Navegacion**
+- Sidebar y MobileMenu actualizados con entradas Compras y Empleados
+
+**Acciones de comprobante mejoradas**
+- Boton Ver RIDE PDF en detalle de comprobante (abre en nueva pestana)
+- Boton Descargar XML (descarga directa del XML autorizado o firmado)
+- Boton Enviar por Email (envia RIDE + XML al email del comprador)
 
 ---
 
@@ -340,13 +432,31 @@ npm install
 Crear `.env.local` en la raiz:
 
 ```
+# Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
 SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
+
+# SRI Web Services
+SRI_AMBIENTE=1
+SRI_WS_RECEPCION_PRUEBAS=https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl
+SRI_WS_AUTORIZACION_PRUEBAS=https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+SRI_WS_RECEPCION_PROD=https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl
+SRI_WS_AUTORIZACION_PROD=https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+
+# Seguridad
+ENCRYPTION_KEY=tu-clave-aes-256-de-32-caracteres
+
+# Inteligencia Artificial
+GEMINI_API_KEY=tu-gemini-api-key
+GOOGLE_GENERATIVE_AI_API_KEY=tu-gemini-api-key
+
+# Email
+RESEND_API_KEY=tu-resend-api-key
+
+# App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_APP_NAME=facturIA
-ENCRYPTION_KEY=tu-clave-aes-256-de-32-caracteres
-RESEND_API_KEY=tu-resend-api-key
 ```
 
 ### Ejecutar
@@ -355,7 +465,162 @@ RESEND_API_KEY=tu-resend-api-key
 npm run dev       # Servidor de desarrollo en http://localhost:3000
 npm run build     # Build de produccion
 npm run lint      # Verificar codigo
+npm run test      # Tests unitarios (vitest)
 ```
+
+---
+
+## Guia de despliegue a Google Cloud Run
+
+Esta guia describe paso a paso como configurar el despliegue automatico a Google Cloud Run usando GitHub Actions. Todo se hace desde las interfaces web (Google Cloud Console y GitHub), sin necesidad de usar la linea de comandos.
+
+### Paso 1: Crear proyecto en Google Cloud
+
+1. Ir a [Google Cloud Console](https://console.cloud.google.com)
+2. Click en el selector de proyectos (arriba a la izquierda) y luego **Nuevo Proyecto**
+3. Nombre: `facturia-prod` (debe coincidir con `PROJECT_ID` en los workflows)
+4. Click **Crear**
+5. Seleccionar el proyecto recien creado
+
+### Paso 2: Habilitar las APIs necesarias
+
+1. En el menu lateral: **APIs y servicios** > **Biblioteca**
+2. Buscar y habilitar cada una de estas APIs:
+   - **Cloud Run Admin API**
+   - **Artifact Registry API**
+   - **Cloud Build API**
+   - **IAM Service Account Credentials API**
+   - **Secret Manager API**
+
+### Paso 3: Crear repositorio en Artifact Registry
+
+1. Menu lateral: **Artifact Registry** > **Repositorios**
+2. Click **Crear repositorio**
+3. Configurar:
+   - Nombre: `facturia`
+   - Formato: **Docker**
+   - Modo: **Estandar**
+   - Region: `us-east1` (debe coincidir con `REGION` en los workflows)
+   - Cifrado: **Clave administrada por Google**
+4. Click **Crear**
+
+### Paso 4: Crear cuenta de servicio para GitHub Actions
+
+1. Menu lateral: **IAM y administracion** > **Cuentas de servicio**
+2. Click **Crear cuenta de servicio**
+3. Configurar:
+   - Nombre: `github-actions-deploy`
+   - ID: `github-actions-deploy`
+   - Descripcion: "Cuenta para despliegues desde GitHub Actions"
+4. Click **Crear y continuar**
+5. Asignar los siguientes roles (agregar uno por uno con "Agregar otro rol"):
+   - `Artifact Registry Writer` (roles/artifactregistry.writer)
+   - `Cloud Run Admin` (roles/run.admin)
+   - `Service Account User` (roles/iam.serviceAccountUser)
+   - `Secret Manager Secret Accessor` (roles/secretmanager.secretAccessor)
+6. Click **Listo**
+
+### Paso 5: Generar clave JSON de la cuenta de servicio
+
+1. En la lista de cuentas de servicio, click en `github-actions-deploy`
+2. Ir a la pestana **Claves**
+3. Click **Agregar clave** > **Crear clave nueva**
+4. Seleccionar **JSON** y click **Crear**
+5. Se descarga un archivo `.json` -- **guardarlo de forma segura**, se usara en GitHub
+
+### Paso 6: Crear secretos en Google Secret Manager
+
+1. Menu lateral: **Seguridad** > **Secret Manager**
+2. Click **Crear secreto** para cada uno de los siguientes (nombre exacto):
+
+| Nombre del secreto | Valor |
+|---|---|
+| `SUPABASE_SERVICE_ROLE_KEY` | Tu service role key de Supabase |
+| `ENCRYPTION_KEY` | Clave AES-256 de 32 caracteres |
+| `GEMINI_API_KEY` | API key de Google Gemini |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Misma API key de Gemini |
+| `RESEND_API_KEY` | API key de Resend |
+| `SRI_AMBIENTE` | `1` (pruebas) o `2` (produccion) |
+| `SRI_WS_RECEPCION_PRUEBAS` | URL WSDL recepcion pruebas |
+| `SRI_WS_AUTORIZACION_PRUEBAS` | URL WSDL autorizacion pruebas |
+| `SRI_WS_RECEPCION_PROD` | URL WSDL recepcion produccion |
+| `SRI_WS_AUTORIZACION_PROD` | URL WSDL autorizacion produccion |
+
+3. Para cada secreto: poner el nombre, pegar el valor y click **Crear version del secreto**
+
+### Paso 7: Configurar secretos en GitHub
+
+1. Ir al repositorio en GitHub: `github.com/israelgo93/FacturIA`
+2. Click **Settings** > **Secrets and variables** > **Actions**
+3. Click **New repository secret** para cada uno:
+
+| Nombre del secreto en GitHub | Valor |
+|---|---|
+| `GCP_SA_KEY` | Contenido COMPLETO del archivo JSON descargado en el Paso 5 |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://tu-proyecto.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Tu anon key de Supabase |
+| `NEXT_PUBLIC_APP_URL` | URL de produccion (ej: `https://facturia-app-xxxxx-ue.a.run.app`) |
+| `NEXT_PUBLIC_APP_URL_STAGING` | URL de staging (se obtiene despues del primer deploy) |
+
+**Nota**: Las variables `NEXT_PUBLIC_*` se necesitan en build-time porque Next.js las embebe en el bundle del cliente. Los demas secretos (Supabase service role, Gemini, Resend, etc.) se inyectan en runtime via Secret Manager de GCP.
+
+### Paso 8: Primer despliegue
+
+El despliegue se activa automaticamente cuando se hace push a la rama correspondiente:
+
+- **Push a `main`**: Despliega a produccion (`facturia-app`)
+- **Push a `develop`**: Despliega a staging (`facturia-staging`)
+
+Para verificar:
+1. En GitHub: ir a **Actions** y ver el workflow ejecutandose
+2. Una vez completado, en Google Cloud Console: **Cloud Run** > click en el servicio
+3. Copiar la URL del servicio (formato: `https://facturia-app-xxxxx-ue.a.run.app`)
+4. **Importante**: Volver a GitHub y actualizar el secreto `NEXT_PUBLIC_APP_URL` con esta URL real
+
+### Paso 9: Configurar dominio personalizado (opcional)
+
+1. En Cloud Run, click en el servicio desplegado
+2. Ir a la pestana **Dominios**
+3. Click **Agregar asignacion**
+4. Seguir las instrucciones para verificar el dominio y configurar los registros DNS
+
+### Verificacion post-despliegue
+
+Despues del primer despliegue exitoso, verificar:
+
+- [ ] La aplicacion carga correctamente en la URL de Cloud Run
+- [ ] Login y registro funcionan (Supabase Auth)
+- [ ] Las variables de entorno se inyectan correctamente (verificar en Cloud Run > Revisiones > Variables)
+- [ ] Los secretos de Secret Manager se montan correctamente
+- [ ] El certificado .p12 se puede subir y usar para firmar
+
+### Resumen de la infraestructura
+
+```
+GitHub (repositorio)
+    |
+    +-- Push a main --> GitHub Actions (deploy-production.yml)
+    |                       |
+    |                       +-- Build Docker image con NEXT_PUBLIC_* como build-args
+    |                       +-- Push imagen a Artifact Registry (us-east1)
+    |                       +-- Deploy a Cloud Run con secretos de Secret Manager
+    |
+    +-- Push a develop --> GitHub Actions (deploy-staging.yml)
+    |                       |
+    |                       +-- Mismo flujo, servicio facturia-staging
+    |
+    +-- Pull Request --> GitHub Actions (ci.yml)
+                            |
+                            +-- npm ci + lint + build (validacion)
+```
+
+### Notas importantes
+
+- El Dockerfile usa `output: 'standalone'` de Next.js para crear una imagen optimizada (~150MB)
+- Las variables `NEXT_PUBLIC_*` deben pasarse como `--build-arg` durante el build de Docker
+- Los secretos sensibles se gestionan via Google Secret Manager (no como env vars en Cloud Run)
+- El servicio de produccion tiene `min-instances: 0` para optimizar costos (cold start ~3s)
+- Staging tiene `max-instances: 3` y produccion `max-instances: 10`
 
 ---
 
@@ -376,8 +641,15 @@ facturia/
 |   |   +-- (dashboard)/      Rutas protegidas
 |   |   |   +-- clientes/     CRUD clientes (lista, nuevo, editar, importar)
 |   |   |   +-- productos/    CRUD productos (lista, nuevo, editar, importar)
+|   |   |   +-- compras/      Registro compras recibidas
+|   |   |   +-- empleados/    CRUD empleados
+|   |   |   +-- reportes/     Hub + ATS, RDEP, IVA, Retenciones, Ventas, Analisis IA
 |   |   |   +-- configuracion/ Hub + empresa, establecimientos, puntos, certificado
 |   |   |   +-- onboarding/   Wizard 5 pasos con componentes
+|   |   +-- api/              Rutas API
+|   |   |   +-- comprobantes/ RIDE PDF, email
+|   |   |   +-- reportes/     Chat IA streaming
+|   |   |   +-- ia/           Factura wizard IA
 |   |   +-- auth/callback/    Callback de confirmacion
 |   +-- components/
 |   |   +-- ui/               9 componentes Glass + ThemeToggle
@@ -386,13 +658,16 @@ facturia/
 |   |   +-- providers/        ThemeProvider
 |   |   +-- pages/            LandingPage
 |   |   +-- pdf/              Templates RIDE (Factura, NC, ND, Ret, GR, LC)
-|   |   +-- comprobantes/     Componentes compartidos (SeleccionarDocumentoSustento)
+|   |   +-- comprobantes/     Componentes compartidos (SeleccionarDocumentoSustento, ComprobanteDetalle)
+|   |   +-- reportes/         PeriodoSelector
 |   +-- lib/
 |   |   +-- supabase/         Clientes browser, servidor y admin (service_role)
-|   |   +-- validations/      Schemas Zod (auth, empresa, cliente, producto, comprobantes)
-|   |   +-- utils/            Constantes, formatters, catalogos SRI
+|   |   +-- validations/      Schemas Zod (auth, empresa, cliente, producto, comprobantes, compras, empleados)
+|   |   +-- utils/            Constantes, formatters, catalogos SRI, vencimientos
 |   |   +-- crypto/           Cifrado AES-256
 |   |   +-- sri/              Motor SRI: XML builders, firma XAdES-BES (C14N+RSA-SHA1), SOAP, orquestador
+|   |   +-- reportes/         ATS builder/consolidator, RDEP builder, Form 103/104, ventas, Excel
+|   |   +-- ia/               Prompts IA, analisis tributario
 |   +-- stores/               Zustand (auth, empresa, UI)
 |   +-- styles/               Tokens CSS con soporte de temas
 +-- Dockerfile                Multi-stage build para Cloud Run
@@ -428,7 +703,7 @@ facturia/
 
 | Pipeline | Trigger | Destino |
 |----------|---------|---------|
-| ci.yml | Pull Request | Lint + Build |
+| ci.yml | Pull Request | Lint + Build (validacion) |
 | deploy-staging.yml | Push a develop | Cloud Run staging |
 | deploy-production.yml | Push a main | Cloud Run produccion |
 
@@ -442,7 +717,7 @@ facturia/
 | **Fase 2** | Temas, onboarding, config empresa, catalogos clientes/productos | Completada |
 | **Fase 3** | Motor de facturacion electronica (firma, SRI, RIDE, email) | Completada |
 | **Fase 4** | Comprobantes adicionales (NC, ND, Ret, GR, LC) + XML builders + RIDE | Completada |
-| Fase 5 | Reportes IA + ATS/RDEP | Pendiente |
+| **Fase 5** | Reportes IA + ATS/RDEP + compras + empleados + chat tributario | Completada |
 | Fase 6 | Dashboard analitico + suscripciones | Pendiente |
 | Fase 7 | Produccion, testing y calidad | Pendiente |
 
