@@ -6,12 +6,13 @@ import GlassCard from '@/components/ui/GlassCard';
 import GlassButton from '@/components/ui/GlassButton';
 import StatusBadge from './StatusBadge';
 import ComprobanteTimeline from './ComprobanteTimeline';
-import { ArrowLeft, Send, FileText, Download, Mail, Ban } from 'lucide-react';
+import { ArrowLeft, Send, FileText, Download, Mail, Ban, Eye } from 'lucide-react';
 import { procesarComprobante, anularComprobante } from '@/app/(dashboard)/comprobantes/actions';
 import { toast } from 'sonner';
 
 export default function ComprobanteDetalle({ comprobante }) {
 	const [procesando, setProcesando] = useState(false);
+	const [enviandoEmail, setEnviandoEmail] = useState(false);
 	const comp = comprobante;
 
 	const handleProcesar = async () => {
@@ -27,6 +28,52 @@ export default function ComprobanteDetalle({ comprobante }) {
 		if (result.error) toast.error(result.error);
 		else toast.success('Comprobante anulado');
 	};
+
+	const handleVerRIDE = () => {
+		window.open(`/api/comprobantes/ride?id=${comp.id}`, '_blank');
+	};
+
+	const handleDescargarXML = () => {
+		const xml = comp.xml_autorizado || comp.xml_firmado;
+		if (!xml) {
+			toast.error('No hay XML disponible');
+			return;
+		}
+		const blob = new Blob([xml], { type: 'application/xml' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `${comp.numero_completo || comp.clave_acceso || 'comprobante'}.xml`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	};
+
+	const handleEnviarEmail = async () => {
+		const email = comp.email_comprador;
+		if (!email) {
+			toast.error('El comprador no tiene email registrado');
+			return;
+		}
+		setEnviandoEmail(true);
+		try {
+			const res = await fetch('/api/comprobantes/email', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ comprobanteId: comp.id, emailDestino: email }),
+			});
+			const data = await res.json();
+			if (data.error) toast.error(data.error);
+			else toast.success(`Email enviado a ${email}`);
+		} catch {
+			toast.error('Error al enviar email');
+		}
+		setEnviandoEmail(false);
+	};
+
+	const tieneXML = Boolean(comp.xml_autorizado || comp.xml_firmado);
+	const estaAutorizado = comp.estado === 'AUT';
 
 	return (
 		<div className="max-w-4xl mx-auto space-y-6">
@@ -61,6 +108,29 @@ export default function ComprobanteDetalle({ comprobante }) {
 					)}
 				</div>
 			</div>
+
+			{/* Acciones del documento: RIDE, XML, Email */}
+			{(estaAutorizado || tieneXML) && (
+				<GlassCard className="p-3" animate={false}>
+					<div className="flex items-center gap-2 flex-wrap">
+						{estaAutorizado && (
+							<GlassButton size="sm" icon={Eye} onClick={handleVerRIDE}>
+								Ver RIDE PDF
+							</GlassButton>
+						)}
+						{tieneXML && (
+							<GlassButton variant="outline" size="sm" icon={Download} onClick={handleDescargarXML}>
+								Descargar XML
+							</GlassButton>
+						)}
+						{estaAutorizado && comp.email_comprador && (
+							<GlassButton variant="outline" size="sm" icon={Mail} onClick={handleEnviarEmail} loading={enviandoEmail}>
+								Enviar por Email
+							</GlassButton>
+						)}
+					</div>
+				</GlassCard>
+			)}
 
 			{/* Timeline */}
 			<ComprobanteTimeline estado={comp.estado} fechaAutorizacion={comp.fecha_autorizacion} />

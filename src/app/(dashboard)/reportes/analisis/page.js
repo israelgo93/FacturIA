@@ -8,7 +8,6 @@ import { obtenerContextoEmpresa } from '../actions';
 import PeriodoSelector from '@/components/reportes/PeriodoSelector';
 import GlassCard from '@/components/ui/GlassCard';
 import GlassButton from '@/components/ui/GlassButton';
-import GlassInput from '@/components/ui/GlassInput';
 
 function AnalisisPageInner() {
 	const [anio, setAnio] = useState(String(new Date().getFullYear()));
@@ -16,7 +15,7 @@ function AnalisisPageInner() {
 	const [empresa, setEmpresa] = useState(null);
 	const messagesEnd = useRef(null);
 
-	const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+	const { messages, input, setInput, handleSubmit, isLoading } = useChat({
 		api: '/api/reportes/chat',
 		body: {
 			empresaId: empresa?.id,
@@ -103,11 +102,16 @@ function AnalisisPageInner() {
 					</div>
 
 					<form onSubmit={handleSubmit} className="p-3 flex gap-2" style={{ borderTop: '1px solid var(--glass-border)' }}>
-						<GlassInput
-							value={input}
-							onChange={handleInputChange}
+						<input
+							value={input || ''}
+							onChange={(e) => setInput(e.target.value)}
 							placeholder="Pregunta sobre tu situación tributaria..."
-							className="flex-1"
+							className="flex-1 px-4 py-2.5 rounded-xl backdrop-blur-sm transition-all duration-300 focus:outline-none"
+							style={{
+								background: 'var(--input-bg)',
+								border: '1px solid var(--input-border)',
+								color: 'var(--text-primary)',
+							}}
 						/>
 						<GlassButton type="submit" disabled={isLoading || !(input || '').trim()} size="sm">
 							<Send className="w-4 h-4" />

@@ -72,5 +72,5 @@ export async function POST(req) {
 		messages,
 	});
 
-	return result.toDataStreamResponse();
+	return result.toUIMessageStreamResponse();
 }
