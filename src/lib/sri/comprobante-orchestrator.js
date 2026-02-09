@@ -14,7 +14,7 @@ import {
 	buildLiquidacionCompraXML,
 } from './xml-builder';
 import { firmarXML } from './xml-signer';
-import { enviarComprobante, consultarAutorizacion, getWSUrl } from './soap-client';
+import { enviarComprobante, consultarAutorizacion, getWSUrl, SRI_ERROR_CODES } from './soap-client';
 import { validarFactura, calcularTotalesImpuestos } from './validators';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -75,19 +75,35 @@ export async function procesarComprobante(comprobanteId) {
 		throw new Error(`Estado inválido para procesar: ${comprobante.estado}. Debe ser "draft".`);
 	}
 
+	const contexto = {
+		comprobanteId,
+		empresaId: comprobante.empresa_id,
+		tipo: comprobante.tipo_comprobante,
+		tipoNombre: NOMBRES_COMPROBANTE[comprobante.tipo_comprobante] || comprobante.tipo_comprobante,
+	};
+
 	try {
 		// 2. Preparar datos para XML
 		const datosXML = prepararDatosXML(comprobante);
 
 		// 3. Validar datos antes de generar XML
-		const validacion = validarFactura(datosXML);
+		const validacion = validarFactura(datosXML, comprobante.tipo_comprobante);
 		if (!validacion.valid) {
-			return { estado: 'ERROR_VALIDACION', errores: validacion.errores };
+			return {
+				estado: 'ERROR_VALIDACION',
+				codigo: 'VALIDACION_DATOS',
+				errores: validacion.errores,
+				contexto,
+			};
 		}
 
 		// 4. Generar clave de acceso
+		// Para Guía de Remisión (06), el SRI valida la clave contra fechaIniTransporte
+		const fechaParaClave = comprobante.tipo_comprobante === '06'
+			? comprobante.fecha_inicio_transporte
+			: comprobante.fecha_emision;
 		const claveAcceso = generarClaveAcceso({
-			fechaEmision: comprobante.fecha_emision,
+			fechaEmision: fechaParaClave,
 			tipoComprobante: comprobante.tipo_comprobante,
 			ruc: comprobante.empresa.ruc,
 			ambiente: String(comprobante.ambiente),
@@ -101,11 +117,43 @@ export async function procesarComprobante(comprobanteId) {
 
 		// 5. Construir XML usando el builder correspondiente al tipo
 		const xmlBuilder = getXMLBuilder(comprobante.tipo_comprobante);
-		const xmlSinFirma = xmlBuilder(datosXML);
+		let xmlSinFirma;
+		try {
+			xmlSinFirma = xmlBuilder(datosXML);
+		} catch (xmlError) {
+			return {
+				estado: 'ERROR_XML',
+				codigo: 'XML_GENERACION_ERROR',
+				mensaje: `Error generando XML de ${contexto.tipoNombre}: ${xmlError.message}`,
+				contexto,
+			};
+		}
 
 		// 6. Obtener certificado y firmar
-		const { p12Buffer, p12Password } = await obtenerCertificado(supabase, comprobante.empresa_id);
-		const xmlFirmado = firmarXML(xmlSinFirma, p12Buffer, p12Password);
+		let p12Buffer, p12Password, xmlFirmado;
+		try {
+			({ p12Buffer, p12Password } = await obtenerCertificado(supabase, comprobante.empresa_id));
+		} catch (certError) {
+			const esCertError = certError.message?.startsWith('CERT_');
+			return {
+				estado: 'ERROR_CERTIFICADO',
+				codigo: esCertError ? certError.message.split(':')[0] : 'CERT_ERROR',
+				mensaje: certError.message,
+				contexto,
+			};
+		}
+
+		try {
+			xmlFirmado = firmarXML(xmlSinFirma, p12Buffer, p12Password);
+		} catch (firmaError) {
+			const esCertError = firmaError.message?.startsWith('CERT_');
+			return {
+				estado: 'ERROR_FIRMA',
+				codigo: esCertError ? firmaError.message.split(':')[0] : 'FIRMA_ERROR',
+				mensaje: `Error firmando ${contexto.tipoNombre}: ${firmaError.message}`,
+				contexto,
+			};
+		}
 
 		// Actualizar estado: FIRMADO
 		await actualizarComprobante(supabase, comprobanteId, {
@@ -140,9 +188,19 @@ export async function procesarComprobante(comprobanteId) {
 
 			if (!esEnProcesamiento) {
 				await actualizarComprobante(supabase, comprobanteId, { estado: 'DEV' });
-				return { estado: 'DEV', mensajes: respuestaRecepcion.mensajes, claveAcceso };
+				return { estado: 'DEV', codigo: 'SRI_DEVUELTA', mensajes: respuestaRecepcion.mensajes, claveAcceso, contexto };
 			}
 			// Si está en procesamiento, continuar con la consulta de autorización
+		}
+
+		if (respuestaRecepcion.estado === 'ERROR_CONEXION') {
+			return {
+				estado: 'ERROR_CONEXION',
+				codigo: respuestaRecepcion.codigo || SRI_ERROR_CODES.CONEXION,
+				mensajes: respuestaRecepcion.mensajes,
+				claveAcceso,
+				contexto,
+			};
 		}
 
 		// Actualizar estado: ENVIADO
@@ -178,17 +236,17 @@ export async function procesarComprobante(comprobanteId) {
 				fecha_autorizacion: autorizacion.fechaAutorizacion,
 				xml_autorizado: autorizacion.xmlAutorizado,
 			});
-			return { estado: 'AUT', claveAcceso, autorizacion };
+			return { estado: 'AUT', claveAcceso, autorizacion, contexto };
 		} else if (autorizacion?.estado === 'NO AUTORIZADO') {
 			await actualizarComprobante(supabase, comprobanteId, { estado: 'NAT' });
-			return { estado: 'NAT', mensajes: autorizacion.mensajes, claveAcceso };
+			return { estado: 'NAT', codigo: 'SRI_NO_AUTORIZADO', mensajes: autorizacion.mensajes, claveAcceso, contexto };
 		} else {
 			// EN PROCESAMIENTO — polling continuará por separado
 			await actualizarComprobante(supabase, comprobanteId, { estado: 'PPR' });
-			return { estado: 'PPR', claveAcceso };
+			return { estado: 'PPR', claveAcceso, contexto };
 		}
 	} catch (error) {
-		console.error('Error procesando comprobante:', error);
+		console.error(`Error procesando comprobante [${contexto.tipoNombre}] id=${comprobanteId}:`, error);
 		throw error;
 	}
 }
@@ -580,9 +638,25 @@ function prepararDatosRetencion(comp, datosBase) {
 		}
 	}
 
-	// Agregar impuestos del documento (IVA calculado)
+	// Calcular defaults y agregar impuestos del documento sustento
 	for (const doc of docsMap.values()) {
-		// Impuesto IVA del documento
+		// Calcular totalSinImpuestos desde las bases de retención si no se proporcionó
+		if (!doc.totalSinImpuestos || doc.totalSinImpuestos === 0) {
+			const maxBase = doc.retenciones.reduce((max, r) => Math.max(max, r.baseImponible), 0);
+			doc.totalSinImpuestos = maxBase;
+		}
+
+		// Default fechaRegistro a fechaEmision si no existe
+		if (!doc.fechaRegistro) {
+			doc.fechaRegistro = doc.fechaEmision;
+		}
+
+		// Default numAutorizacion a placeholder si no existe
+		if (!doc.numAutorizacion) {
+			doc.numAutorizacion = '0000000000';
+		}
+
+		// Impuesto IVA del documento (usar base de retenciones IVA si existen, sino usar totalSinImpuestos)
 		const baseIVA = doc.retenciones
 			.filter((r) => r.codigoImpuesto === '2')
 			.reduce((sum, r) => sum + r.baseImponible, 0);
@@ -594,6 +668,32 @@ function prepararDatosRetencion(comp, datosBase) {
 				baseImponible: baseIVA,
 				tarifa: 15,
 				valorImpuesto: baseIVA * 0.15,
+			});
+		}
+
+		// Si no hay impuestos aún, agregar IVA 15% por defecto basado en totalSinImpuestos
+		if (doc.impuestos.length === 0) {
+			const ivaBase = doc.totalSinImpuestos;
+			doc.impuestos.push({
+				codigo: '2',
+				codigoPorcentaje: '4',
+				baseImponible: ivaBase,
+				tarifa: 15,
+				valorImpuesto: ivaBase * 0.15,
+			});
+		}
+
+		// Calcular importeTotal si no se proporcionó
+		if (!doc.importeTotal || doc.importeTotal === 0) {
+			const totalImpuestos = doc.impuestos.reduce((sum, i) => sum + i.valorImpuesto, 0);
+			doc.importeTotal = doc.totalSinImpuestos + totalImpuestos;
+		}
+
+		// Default pago si no hay pagos
+		if (doc.pagos.length === 0) {
+			doc.pagos.push({
+				formaPago: '20',
+				total: doc.importeTotal,
 			});
 		}
 	}

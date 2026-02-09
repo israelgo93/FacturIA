@@ -17,18 +17,96 @@ const WS_URLS = {
 	},
 };
 
+// Timeout para operaciones SOAP (ms)
+const SOAP_TIMEOUT_MS = parseInt(process.env.SRI_SOAP_TIMEOUT_MS || '30000', 10);
+
+/**
+ * Códigos de error estructurados para operaciones SRI
+ */
+export const SRI_ERROR_CODES = {
+	TIMEOUT: 'SRI_TIMEOUT',
+	CONEXION: 'SRI_CONEXION_ERROR',
+	SOAP_FAULT: 'SRI_SOAP_FAULT',
+	URL_INVALIDA: 'SRI_URL_INVALIDA',
+	RESPUESTA_INVALIDA: 'SRI_RESPUESTA_INVALIDA',
+};
+
+/**
+ * Clasifica un error de red/SOAP en un código estructurado
+ * @param {Error} error
+ * @returns {{ codigo: string, mensaje: string }}
+ */
+function clasificarError(error) {
+	const msg = error.message || '';
+
+	if (msg.includes('ETIMEDOUT') || msg.includes('ESOCKETTIMEDOUT') || msg.includes('timeout')) {
+		return {
+			codigo: SRI_ERROR_CODES.TIMEOUT,
+			mensaje: `Timeout al comunicarse con el SRI (${SOAP_TIMEOUT_MS}ms). El servicio puede estar temporalmente no disponible.`,
+		};
+	}
+	if (msg.includes('ECONNREFUSED') || msg.includes('ENOTFOUND') || msg.includes('getaddrinfo')) {
+		return {
+			codigo: SRI_ERROR_CODES.CONEXION,
+			mensaje: `No se pudo conectar con el servidor del SRI. Verifique su conexión a internet.`,
+		};
+	}
+	if (msg.includes('ECONNRESET') || msg.includes('socket hang up')) {
+		return {
+			codigo: SRI_ERROR_CODES.CONEXION,
+			mensaje: 'La conexión con el SRI fue interrumpida. Intente nuevamente.',
+		};
+	}
+	if (error.root?.Envelope?.Body?.Fault || msg.includes('Fault')) {
+		return {
+			codigo: SRI_ERROR_CODES.SOAP_FAULT,
+			mensaje: `Error SOAP del SRI: ${msg}`,
+		};
+	}
+
+	return {
+		codigo: SRI_ERROR_CODES.CONEXION,
+		mensaje: `Error de comunicación con el SRI: ${msg}`,
+	};
+}
+
+/**
+ * Crea un cliente SOAP con timeout configurado
+ * @param {string} url - URL del WSDL
+ * @returns {Promise<Object>} Cliente SOAP
+ */
+async function crearClienteSOAP(url) {
+	if (!url) {
+		throw Object.assign(new Error('URL del servicio web del SRI no configurada'), {
+			codigoSRI: SRI_ERROR_CODES.URL_INVALIDA,
+		});
+	}
+
+	const client = await soap.createClientAsync(url, {
+		wsdl_options: { timeout: SOAP_TIMEOUT_MS },
+	});
+
+	// Configurar timeout en las peticiones HTTP
+	client.setEndpoint(client.endpoint);
+	if (client.httpClient?.options) {
+		client.httpClient.options.timeout = SOAP_TIMEOUT_MS;
+	}
+
+	return client;
+}
+
 /**
  * Envía un comprobante firmado al WS de Recepción del SRI
  * @param {string} xmlFirmado - XML firmado con XAdES-BES
  * @param {string} ambiente - '1'=Pruebas, '2'=Producción
- * @returns {Promise<Object>} { estado, comprobantes, mensajes, tiempoMs }
+ * @returns {Promise<Object>} { estado, comprobantes, mensajes, tiempoMs, codigo? }
  */
 export async function enviarComprobante(xmlFirmado, ambiente = '1') {
 	const urls = ambiente === '2' ? WS_URLS.produccion : WS_URLS.pruebas;
 	const startTime = Date.now();
 
 	try {
-		const client = await soap.createClientAsync(urls.recepcion);
+		const client = await crearClienteSOAP(urls.recepcion);
 
 		// Convertir XML a Base64 para el WS
 		const xmlBase64 = Buffer.from(xmlFirmado, 'utf-8').toString('base64');
@@ -46,10 +124,12 @@ export async function enviarComprobante(xmlFirmado, ambiente = '1') {
 			tiempoMs,
 		};
 	} catch (error) {
+		const errorInfo = clasificarError(error);
 		return {
 			estado: 'ERROR_CONEXION',
+			codigo: errorInfo.codigo,
 			comprobantes: [],
-			mensajes: [{ tipo: 'ERROR', mensaje: error.message }],
+			mensajes: [{ tipo: 'ERROR', codigo: errorInfo.codigo, mensaje: errorInfo.mensaje }],
 			tiempoMs: Date.now() - startTime,
 		};
 	}
@@ -59,14 +139,14 @@ export async function enviarComprobante(xmlFirmado, ambiente = '1') {
  * Consulta la autorización de un comprobante por clave de acceso
  * @param {string} claveAcceso - Clave de acceso de 49 dígitos
  * @param {string} ambiente - '1'=Pruebas, '2'=Producción
- * @returns {Promise<Object>} { estado, numeroAutorizacion, fechaAutorizacion, xmlAutorizado, mensajes, tiempoMs }
+ * @returns {Promise<Object>} { estado, numeroAutorizacion, fechaAutorizacion, xmlAutorizado, mensajes, tiempoMs, codigo? }
  */
 export async function consultarAutorizacion(claveAcceso, ambiente = '1') {
 	const urls = ambiente === '2' ? WS_URLS.produccion : WS_URLS.pruebas;
 	const startTime = Date.now();
 
 	try {
-		const client = await soap.createClientAsync(urls.autorizacion);
+		const client = await crearClienteSOAP(urls.autorizacion);
 
 		const [result] = await client.autorizacionComprobanteAsync({
 			claveAccesoComprobante: claveAcceso,
@@ -92,7 +172,7 @@ export async function consultarAutorizacion(claveAcceso, ambiente = '1') {
 		if (!autorizacion || (numComprobantes === '0')) {
 			return {
 				estado: 'SIN_RESPUESTA',
-				mensajes: [{ tipo: 'INFO', mensaje: `Comprobante aun en procesamiento. numeroComprobantes: ${numComprobantes}` }],
+				mensajes: [{ tipo: 'INFO', mensaje: `Comprobante aún en procesamiento. numeroComprobantes: ${numComprobantes}` }],
 				tiempoMs,
 			};
 		}
@@ -110,10 +190,12 @@ export async function consultarAutorizacion(claveAcceso, ambiente = '1') {
 			tiempoMs,
 		};
 	} catch (error) {
-		console.error('[SRI-AUTH] Error consultando autorizacion:', error.message);
+		const errorInfo = clasificarError(error);
+		console.error(`[SRI-AUTH] ${errorInfo.codigo}: ${errorInfo.mensaje}`);
 		return {
 			estado: 'ERROR_CONEXION',
-			mensajes: [{ tipo: 'ERROR', mensaje: error.message }],
+			codigo: errorInfo.codigo,
+			mensajes: [{ tipo: 'ERROR', codigo: errorInfo.codigo, mensaje: errorInfo.mensaje }],
 			tiempoMs: Date.now() - startTime,
 		};
 	}

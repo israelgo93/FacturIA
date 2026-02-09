@@ -151,10 +151,17 @@ export function descomponerClaveAcceso(clave) {
  * @returns {string} Fecha formateada
  */
 function formatearFecha(fecha) {
+	// Si la fecha es string ISO "YYYY-MM-DD", parsear directamente para evitar
+	// problemas de timezone (new Date("2026-02-09") se interpreta como UTC,
+	// pero getDate() devuelve hora local, causando desfase en UTC-5)
+	if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}/.test(fecha)) {
+		const parts = fecha.substring(0, 10).split('-');
+		return parts[2] + parts[1] + parts[0]; // ddmmaaaa
+	}
 	const d = new Date(fecha);
-	const dd = String(d.getDate()).padStart(2, '0');
-	const mm = String(d.getMonth() + 1).padStart(2, '0');
-	const aaaa = String(d.getFullYear());
+	const dd = String(d.getUTCDate()).padStart(2, '0');
+	const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+	const aaaa = String(d.getUTCFullYear());
 	return dd + mm + aaaa;
 }
 

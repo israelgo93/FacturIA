@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 import { obtenerSiguienteSecuencial, generarNumeroCompleto } from '@/lib/sri/secuencial-manager';
 import { procesarComprobante as procesarComprobanteMotor } from '@/lib/sri/comprobante-orchestrator';
 import { consultarAutorizacion, getWSUrl } from '@/lib/sri/soap-client';
+import { getTarifaIVA } from '@/lib/utils/sri-catalogs';
 
 /**
  * Crea un borrador de comprobante (factura)
@@ -177,9 +178,12 @@ export async function crearBorrador(formData) {
  */
 export async function procesarComprobante(comprobanteId) {
 	try {
+		console.log('[procesarComprobante] Iniciando para:', comprobanteId);
 		const resultado = await procesarComprobanteMotor(comprobanteId);
+		console.log('[procesarComprobante] Resultado:', JSON.stringify(resultado, null, 2));
 		return { data: resultado };
 	} catch (error) {
+		console.error('[procesarComprobante] Error:', error.message, error.stack);
 		return { error: error.message };
 	}
 }
@@ -291,6 +295,43 @@ export async function obtenerComprobante(id) {
 // Utilidades de cálculo
 // =========================================
 
+/**
+ * Transforma detalles crudos del formulario (con codigoIVA) al formato
+ * esperado por calcularTotalesDesdeDetalles e insertarDetallesComprobante
+ * (con precioTotalSinImpuesto e impuestos[]).
+ * @param {Array} detallesRaw - Detalles del formulario [{codigoPrincipal, descripcion, cantidad, precioUnitario, descuento, codigoIVA}]
+ * @returns {Array} Detalles normalizados con impuestos computados
+ */
+function normalizarDetallesFormulario(detallesRaw) {
+	return detallesRaw.map((d) => {
+		const cantidad = Number(d.cantidad) || 0;
+		const precioUnitario = Number(d.precioUnitario) || 0;
+		const descuento = Number(d.descuento) || 0;
+		const precioTotalSinImpuesto = cantidad * precioUnitario - descuento;
+		const tarifa = getTarifaIVA(String(d.codigoIVA));
+		const valorImpuesto = precioTotalSinImpuesto * (tarifa / 100);
+
+		return {
+			codigoPrincipal: d.codigoPrincipal,
+			descripcion: d.descripcion,
+			cantidad,
+			precioUnitario,
+			descuento,
+			precioTotalSinImpuesto,
+			productoId: d.productoId || null,
+			impuestos: [
+				{
+					codigo: '2', // IVA
+					codigoPorcentaje: String(d.codigoIVA),
+					tarifa,
+					baseImponible: precioTotalSinImpuesto,
+					valor: Number(valorImpuesto.toFixed(2)),
+				},
+			],
+		};
+	});
+}
+
 function calcularTotalesDesdeDetalles(detalles) {
 	let subtotalSinImpuestos = 0;
 	let subtotalIva = 0;
@@ -370,16 +411,25 @@ export async function buscarComprobantesAutorizados({
  * Crea un borrador de Nota de Crédito
  */
 export async function crearNotaCredito(formData) {
+	try {
+	console.log('[crearNotaCredito] Iniciando con formData keys:', Object.keys(formData));
+	console.log('[crearNotaCredito] establecimientoId:', formData.establecimientoId);
+	console.log('[crearNotaCredito] puntoEmisionId:', formData.puntoEmisionId);
+	console.log('[crearNotaCredito] docSustentoTipo:', formData.docSustentoTipo);
+	console.log('[crearNotaCredito] docSustentoNumero:', formData.docSustentoNumero);
+	console.log('[crearNotaCredito] detalles count:', formData.detalles?.length);
+
 	const supabase = await createClient();
 	const { data: { user } } = await supabase.auth.getUser();
-	if (!user) return { error: 'No autenticado' };
+	if (!user) { console.log('[crearNotaCredito] No autenticado'); return { error: 'No autenticado' }; }
 
 	const { data: empresa } = await supabase
 		.from('empresas')
 		.select('id, ambiente, tipo_emision')
 		.eq('user_id', user.id)
 		.single();
-	if (!empresa) return { error: 'Empresa no configurada' };
+	if (!empresa) { console.log('[crearNotaCredito] Empresa no configurada'); return { error: 'Empresa no configurada' }; }
+	console.log('[crearNotaCredito] Empresa:', empresa.id);
 
 	const {
 		establecimientoId,
@@ -399,17 +449,20 @@ export async function crearNotaCredito(formData) {
 	} = formData;
 
 	// Obtener códigos
-	const { data: establecimiento } = await supabase
+	const { data: establecimiento, error: estabErr } = await supabase
 		.from('establecimientos')
 		.select('codigo')
 		.eq('id', establecimientoId)
 		.single();
 
-	const { data: puntoEmision } = await supabase
+	const { data: puntoEmision, error: peErr } = await supabase
 		.from('puntos_emision')
 		.select('codigo')
 		.eq('id', puntoEmisionId)
 		.single();
+
+	console.log('[crearNotaCredito] Establecimiento:', establecimiento, 'Error:', estabErr);
+	console.log('[crearNotaCredito] PuntoEmision:', puntoEmision, 'Error:', peErr);
 
 	if (!establecimiento || !puntoEmision) {
 		return { error: 'Establecimiento o punto de emisión no encontrado' };
@@ -430,50 +483,60 @@ export async function crearNotaCredito(formData) {
 	);
 
 	const totales = calcularTotalesDesdeDetalles(detalles);
+	console.log('[crearNotaCredito] Totales:', totales);
+	console.log('[crearNotaCredito] Detalles count:', detalles?.length, 'First:', JSON.stringify(detalles?.[0]));
 
 	// Crear comprobante NC
+	const insertPayload = {
+		empresa_id: empresa.id,
+		establecimiento_id: establecimientoId,
+		punto_emision_id: puntoEmisionId,
+		tipo_comprobante: '04',
+		ambiente: empresa.ambiente,
+		tipo_emision: empresa.tipo_emision || 1,
+		secuencial,
+		serie: `${establecimiento.codigo}${puntoEmision.codigo}`,
+		numero_completo: numeroCompleto,
+		estado: 'draft',
+		fecha_emision: new Date().toISOString().split('T')[0],
+		doc_sustento_tipo: docSustentoTipo,
+		doc_sustento_numero: docSustentoNumero,
+		doc_sustento_fecha: docSustentoFecha,
+		comprobante_referencia_id: comprobanteReferenciaId || null,
+		motivo_modificacion: motivoModificacion,
+		tipo_identificacion_comprador: tipoIdentificacionComprador,
+		identificacion_comprador: identificacionComprador,
+		razon_social_comprador: razonSocialComprador,
+		direccion_comprador: direccionComprador || null,
+		email_comprador: emailComprador || null,
+		subtotal_sin_impuestos: totales.subtotalSinImpuestos,
+		subtotal_iva: totales.subtotalIva,
+		subtotal_iva_0: totales.subtotalIva0,
+		total_descuento: totales.totalDescuento,
+		valor_iva: totales.valorIva,
+		importe_total: totales.importeTotal,
+		info_adicional: infoAdicional || [],
+		created_by: user.id,
+	};
+	console.log('[crearNotaCredito] Insert payload keys:', Object.keys(insertPayload));
+
 	const { data: comprobante, error: insertError } = await supabase
 		.from('comprobantes')
-		.insert({
-			empresa_id: empresa.id,
-			establecimiento_id: establecimientoId,
-			punto_emision_id: puntoEmisionId,
-			tipo_comprobante: '04',
-			ambiente: empresa.ambiente,
-			tipo_emision: empresa.tipo_emision || 1,
-			secuencial,
-			serie: `${establecimiento.codigo}${puntoEmision.codigo}`,
-			numero_completo: numeroCompleto,
-			estado: 'draft',
-			fecha_emision: new Date().toISOString().split('T')[0],
-			doc_sustento_tipo: docSustentoTipo,
-			doc_sustento_numero: docSustentoNumero,
-			doc_sustento_fecha: docSustentoFecha,
-			comprobante_referencia_id: comprobanteReferenciaId || null,
-			motivo_modificacion: motivoModificacion,
-			tipo_identificacion_comprador: tipoIdentificacionComprador,
-			identificacion_comprador: identificacionComprador,
-			razon_social_comprador: razonSocialComprador,
-			direccion_comprador: direccionComprador || null,
-			email_comprador: emailComprador || null,
-			subtotal_sin_impuestos: totales.subtotalSinImpuestos,
-			subtotal_iva: totales.subtotalIva,
-			subtotal_iva_0: totales.subtotalIva0,
-			total_descuento: totales.totalDescuento,
-			valor_iva: totales.valorIva,
-			importe_total: totales.importeTotal,
-			info_adicional: infoAdicional || [],
-			created_by: user.id,
-		})
+		.insert(insertPayload)
 		.select('id')
 		.single();
 
+	console.log('[crearNotaCredito] Insert result:', comprobante, 'Error:', insertError);
 	if (insertError) return { error: insertError.message };
 
 	// Insertar detalles
 	await insertarDetallesComprobante(supabase, comprobante.id, empresa.id, detalles);
 
 	return { data: { id: comprobante.id, numeroCompleto } };
+	} catch (error) {
+		console.error('[crearNotaCredito] Error:', error.message, error.stack);
+		return { error: error.message };
+	}
 }
 
 /**
@@ -537,8 +600,12 @@ export async function crearNotaDebito(formData) {
 		secuencial
 	);
 
-	// Para ND, los motivos son los detalles
+	// Para ND, los motivos son los detalles - calcular IVA (15%)
+	const IVA_TARIFA = 15;
+	const IVA_CODIGO_PORCENTAJE = '4'; // 15% IVA vigente
 	const totalMotivos = motivos.reduce((sum, m) => sum + Number(m.valor), 0);
+	const valorIvaND = totalMotivos * (IVA_TARIFA / 100);
+	const importeTotalND = totalMotivos + valorIvaND;
 
 	const { data: comprobante, error: insertError } = await supabase
 		.from('comprobantes')
@@ -564,7 +631,9 @@ export async function crearNotaDebito(formData) {
 			direccion_comprador: direccionComprador || null,
 			email_comprador: emailComprador || null,
 			subtotal_sin_impuestos: totalMotivos.toFixed(2),
-			importe_total: totalMotivos.toFixed(2),
+			subtotal_iva: totalMotivos.toFixed(2),
+			valor_iva: valorIvaND.toFixed(2),
+			importe_total: importeTotalND.toFixed(2),
 			info_adicional: infoAdicional || [],
 			created_by: user.id,
 		})
@@ -573,29 +642,51 @@ export async function crearNotaDebito(formData) {
 
 	if (insertError) return { error: insertError.message };
 
-	// Insertar motivos como detalles
+	// Insertar motivos como detalles con impuestos IVA
 	for (let i = 0; i < motivos.length; i++) {
 		const m = motivos[i];
-		await supabase.from('comprobante_detalles').insert({
+		const valorMotivo = Number(m.valor);
+		const ivaMotivo = Number((valorMotivo * (IVA_TARIFA / 100)).toFixed(2));
+
+		const { data: detalle, error: detError } = await supabase.from('comprobante_detalles').insert({
 			comprobante_id: comprobante.id,
 			empresa_id: empresa.id,
 			codigo_principal: `MOT${i + 1}`,
 			descripcion: m.razon,
 			cantidad: 1,
-			precio_unitario: m.valor,
-			precio_total_sin_impuesto: m.valor,
-			impuestos: [],
+			precio_unitario: valorMotivo,
+			precio_total_sin_impuesto: valorMotivo,
+			impuestos: [
+				{
+					codigo: '2',
+					codigoPorcentaje: IVA_CODIGO_PORCENTAJE,
+					tarifa: IVA_TARIFA,
+					baseImponible: valorMotivo,
+					valor: ivaMotivo,
+				},
+			],
 			orden: i,
-		});
+		}).select('id').single();
+
+		if (!detError && detalle) {
+			await supabase.from('comprobante_impuestos').insert({
+				comprobante_detalle_id: detalle.id,
+				codigo: '2',
+				codigo_porcentaje: IVA_CODIGO_PORCENTAJE,
+				tarifa: IVA_TARIFA,
+				base_imponible: valorMotivo,
+				valor: ivaMotivo,
+			});
+		}
 	}
 
-	// Insertar pagos
+	// Insertar pagos (ajustar al total con IVA incluido)
 	if (pagos && pagos.length > 0) {
 		await supabase.from('comprobante_pagos').insert(
 			pagos.map((p) => ({
 				comprobante_id: comprobante.id,
 				forma_pago: p.formaPago,
-				total: p.total,
+				total: importeTotalND.toFixed(2),
 				plazo: p.plazo || null,
 				unidad_tiempo: p.unidadTiempo || 'dias',
 			}))
@@ -627,8 +718,11 @@ export async function crearRetencion(formData) {
 		tipoIdentificacionSujetoRetenido,
 		identificacionSujetoRetenido,
 		razonSocialSujetoRetenido,
-		tipoSujetoRetenido,
-		documentosSustento,
+		emailSujetoRetenido,
+		docSustentoTipo,
+		docSustentoNumero,
+		docSustentoFecha,
+		detalles,
 		infoAdicional,
 	} = formData;
 
@@ -661,12 +755,10 @@ export async function crearRetencion(formData) {
 		secuencial
 	);
 
-	// Calcular total retenido
+	// Calcular total retenido desde los detalles planos
 	let totalRetenido = 0;
-	for (const doc of documentosSustento) {
-		for (const ret of doc.retenciones) {
-			totalRetenido += Number(ret.valorRetenido);
-		}
+	for (const d of detalles) {
+		totalRetenido += Number(d.valorRetenido) || 0;
 	}
 
 	const { data: comprobante, error: insertError } = await supabase
@@ -684,10 +776,10 @@ export async function crearRetencion(formData) {
 			estado: 'draft',
 			fecha_emision: new Date().toISOString().split('T')[0],
 			periodo_fiscal: periodoFiscal,
-			tipo_sujeto_retenido: tipoSujetoRetenido || null,
 			tipo_identificacion_comprador: tipoIdentificacionSujetoRetenido,
 			identificacion_comprador: identificacionSujetoRetenido,
 			razon_social_comprador: razonSocialSujetoRetenido,
+			email_comprador: emailSujetoRetenido || null,
 			importe_total: totalRetenido.toFixed(2),
 			info_adicional: infoAdicional || [],
 			created_by: user.id,
@@ -698,27 +790,24 @@ export async function crearRetencion(formData) {
 	if (insertError) return { error: insertError.message };
 
 	// Insertar detalles de retención
-	for (const doc of documentosSustento) {
-		for (const ret of doc.retenciones) {
-			await supabase.from('retencion_detalles').insert({
-				comprobante_id: comprobante.id,
-				empresa_id: empresa.id,
-				cod_sustento: doc.codSustento,
-				cod_doc_sustento: doc.codDocSustento,
-				num_doc_sustento: doc.numDocSustento,
-				fecha_emision_doc_sustento: doc.fechaEmision,
-				fecha_registro_contable: doc.fechaRegistroContable || doc.fechaEmision,
-				num_aut_doc_sustento: doc.numAutorizacion,
-				pago_loc_ext: doc.pagoLocExt || '01',
-				codigo_impuesto: ret.codigoImpuesto,
-				codigo_retencion: ret.codigoRetencion,
-				base_imponible: ret.baseImponible,
-				porcentaje_retener: ret.porcentaje,
-				valor_retenido: ret.valorRetenido,
-				forma_pago: doc.pagos?.[0]?.formaPago || '20',
-				total_sin_impuestos: doc.totalSinImpuestos,
-				importe_total: doc.importeTotal,
-			});
+	for (const d of detalles) {
+		const { error: detError } = await supabase.from('retencion_detalles').insert({
+			comprobante_id: comprobante.id,
+			empresa_id: empresa.id,
+			cod_sustento: '01',
+			cod_doc_sustento: docSustentoTipo,
+			num_doc_sustento: docSustentoNumero,
+			fecha_emision_doc_sustento: docSustentoFecha || null,
+			codigo_impuesto: d.tipoImpuesto,
+			codigo_retencion: d.codigoRetencion,
+			base_imponible: Number(d.baseImponible),
+			porcentaje_retener: Number(d.porcentajeRetener),
+			valor_retenido: Number(d.valorRetenido),
+			pago_loc_ext: '01',
+			forma_pago: '20',
+		});
+		if (detError) {
+			console.error('Error insertando detalle retención:', detError);
 		}
 	}
 
@@ -744,7 +833,7 @@ export async function crearGuiaRemision(formData) {
 		establecimientoId,
 		puntoEmisionId,
 		dirPartida,
-		fechaIniTransporte,
+		fechaInicioTransporte,
 		fechaFinTransporte,
 		placa,
 		tipoIdentificacionTransportista,
@@ -798,7 +887,7 @@ export async function crearGuiaRemision(formData) {
 			estado: 'draft',
 			fecha_emision: new Date().toISOString().split('T')[0],
 			dir_partida: dirPartida,
-			fecha_inicio_transporte: fechaIniTransporte,
+			fecha_inicio_transporte: fechaInicioTransporte,
 			fecha_fin_transporte: fechaFinTransporte,
 			placa,
 			tipo_identificacion_transportista: tipoIdentificacionTransportista,
@@ -821,26 +910,29 @@ export async function crearGuiaRemision(formData) {
 				empresa_id: empresa.id,
 				identificacion_destinatario: dest.identificacion,
 				razon_social_destinatario: dest.razonSocial,
-				direccion_destinatario: dest.direccion,
+				direccion_destinatario: dest.dirDestinatario,
 				motivo_traslado: dest.motivoTraslado,
 				ruta: dest.ruta || null,
-				cod_doc_sustento: dest.codDocSustento || null,
-				num_doc_sustento: dest.numDocSustento || null,
+				cod_doc_sustento: dest.docSustentoTipo || null,
+				num_doc_sustento: dest.docSustentoNumero || null,
 				num_autorizacion_doc_sustento: dest.numAutDocSustento || null,
-				fecha_emision_doc_sustento: dest.fechaEmisionDocSustento || null,
+				fecha_emision_doc_sustento: dest.docSustentoFecha || null,
 				cod_estab_destino: dest.codEstabDestino || null,
 			})
 			.select('id')
 			.single();
 
-		if (destError) continue;
+		if (destError) {
+			console.error('[crearGuiaRemision] Error insertando destinatario:', destError.message);
+			continue;
+		}
 
 		// Insertar items del destinatario
-		for (const item of (dest.items || [])) {
+		for (const item of (dest.detalles || [])) {
 			await supabase.from('guia_remision_detalles').insert({
 				destinatario_id: destData.id,
 				empresa_id: empresa.id,
-				codigo_interno: item.codigoInterno || null,
+				codigo_interno: item.codigoPrincipal || null,
 				codigo_adicional: item.codigoAdicional || null,
 				descripcion: item.descripcion,
 				cantidad: item.cantidad,
@@ -907,7 +999,9 @@ export async function crearLiquidacionCompra(formData) {
 		secuencial
 	);
 
-	const totales = calcularTotalesDesdeDetalles(detalles);
+	// Normalizar detalles: transformar codigoIVA del formulario a formato con impuestos computados
+	const detallesNormalizados = normalizarDetallesFormulario(detalles);
+	const totales = calcularTotalesDesdeDetalles(detallesNormalizados);
 
 	const { data: comprobante, error: insertError } = await supabase
 		.from('comprobantes')
@@ -941,8 +1035,8 @@ export async function crearLiquidacionCompra(formData) {
 
 	if (insertError) return { error: insertError.message };
 
-	// Insertar detalles
-	await insertarDetallesComprobante(supabase, comprobante.id, empresa.id, detalles);
+	// Insertar detalles (con impuestos ya computados)
+	await insertarDetallesComprobante(supabase, comprobante.id, empresa.id, detallesNormalizados);
 
 	// Insertar pagos
 	if (pagos && pagos.length > 0) {

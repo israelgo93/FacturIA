@@ -305,19 +305,13 @@ export default function NotaCreditoPage() {
 				))}
 			</div>
 
-			{/* Alertas */}
-			{error && (
-				<GlassAlert type="error" className="mb-4">
-					<AlertCircle size={16} />
-					{error}
-				</GlassAlert>
-			)}
-			{success && (
-				<GlassAlert type="success" className="mb-4">
-					<CheckCircle size={16} />
-					{success}
-				</GlassAlert>
-			)}
+		{/* Alertas */}
+		{error && (
+			<GlassAlert type="error" message={error} className="mb-4" onClose={() => setError(null)} />
+		)}
+		{success && (
+			<GlassAlert type="success" message={success} className="mb-4" />
+		)}
 
 			{/* Step 1: Seleccionar documento sustento */}
 			{step === 1 && (

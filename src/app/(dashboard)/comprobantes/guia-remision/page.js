@@ -242,8 +242,8 @@ export default function GuiaRemisionPage() {
 			</div>
 
 			{/* Alertas */}
-			{error && <GlassAlert type="error" className="mb-4"><AlertCircle size={16} />{error}</GlassAlert>}
-			{success && <GlassAlert type="success" className="mb-4"><CheckCircle size={16} />{success}</GlassAlert>}
+		{error && <GlassAlert type="error" message={error} className="mb-4" onClose={() => setError(null)} />}
+		{success && <GlassAlert type="success" message={success} className="mb-4" />}
 
 			{/* Step 1: Configuración y Transportista */}
 			{step === 1 && (
@@ -392,7 +392,7 @@ export default function GuiaRemisionPage() {
 									label="Motivo Traslado"
 									value={dest.motivoTraslado}
 									onChange={(e) => updateDestinatario(di, 'motivoTraslado', e.target.value)}
-									options={MOTIVOS_TRASLADO.map((m) => ({ value: m.codigo, label: `${m.codigo} - ${m.descripcion}` }))}
+									options={MOTIVOS_TRASLADO.map((m) => ({ value: m.value, label: `${m.value} - ${m.label}` }))}
 								/>
 							</div>
 
@@ -402,7 +402,7 @@ export default function GuiaRemisionPage() {
 									label="Tipo Doc. Sustento"
 									value={dest.docSustentoTipo}
 									onChange={(e) => updateDestinatario(di, 'docSustentoTipo', e.target.value)}
-									options={TIPOS_DOC_SUSTENTO.slice(0, 5).map((t) => ({ value: t.codigo, label: `${t.codigo} - ${t.descripcion}` }))}
+									options={TIPOS_DOC_SUSTENTO.slice(0, 5).map((t) => ({ value: t.value, label: `${t.value} - ${t.label}` }))}
 								/>
 								<GlassInput
 									label="Número Doc. Sustento"

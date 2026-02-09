@@ -86,7 +86,7 @@ export default function ComprobanteDetalle({ comprobante }) {
 					<div>
 						<div className="flex items-center gap-2">
 							<h1 className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
-								Factura {comp.numero_completo || comp.secuencial}
+								{{'01': 'Factura', '03': 'Liquidación de Compra', '04': 'Nota de Crédito', '05': 'Nota de Débito', '06': 'Guía de Remisión', '07': 'Retención'}[comp.tipo_comprobante] || 'Comprobante'} {comp.numero_completo || comp.secuencial}
 							</h1>
 							<StatusBadge estado={comp.estado} />
 						</div>

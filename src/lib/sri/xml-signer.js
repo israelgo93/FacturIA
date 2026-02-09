@@ -341,6 +341,7 @@ function insertSignatureInDocument(xmlString, signatureXml) {
 
 /**
  * Extrae certificado y clave privada del PKCS#12
+ * Valida vigencia del certificado antes de retornar
  */
 function extraerCredenciales(p12Buffer, password) {
 	let derBuffer;
@@ -351,22 +352,51 @@ function extraerCredenciales(p12Buffer, password) {
 	} else if (Buffer.isBuffer(p12Buffer)) {
 		derBuffer = new Uint8Array(p12Buffer);
 	} else {
-		throw new Error('p12Buffer debe ser Buffer, ArrayBuffer o Uint8Array');
+		throw new Error('CERT_FORMATO_INVALIDO: p12Buffer debe ser Buffer, ArrayBuffer o Uint8Array');
 	}
 
-	const p12Der = forge.util.createBuffer(derBuffer);
-	const p12Asn1 = forge.asn1.fromDer(p12Der);
-	const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, password);
+	let p12;
+	try {
+		const p12Der = forge.util.createBuffer(derBuffer);
+		const p12Asn1 = forge.asn1.fromDer(p12Der);
+		p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, password);
+	} catch (err) {
+		if (err.message?.includes('Invalid password') || err.message?.includes('PKCS#12 MAC')) {
+			throw new Error('CERT_PASSWORD_INCORRECTA: La contraseña del certificado .p12 es incorrecta');
+		}
+		throw new Error(`CERT_LECTURA_ERROR: Error leyendo el certificado .p12: ${err.message}`);
+	}
 
 	// Buscar clave privada
 	const keyBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
 	const keyBag = keyBags[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0];
-	if (!keyBag) throw new Error('No se encontró clave privada en el .p12');
+	if (!keyBag) throw new Error('CERT_SIN_CLAVE: No se encontró clave privada en el .p12');
 
 	// Buscar certificado
 	const certBags = p12.getBags({ bagType: forge.pki.oids.certBag });
 	const certBag = certBags[forge.pki.oids.certBag]?.[0];
-	if (!certBag) throw new Error('No se encontró certificado en el .p12');
+	if (!certBag) throw new Error('CERT_SIN_CERTIFICADO: No se encontró certificado en el .p12');
+
+	// Validar vigencia del certificado
+	const ahora = new Date();
+	const notAfter = certBag.cert.validity.notAfter;
+	const notBefore = certBag.cert.validity.notBefore;
+
+	if (notAfter < ahora) {
+		const fechaExpiracion = notAfter.toISOString().split('T')[0];
+		throw new Error(`CERT_EXPIRADO: El certificado digital expiró el ${fechaExpiracion}. Debe renovarlo con su entidad certificadora.`);
+	}
+
+	if (notBefore > ahora) {
+		const fechaInicio = notBefore.toISOString().split('T')[0];
+		throw new Error(`CERT_NO_VIGENTE: El certificado digital no es válido hasta el ${fechaInicio}.`);
+	}
+
+	// Advertir si expira en los próximos 30 días
+	const diasParaExpirar = Math.ceil((notAfter - ahora) / (1000 * 60 * 60 * 24));
+	if (diasParaExpirar <= 30) {
+		console.warn(`[CERT_AVISO] El certificado expira en ${diasParaExpirar} días (${notAfter.toISOString().split('T')[0]}). Considere renovarlo.`);
+	}
 
 	// PEM de clave privada para crypto.createSign
 	const privateKeyPem = forge.pki.privateKeyToPem(keyBag.key);

@@ -35,11 +35,8 @@ export default function RetencionPage() {
 	const [establecimientoId, setEstablecimientoId] = useState('');
 	const [puntoEmisionId, setPuntoEmisionId] = useState('');
 
-	// Período fiscal
-	const [periodoFiscal, setPeriodoFiscal] = useState(() => {
-		const now = new Date();
-		return `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-	});
+	// Período fiscal (inicializar vacío para evitar hydration mismatch, se establece en useEffect)
+	const [periodoFiscal, setPeriodoFiscal] = useState('');
 
 	// Datos del sujeto retenido
 	const [tipoIdentificacion, setTipoIdentificacion] = useState('04');
@@ -62,6 +59,12 @@ export default function RetencionPage() {
 			valorRetenido: '',
 		},
 	]);
+
+	// Establecer período fiscal en el cliente para evitar hydration mismatch con new Date()
+	useEffect(() => {
+		const now = new Date();
+		setPeriodoFiscal(`${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`);
+	}, []);
 
 	// Cargar establecimientos
 	useEffect(() => {
@@ -127,7 +130,7 @@ export default function RetencionPage() {
 		if (field === 'codigoRetencion') {
 			const tipoImp = newDetalles[index].tipoImpuesto;
 			const catalogo = tipoImp === '1' ? CODIGOS_RETENCION_RENTA : CODIGOS_RETENCION_IVA_COMPROBANTE;
-			const item = catalogo.find((c) => c.codigo === value);
+			const item = catalogo.find((c) => c.value === value);
 			if (item) {
 				newDetalles[index].porcentajeRetener = item.porcentaje.toString();
 				const base = Number(newDetalles[index].baseImponible) || 0;
@@ -145,13 +148,13 @@ export default function RetencionPage() {
 	const getCodigosRetencion = (tipoImpuesto) => {
 		if (tipoImpuesto === '1') {
 			return CODIGOS_RETENCION_RENTA.map((c) => ({
-				value: c.codigo,
-				label: `${c.codigo} - ${c.descripcion} (${c.porcentaje}%)`,
+				value: c.value,
+				label: `${c.value} - ${c.label} (${c.porcentaje}%)`,
 			}));
 		}
 		return CODIGOS_RETENCION_IVA_COMPROBANTE.map((c) => ({
-			value: c.codigo,
-			label: `${c.codigo} - ${c.descripcion} (${c.porcentaje}%)`,
+			value: c.value,
+			label: `${c.value} - ${c.label} (${c.porcentaje}%)`,
 		}));
 	};
 
@@ -238,8 +241,8 @@ export default function RetencionPage() {
 			</div>
 
 			{/* Alertas */}
-			{error && <GlassAlert type="error" className="mb-4"><AlertCircle size={16} />{error}</GlassAlert>}
-			{success && <GlassAlert type="success" className="mb-4"><CheckCircle size={16} />{success}</GlassAlert>}
+		{error && <GlassAlert type="error" message={error} className="mb-4" onClose={() => setError(null)} />}
+		{success && <GlassAlert type="success" message={success} className="mb-4" />}
 
 			{/* Step 1: Configuración y Sujeto */}
 			{step === 1 && (
@@ -315,7 +318,7 @@ export default function RetencionPage() {
 								label="Tipo Documento"
 								value={tipoDocSustento}
 								onChange={(e) => setTipoDocSustento(e.target.value)}
-								options={TIPOS_DOC_SUSTENTO.map((t) => ({ value: t.codigo, label: `${t.codigo} - ${t.descripcion}` }))}
+								options={TIPOS_DOC_SUSTENTO.map((t) => ({ value: t.value, label: `${t.value} - ${t.label}` }))}
 							/>
 							<GlassInput
 								label="Número (001-001-000000001)"

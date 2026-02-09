@@ -30,8 +30,8 @@ export default function ComprasPage() {
 			tipo_id_proveedor: '01', identificacion_proveedor: '', razon_social_proveedor: '',
 			tipo_comprobante: '01', cod_sustento: '01',
 			establecimiento: '001', punto_emision: '001', secuencial: '',
-			fecha_emision: new Date().toISOString().split('T')[0],
-			fecha_registro: new Date().toISOString().split('T')[0],
+			fecha_emision: '', // Se establece en useEffect para evitar hydration mismatch
+			fecha_registro: '', // Se establece en useEffect para evitar hydration mismatch
 			autorizacion: '',
 			base_no_grava_iva: 0, base_imponible_0: 0, base_imponible_iva: 0,
 			base_imp_exenta: 0, monto_iva: 0, monto_ice: 0,
@@ -39,6 +39,16 @@ export default function ComprasPage() {
 			observaciones: '', retenciones: [],
 		};
 	}
+
+	// Establecer fechas en el cliente para evitar hydration mismatch con new Date()
+	useEffect(() => {
+		const hoy = new Date().toISOString().split('T')[0];
+		setForm((prev) => ({
+			...prev,
+			fecha_emision: prev.fecha_emision || hoy,
+			fecha_registro: prev.fecha_registro || hoy,
+		}));
+	}, []);
 
 	const cargarDatos = useCallback(async () => {
 		setLoading(true);

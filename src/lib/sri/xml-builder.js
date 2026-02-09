@@ -158,10 +158,17 @@ function buildTotalImpuestos(impuestos) {
  * @returns {string}
  */
 function formatDateSRI(date) {
+	// Si la fecha es string ISO "YYYY-MM-DD", parsear directamente para evitar
+	// problemas de timezone (new Date("2026-02-09") se interpreta como UTC,
+	// pero getDate() devuelve hora local, causando desfase en UTC-5)
+	if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(date)) {
+		const parts = date.substring(0, 10).split('-');
+		return `${parts[2]}/${parts[1]}/${parts[0]}`; // dd/mm/yyyy
+	}
 	const d = new Date(date);
-	const dd = String(d.getDate()).padStart(2, '0');
-	const mm = String(d.getMonth() + 1).padStart(2, '0');
-	const yyyy = d.getFullYear();
+	const dd = String(d.getUTCDate()).padStart(2, '0');
+	const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+	const yyyy = d.getUTCFullYear();
 	return `${dd}/${mm}/${yyyy}`;
 }
 
@@ -350,7 +357,7 @@ export function buildRetencionXML(ret) {
 				obligadoContabilidad: ret.emisor.obligadoContabilidad ? 'SI' : 'NO',
 				tipoIdentificacionSujetoRetenido: ret.sujetoRetenido.tipoIdentificacion,
 				...(ret.tipoSujetoRetenido && { tipoSujetoRetenido: ret.tipoSujetoRetenido }),
-				parteRelacionada: ret.parteRelacionada || 'NO',
+				parteRel: ret.parteRelacionada || 'NO',
 				razonSocialSujetoRetenido: ret.sujetoRetenido.razonSocial,
 				identificacionSujetoRetenido: ret.sujetoRetenido.identificacion,
 				periodoFiscal: ret.periodoFiscal,
@@ -359,7 +366,7 @@ export function buildRetencionXML(ret) {
 				docSustento: ret.documentosSustento.map((doc) => ({
 					codSustento: doc.codSustento,
 					codDocSustento: doc.codDocSustento,
-					numDocSustento: doc.numDocSustento,
+					numDocSustento: (doc.numDocSustento || '').replace(/-/g, ''),
 					fechaEmisionDocSustento: formatDateSRI(doc.fechaEmision),
 					fechaRegistroContable: formatDateSRI(doc.fechaRegistro || doc.fechaEmision),
 					numAutDocSustento: doc.numAutorizacion,

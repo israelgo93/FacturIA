@@ -16,7 +16,7 @@ describe('validarFactura', () => {
 		},
 		comprador: {
 			tipoIdentificacion: '05',
-			identificacion: '1712345678',
+			identificacion: '0911686913',
 			razonSocial: 'JUAN PEREZ',
 		},
 		detalles: [

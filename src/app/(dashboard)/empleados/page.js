@@ -38,11 +38,20 @@ export default function EmpleadosPage() {
 		return {
 			tipo_identificacion: 'C', identificacion: '',
 			apellidos: '', nombres: '',
-			fecha_ingreso: new Date().toISOString().split('T')[0],
+			fecha_ingreso: '', // Se establece en useEffect para evitar hydration mismatch
 			fecha_salida: '', cargo: '', tipo_contrato: '01',
 			sueldo_mensual: 0,
 		};
 	}
+
+	// Establecer fecha en el cliente para evitar hydration mismatch con new Date()
+	useEffect(() => {
+		const hoy = new Date().toISOString().split('T')[0];
+		setForm((prev) => ({
+			...prev,
+			fecha_ingreso: prev.fecha_ingreso || hoy,
+		}));
+	}, []);
 
 	const cargarDatos = useCallback(async () => {
 		setLoading(true);
