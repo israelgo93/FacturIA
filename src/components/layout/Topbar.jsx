@@ -2,11 +2,13 @@
 
 import { Bell, Menu, Building2, User } from 'lucide-react';
 import { useUIStore } from '@/stores/useUIStore';
+import { useEmpresaStore } from '@/stores/useEmpresaStore';
 import Logo from '@/components/shared/Logo';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 
 export default function Topbar() {
 	const { setMobileMenuOpen } = useUIStore();
+	const { empresa } = useEmpresaStore();
 
 	return (
 		<header
@@ -37,8 +39,15 @@ export default function Topbar() {
 					border: '1px solid var(--glass-border)',
 				}}
 			>
-				<Building2 className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
-				<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Selecciona una empresa</span>
+				<Building2 className="w-3.5 h-3.5" style={{ color: empresa ? 'var(--text-secondary)' : 'var(--text-muted)' }} />
+				<span className="text-xs font-medium" style={{ color: empresa ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
+					{empresa ? (empresa.nombre_comercial || empresa.razon_social) : 'Cargando...'}
+				</span>
+				{empresa?.ruc && (
+					<span className="text-[10px] ml-1 opacity-60" style={{ color: 'var(--text-muted)' }}>
+						{empresa.ruc}
+					</span>
+				)}
 			</div>
 
 			<div className="flex items-center gap-1">

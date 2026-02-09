@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { FileSpreadsheet, Calculator, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { FileSpreadsheet, Calculator, Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { obtenerForm104, exportarForm104 } from '../actions';
 import PeriodoSelector from '@/components/reportes/PeriodoSelector';
@@ -54,9 +55,14 @@ export default function IVAPage() {
 
 	return (
 		<div className="space-y-6">
-			<div>
-				<h1 className="text-xl font-medium" style={{ color: 'var(--text-primary)' }}>Formulario 104 — Declaración IVA</h1>
-				<p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Pre-llenado automático con datos de ventas y compras registradas</p>
+			<div className="flex items-center gap-3">
+				<Link href="/reportes">
+					<GlassButton variant="ghost" size="sm" icon={ArrowLeft} />
+				</Link>
+				<div>
+					<h1 className="text-xl font-medium" style={{ color: 'var(--text-primary)' }}>Formulario 104 — Declaración IVA</h1>
+					<p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Pre-llenado automático con datos de ventas y compras registradas</p>
+				</div>
 			</div>
 
 			<GlassCard className="p-6">

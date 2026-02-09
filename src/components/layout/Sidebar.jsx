@@ -11,7 +11,7 @@ import { useUIStore } from '@/stores/useUIStore';
 import Logo from '@/components/shared/Logo';
 
 const navItems = [
-	{ label: 'Dashboard', href: '/', icon: LayoutDashboard },
+	{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
 	{ label: 'Comprobantes', href: '/comprobantes', icon: FileText },
 	{ label: 'Clientes', href: '/clientes', icon: Users },
 	{ label: 'Productos', href: '/productos', icon: Package },
@@ -76,9 +76,7 @@ export default function Sidebar() {
 
 			<nav className="flex-1 py-3 px-2.5 space-y-0.5 overflow-y-auto">
 				{navItems.map((item) => {
-					const isActive = item.href === '/'
-						? pathname === '/'
-						: pathname.startsWith(item.href);
+					const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
 					const Icon = item.icon;
 
 					return (

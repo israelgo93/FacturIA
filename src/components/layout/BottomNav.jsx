@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation';
 import { LayoutDashboard, FileText, PlusCircle, BarChart3, Menu } from 'lucide-react';
 
 const items = [
-	{ label: 'Inicio', href: '/', icon: LayoutDashboard },
+	{ label: 'Inicio', href: '/dashboard', icon: LayoutDashboard },
 	{ label: 'Docs', href: '/comprobantes', icon: FileText },
-	{ label: 'Nuevo', href: '/comprobantes/nueva-factura', icon: PlusCircle, isMain: true },
+	{ label: 'Nuevo', href: '/comprobantes/nuevo', icon: PlusCircle, isMain: true },
 	{ label: 'Reportes', href: '/reportes', icon: BarChart3 },
 	{ label: 'Más', href: '/configuracion', icon: Menu },
 ];
@@ -25,9 +25,7 @@ export default function BottomNav() {
 		>
 			<div className="flex items-center justify-around h-14 px-2">
 				{items.map((item) => {
-					const isActive = item.href === '/'
-						? pathname === '/'
-						: pathname.startsWith(item.href);
+				const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
 					const Icon = item.icon;
 
 					if (item.isMain) {

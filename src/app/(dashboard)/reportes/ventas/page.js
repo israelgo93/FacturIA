@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { FileSpreadsheet, BarChart3, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { FileSpreadsheet, BarChart3, Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { obtenerReporteVentas, exportarVentasXlsx } from '../actions';
 import PeriodoSelector from '@/components/reportes/PeriodoSelector';
@@ -76,9 +77,14 @@ export default function VentasPage() {
 
 	return (
 		<div className="space-y-6">
-			<div>
-				<h1 className="text-xl font-medium" style={{ color: 'var(--text-primary)' }}>Reporte de Ventas</h1>
-				<p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Detalle y resumen de comprobantes de venta emitidos</p>
+			<div className="flex items-center gap-3">
+				<Link href="/reportes">
+					<GlassButton variant="ghost" size="sm" icon={ArrowLeft} />
+				</Link>
+				<div>
+					<h1 className="text-xl font-medium" style={{ color: 'var(--text-primary)' }}>Reporte de Ventas</h1>
+					<p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Detalle y resumen de comprobantes de venta emitidos</p>
+				</div>
 			</div>
 
 			<GlassCard className="p-6">

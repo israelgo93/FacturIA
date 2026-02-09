@@ -23,7 +23,7 @@ export default async function Page() {
 			redirect('/onboarding');
 		}
 
-		redirect('/comprobantes');
+		redirect('/dashboard');
 	}
 
 	return <LandingPage />;

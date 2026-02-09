@@ -6,8 +6,8 @@ import GlassCard from '@/components/ui/GlassCard';
 import GlassButton from '@/components/ui/GlassButton';
 import StatusBadge from './StatusBadge';
 import ComprobanteTimeline from './ComprobanteTimeline';
-import { ArrowLeft, Send, FileText, Download, Mail, Ban, Eye } from 'lucide-react';
-import { procesarComprobante, anularComprobante } from '@/app/(dashboard)/comprobantes/actions';
+import { ArrowLeft, Send, FileText, Download, Mail, Ban, Eye, RefreshCw } from 'lucide-react';
+import { procesarComprobante, anularComprobante, reConsultarAutorizacion } from '@/app/(dashboard)/comprobantes/actions';
 import { toast } from 'sonner';
 
 export default function ComprobanteDetalle({ comprobante }) {
@@ -27,6 +27,14 @@ export default function ComprobanteDetalle({ comprobante }) {
 		const result = await anularComprobante(comp.id);
 		if (result.error) toast.error(result.error);
 		else toast.success('Comprobante anulado');
+	};
+
+	const handleReConsultar = async () => {
+		setProcesando(true);
+		const result = await reConsultarAutorizacion(comp.id);
+		if (result.error) toast.error(result.error);
+		else toast.success(`Estado actualizado: ${result.data?.estado}`);
+		setProcesando(false);
 	};
 
 	const handleVerRIDE = () => {
@@ -96,16 +104,21 @@ export default function ComprobanteDetalle({ comprobante }) {
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
-					{comp.estado === 'draft' && (
-						<GlassButton size="sm" icon={Send} onClick={handleProcesar} loading={procesando}>
-							Procesar
-						</GlassButton>
-					)}
-					{(comp.estado === 'draft' || comp.estado === 'NAT' || comp.estado === 'DEV') && (
-						<GlassButton variant="ghost" size="sm" icon={Ban} onClick={handleAnular}>
-							Anular
-						</GlassButton>
-					)}
+				{comp.estado === 'draft' && (
+					<GlassButton size="sm" icon={Send} onClick={handleProcesar} loading={procesando}>
+						Procesar
+					</GlassButton>
+				)}
+				{comp.estado === 'PPR' && (
+					<GlassButton size="sm" icon={RefreshCw} onClick={handleReConsultar} loading={procesando}>
+						Re-consultar SRI
+					</GlassButton>
+				)}
+				{(comp.estado === 'draft' || comp.estado === 'NAT' || comp.estado === 'DEV') && (
+					<GlassButton variant="ghost" size="sm" icon={Ban} onClick={handleAnular}>
+						Anular
+					</GlassButton>
+				)}
 				</div>
 			</div>
 

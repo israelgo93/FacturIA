@@ -104,7 +104,7 @@ describe('buildRetencionXML', () => {
 		expect(xml).toContain('<docsSustento>');
 		expect(xml).toContain('<docSustento>');
 		expect(xml).toContain('<codDocSustento>01</codDocSustento>');
-		expect(xml).toContain('<numDocSustento>001-001-000000003</numDocSustento>');
+		expect(xml).toContain('<numDocSustento>001001000000003</numDocSustento>');
 	});
 
 	it('contiene retenciones individuales', () => {
