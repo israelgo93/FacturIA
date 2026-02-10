@@ -32,25 +32,29 @@ export default function DashboardPage() {
 			label: 'Ventas del Mes',
 			value: kpis ? `$${parseFloat(kpis.ventas_mes).toFixed(2)}` : '...',
 			icon: DollarSign,
-			color: '#22c55e',
+			color: 'var(--color-accent-emerald)',
+			mutedColor: 'var(--color-accent-emerald-muted)',
 		},
 		{
 			label: 'Comprobantes',
 			value: kpis ? String(kpis.comprobantes_mes) : '...',
 			icon: FileText,
-			color: '#3b82f6',
+			color: 'var(--color-accent-blue)',
+			mutedColor: 'var(--color-accent-blue-muted)',
 		},
 		{
 			label: 'Clientes',
 			value: kpis ? String(kpis.total_clientes) : '...',
 			icon: Users,
-			color: '#8b5cf6',
+			color: 'var(--color-accent-purple)',
+			mutedColor: 'var(--color-accent-purple-muted)',
 		},
 		{
 			label: 'IVA Cobrado',
 			value: kpis ? `$${parseFloat(kpis.iva_cobrado_mes).toFixed(2)}` : '...',
 			icon: TrendingUp,
-			color: '#f59e0b',
+			color: 'var(--color-accent-amber)',
+			mutedColor: 'var(--color-accent-amber-muted)',
 		},
 	];
 
@@ -80,7 +84,7 @@ export default function DashboardPage() {
 									</span>
 									<div
 										className="w-8 h-8 rounded-lg flex items-center justify-center"
-										style={{ background: `${stat.color}15`, border: `1px solid ${stat.color}30` }}
+										style={{ background: stat.mutedColor, border: `1px solid ${stat.color}30` }}
 									>
 										<stat.icon className="w-4 h-4" style={{ color: stat.color }} />
 									</div>
@@ -139,7 +143,7 @@ export default function DashboardPage() {
 								<div className="space-y-3">
 									<div className="flex justify-between items-center">
 										<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Autorizados SRI</span>
-										<span className="text-sm font-medium" style={{ color: '#22c55e' }}>{kpis?.autorizados_mes || 0}</span>
+										<span className="text-sm font-medium" style={{ color: 'var(--color-success)' }}>{kpis?.autorizados_mes || 0}</span>
 									</div>
 									<div className="flex justify-between items-center">
 										<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Total emitidos</span>
@@ -153,7 +157,7 @@ export default function DashboardPage() {
 									</div>
 									<div className="flex justify-between items-center">
 										<span className="text-xs" style={{ color: 'var(--text-muted)' }}>IVA cobrado</span>
-										<span className="text-sm font-medium" style={{ color: '#f59e0b' }}>
+										<span className="text-sm font-medium" style={{ color: 'var(--color-warning)' }}>
 											${kpis ? parseFloat(kpis.iva_cobrado_mes).toFixed(2) : '0.00'}
 										</span>
 									</div>
@@ -165,9 +169,9 @@ export default function DashboardPage() {
 									<div className="flex items-center gap-4">
 										<div
 											className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-											style={{ background: 'rgba(168, 85, 247, 0.12)', border: '1px solid rgba(168, 85, 247, 0.25)' }}
+											style={{ background: 'var(--color-accent-purple-muted)', border: '1px solid var(--color-accent-purple)' }}
 										>
-											<Sparkles className="w-5 h-5" style={{ color: '#a855f7' }} />
+											<Sparkles className="w-5 h-5" style={{ color: 'var(--color-accent-purple)' }} />
 										</div>
 										<div className="flex-1 min-w-0">
 											<p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>

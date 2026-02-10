@@ -241,8 +241,8 @@ export default function RetencionPage() {
 			</div>
 
 			{/* Alertas */}
-		{error && <GlassAlert type="error" message={error} className="mb-4" onClose={() => setError(null)} />}
-		{success && <GlassAlert type="success" message={success} className="mb-4" />}
+			{error && <GlassAlert type="error" message={error} className="mb-4" onClose={() => setError(null)} />}
+			{success && <GlassAlert type="success" message={success} className="mb-4" />}
 
 			{/* Step 1: Configuración y Sujeto */}
 			{step === 1 && (
@@ -371,7 +371,7 @@ export default function RetencionPage() {
 											Retención #{i + 1}
 										</span>
 										{detalles.length > 1 && (
-											<button onClick={() => removeDetalle(i)} className="p-1 hover:bg-red-500/10 rounded" style={{ color: '#ef4444' }}>
+											<button onClick={() => removeDetalle(i)} className="p-1 rounded transition-colors" style={{ color: 'var(--color-danger)' }} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-danger-muted)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
 												<Trash2 size={16} />
 											</button>
 										)}

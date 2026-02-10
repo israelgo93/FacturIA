@@ -205,9 +205,9 @@ export default function NotaDebitoPage() {
 				</div>
 			</div>
 
-		{/* Alertas */}
-		{error && <GlassAlert type="error" message={error} className="mb-4" onClose={() => setError(null)} />}
-		{success && <GlassAlert type="success" message={success} className="mb-4" />}
+			{/* Alertas */}
+			{error && <GlassAlert type="error" message={error} className="mb-4" onClose={() => setError(null)} />}
+			{success && <GlassAlert type="success" message={success} className="mb-4" />}
 
 			{/* Step 1 */}
 			{step === 1 && (
@@ -296,8 +296,10 @@ export default function NotaDebitoPage() {
 									{motivos.length > 1 && (
 										<button
 											onClick={() => removeMotivo(i)}
-											className="mt-8 p-2 rounded-lg hover:bg-red-500/10"
-											style={{ color: '#ef4444' }}
+											className="mt-8 p-2 rounded-lg transition-colors"
+											style={{ color: 'var(--color-danger)' }}
+											onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-danger-muted)'}
+											onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
 										>
 											<Trash2 size={16} />
 										</button>

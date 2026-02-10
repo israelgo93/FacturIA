@@ -68,7 +68,13 @@ export default function VentasPage() {
 		{
 			key: 'estado', label: 'Estado', width: '70px',
 			render: (val) => (
-				<span className={`text-xs px-2 py-0.5 rounded-full ${val === 'AUT' ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+				<span
+					className="text-xs px-2 py-0.5 rounded-full"
+					style={{
+						background: val === 'AUT' ? 'var(--color-success-muted)' : 'var(--color-warning-muted)',
+						color: val === 'AUT' ? 'var(--color-success)' : 'var(--color-warning)',
+					}}
+				>
 					{val}
 				</span>
 			),
@@ -101,9 +107,9 @@ export default function VentasPage() {
 					<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 						{[
 							{ label: 'Facturas', value: datos.resumen.totalFacturas, color: 'var(--text-primary)' },
-							{ label: 'Ventas Netas', value: `$${datos.resumen.ventasNetas.toFixed(2)}`, color: '#22c55e' },
+							{ label: 'Ventas Netas', value: `$${datos.resumen.ventasNetas.toFixed(2)}`, color: 'var(--color-success)' },
 							{ label: 'IVA Cobrado', value: `$${datos.resumen.totalIVA.toFixed(2)}`, color: 'var(--text-primary)' },
-							{ label: 'Notas de Crédito', value: datos.resumen.totalNC, color: '#ef4444' },
+							{ label: 'Notas de Crédito', value: datos.resumen.totalNC, color: 'var(--color-danger)' },
 						].map((item) => (
 							<GlassCard key={item.label} className="p-4">
 								<p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.label}</p>

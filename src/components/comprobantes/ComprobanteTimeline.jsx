@@ -21,8 +21,8 @@ export default function ComprobanteTimeline({ estado, fechaAutorizacion }) {
 		return (
 			<GlassCard className="p-4" animate={false}>
 				<div className="flex items-center gap-2">
-					<Circle className="w-4 h-4" style={{ color: '#6b7280' }} />
-					<span className="text-sm" style={{ color: '#6b7280' }}>Comprobante anulado</span>
+					<Circle className="w-4 h-4" style={{ color: 'var(--color-accent-slate)' }} />
+					<span className="text-sm" style={{ color: 'var(--color-accent-slate)' }}>Comprobante anulado</span>
 				</div>
 			</GlassCard>
 		);
@@ -42,21 +42,21 @@ export default function ComprobanteTimeline({ estado, fechaAutorizacion }) {
 						<div key={i} className="flex items-center flex-1">
 							<div className="flex flex-col items-center">
 								{completadoFinal ? (
-									<CheckCircle className="w-5 h-5" style={{ color: '#10b981' }} />
+									<CheckCircle className="w-5 h-5" style={{ color: 'var(--color-success)' }} />
 								) : actual ? (
-									<Clock className="w-5 h-5" style={{ color: errorEnPaso ? '#ef4444' : '#f59e0b' }} />
+									<Clock className="w-5 h-5" style={{ color: errorEnPaso ? 'var(--color-danger)' : 'var(--color-warning)' }} />
 								) : (
 									<Circle className="w-5 h-5" style={{ color: 'var(--text-disabled)' }} />
 								)}
 								<span className="text-[10px] mt-1 text-center" style={{
-									color: completadoFinal ? '#10b981' : actual ? (errorEnPaso ? '#ef4444' : 'var(--text-primary)') : 'var(--text-disabled)',
+									color: completadoFinal ? 'var(--color-success)' : actual ? (errorEnPaso ? 'var(--color-danger)' : 'var(--text-primary)') : 'var(--text-disabled)',
 								}}>
 									{paso.label}
 								</span>
 							</div>
 							{i < PASOS_TIMELINE.length - 1 && (
 								<div className="flex-1 h-px mx-1" style={{
-									background: completadoFinal ? '#10b981' : 'var(--glass-border)',
+									background: completadoFinal ? 'var(--color-success)' : 'var(--glass-border)',
 								}} />
 							)}
 						</div>

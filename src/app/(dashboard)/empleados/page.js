@@ -109,7 +109,13 @@ export default function EmpleadosPage() {
 		{
 			key: 'activo', label: 'Estado', width: '80px',
 			render: (val) => (
-				<span className={`text-xs px-2 py-0.5 rounded-full ${val ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+				<span
+					className="text-xs px-2 py-0.5 rounded-full"
+					style={{
+						background: val ? 'var(--color-success-muted)' : 'var(--color-danger-muted)',
+						color: val ? 'var(--color-success)' : 'var(--color-danger)',
+					}}
+				>
 					{val ? 'Activo' : 'Inactivo'}
 				</span>
 			),

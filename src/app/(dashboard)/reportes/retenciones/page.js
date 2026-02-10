@@ -112,7 +112,7 @@ export default function RetencionesPage() {
 					<GlassCard className="p-6">
 						<div className="flex justify-between items-center">
 							<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Total a Pagar</span>
-							<span className="text-lg font-bold" style={{ color: '#ef4444' }}>${datos.totalAPagar.toFixed(2)}</span>
+							<span className="text-lg font-bold" style={{ color: 'var(--color-danger)' }}>${datos.totalAPagar.toFixed(2)}</span>
 						</div>
 					</GlassCard>
 

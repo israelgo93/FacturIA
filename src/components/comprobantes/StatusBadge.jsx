@@ -1,16 +1,16 @@
 'use client';
 
 const ESTADOS = {
-	draft: { label: 'Borrador', bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8' },
-	signed: { label: 'Firmado', bg: 'rgba(245, 158, 11, 0.15)', text: '#f59e0b' },
-	sent: { label: 'Enviado', bg: 'rgba(59, 130, 246, 0.15)', text: '#3b82f6' },
-	PPR: { label: 'Procesando', bg: 'rgba(245, 158, 11, 0.15)', text: '#f59e0b' },
-	AUT: { label: 'Autorizado', bg: 'rgba(16, 185, 129, 0.15)', text: '#10b981' },
-	NAT: { label: 'No Autorizado', bg: 'rgba(239, 68, 68, 0.15)', text: '#ef4444' },
-	DEV: { label: 'Devuelto', bg: 'rgba(239, 68, 68, 0.15)', text: '#ef4444' },
-	voided: { label: 'Anulado', bg: 'rgba(107, 114, 128, 0.15)', text: '#6b7280' },
+	draft: { label: 'Borrador', bg: 'var(--color-neutral-muted)', text: 'var(--color-accent-slate)' },
+	signed: { label: 'Firmado', bg: 'var(--color-warning-muted)', text: 'var(--color-warning)' },
+	sent: { label: 'Enviado', bg: 'var(--color-info-muted)', text: 'var(--color-info)' },
+	PPR: { label: 'Procesando', bg: 'var(--color-warning-muted)', text: 'var(--color-warning)' },
+	AUT: { label: 'Autorizado', bg: 'var(--color-success-muted)', text: 'var(--color-success)' },
+	NAT: { label: 'No Autorizado', bg: 'var(--color-danger-muted)', text: 'var(--color-danger)' },
+	DEV: { label: 'Devuelto', bg: 'var(--color-danger-muted)', text: 'var(--color-danger)' },
+	voided: { label: 'Anulado', bg: 'var(--color-neutral-muted)', text: 'var(--color-accent-slate)' },
 	// Legacy
-	CREADO: { label: 'Borrador', bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8' },
+	CREADO: { label: 'Borrador', bg: 'var(--color-neutral-muted)', text: 'var(--color-accent-slate)' },
 };
 
 export default function StatusBadge({ estado, className = '' }) {

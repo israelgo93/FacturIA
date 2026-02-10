@@ -104,12 +104,12 @@ export default function IVAPage() {
 							<CasilleroRow numero="605" label="IVA cobrado neto" valor={datos.casillero_605} />
 							<CasilleroRow numero="615" label="Crédito tributario (IVA pagado)" valor={datos.casillero_615} />
 						</div>
-						<div className="mt-4 p-3 rounded-lg" style={{ background: datos.impuesto_a_pagar > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)' }}>
+						<div className="mt-4 p-3 rounded-lg" style={{ background: datos.impuesto_a_pagar > 0 ? 'var(--color-danger-muted)' : 'var(--color-success-muted)' }}>
 							<div className="flex justify-between items-center">
 								<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
 									{datos.impuesto_a_pagar > 0 ? 'Impuesto a Pagar' : 'Crédito Próximo Mes'}
 								</span>
-								<span className="text-lg font-bold" style={{ color: datos.impuesto_a_pagar > 0 ? '#ef4444' : '#22c55e' }}>
+								<span className="text-lg font-bold" style={{ color: datos.impuesto_a_pagar > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>
 									${(datos.impuesto_a_pagar > 0 ? datos.impuesto_a_pagar : datos.credito_proximo_mes).toFixed(2)}
 								</span>
 							</div>

@@ -242,8 +242,8 @@ export default function GuiaRemisionPage() {
 			</div>
 
 			{/* Alertas */}
-		{error && <GlassAlert type="error" message={error} className="mb-4" onClose={() => setError(null)} />}
-		{success && <GlassAlert type="success" message={success} className="mb-4" />}
+			{error && <GlassAlert type="error" message={error} className="mb-4" onClose={() => setError(null)} />}
+			{success && <GlassAlert type="success" message={success} className="mb-4" />}
 
 			{/* Step 1: Configuración y Transportista */}
 			{step === 1 && (
@@ -358,7 +358,7 @@ export default function GuiaRemisionPage() {
 									Destinatario #{di + 1}
 								</span>
 								{destinatarios.length > 1 && (
-									<button onClick={() => removeDestinatario(di)} className="p-1 hover:bg-red-500/10 rounded" style={{ color: '#ef4444' }}>
+									<button onClick={() => removeDestinatario(di)} className="p-1 rounded transition-colors" style={{ color: 'var(--color-danger)' }} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-danger-muted)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
 										<Trash2 size={16} />
 									</button>
 								)}
@@ -456,8 +456,10 @@ export default function GuiaRemisionPage() {
 										{dest.detalles.length > 1 && (
 											<button
 												onClick={() => removeDetalle(di, deti)}
-												className="p-2 hover:bg-red-500/10 rounded"
-												style={{ color: '#ef4444' }}
+												className="p-2 rounded transition-colors"
+												style={{ color: 'var(--color-danger)' }}
+												onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-danger-muted)'}
+												onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
 											>
 												<Trash2 size={14} />
 											</button>

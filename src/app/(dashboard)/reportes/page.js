@@ -10,42 +10,48 @@ const reportes = [
 		desc: 'Anexo Transaccional Simplificado — Genera XML para DIMM',
 		icon: FileSpreadsheet,
 		href: '/reportes/ats',
-		color: '#3b82f6',
+		color: 'var(--color-accent-blue)',
+		mutedColor: 'var(--color-accent-blue-muted)',
 	},
 	{
 		title: 'RDEP',
 		desc: 'Relación de Dependencia — Retenciones anuales empleados',
 		icon: FileText,
 		href: '/reportes/rdep',
-		color: '#8b5cf6',
+		color: 'var(--color-accent-purple)',
+		mutedColor: 'var(--color-accent-purple-muted)',
 	},
 	{
 		title: 'Form. 104',
 		desc: 'Pre-llenado automático de declaración de IVA',
 		icon: Calculator,
 		href: '/reportes/iva',
-		color: '#22c55e',
+		color: 'var(--color-accent-emerald)',
+		mutedColor: 'var(--color-accent-emerald-muted)',
 	},
 	{
 		title: 'Form. 103',
 		desc: 'Pre-llenado de retenciones en la fuente',
 		icon: Calculator,
 		href: '/reportes/retenciones',
-		color: '#f59e0b',
+		color: 'var(--color-accent-amber)',
+		mutedColor: 'var(--color-accent-amber-muted)',
 	},
 	{
 		title: 'Ventas',
 		desc: 'Reporte detallado de comprobantes de venta',
 		icon: BarChart3,
 		href: '/reportes/ventas',
-		color: '#06b6d4',
+		color: 'var(--color-accent-cyan)',
+		mutedColor: 'var(--color-accent-cyan-muted)',
 	},
 	{
 		title: 'Análisis IA',
 		desc: 'Chat IA para análisis tributario y detección de anomalías',
 		icon: Brain,
 		href: '/reportes/analisis',
-		color: '#ec4899',
+		color: 'var(--color-accent-pink)',
+		mutedColor: 'var(--color-accent-pink-muted)',
 	},
 ];
 
@@ -62,7 +68,7 @@ export default function ReportesPage() {
 						<GlassCard className="p-5 cursor-pointer h-full">
 							<div
 								className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
-								style={{ background: `${reporte.color}15`, border: `1px solid ${reporte.color}30` }}
+								style={{ background: reporte.mutedColor, border: `1px solid ${reporte.color}` }}
 							>
 								<reporte.icon className="w-4 h-4" style={{ color: reporte.color }} />
 							</div>

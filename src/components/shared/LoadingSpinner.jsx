@@ -12,7 +12,8 @@ const sizeClasses = {
 export default function LoadingSpinner({ size = 'md', className = '' }) {
 	return (
 		<Loader2
-			className={`animate-spin text-white/40 ${sizeClasses[size] || sizeClasses.md} ${className}`}
+			className={`animate-spin ${sizeClasses[size] || sizeClasses.md} ${className}`}
+			style={{ color: 'var(--text-muted)' }}
 		/>
 	);
 }

@@ -1,0 +1,19 @@
+## Error Type
+Runtime TypeError
+
+## Error Message
+Cannot read properties of undefined (reading 'trim')
+
+
+    at AnalisisPageInner (src/app/(dashboard)/reportes/analisis/page.js:112:64)
+
+## Code Frame
+  110 | 							className="flex-1"
+  111 | 						/>
+> 112 | 						<GlassButton type="submit" disabled={isLoading || !input.trim()} size="sm">
+      | 						                                                         ^
+  113 | 							<Send className="w-4 h-4" />
+  114 | 						</GlassButton>
+  115 | 					</form>
+
+Next.js version: 16.1.6 (Turbopack)

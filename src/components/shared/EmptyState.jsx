@@ -13,11 +13,14 @@ export default function EmptyState({
 }) {
 	return (
 		<div className={`flex flex-col items-center justify-center py-20 px-4 ${className}`}>
-			<div className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] mb-5">
-				<Icon className="w-8 h-8 text-white/15" />
+			<div
+				className="p-5 rounded-2xl mb-5"
+				style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)' }}
+			>
+				<Icon className="w-8 h-8" style={{ color: 'var(--text-disabled)' }} />
 			</div>
-			<h3 className="text-base font-medium text-white/50 mb-1">{title}</h3>
-			<p className="text-sm text-white/25 text-center max-w-sm mb-8">{description}</p>
+			<h3 className="text-base font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{title}</h3>
+			<p className="text-sm text-center max-w-sm mb-8" style={{ color: 'var(--text-muted)' }}>{description}</p>
 			{actionLabel && onAction && (
 				<GlassButton variant="secondary" onClick={onAction}>
 					{actionLabel}
