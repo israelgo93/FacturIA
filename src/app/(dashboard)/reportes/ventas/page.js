@@ -9,6 +9,7 @@ import PeriodoSelector from '@/components/reportes/PeriodoSelector';
 import GlassCard from '@/components/ui/GlassCard';
 import GlassTable from '@/components/ui/GlassTable';
 import GlassButton from '@/components/ui/GlassButton';
+import StatusBadge from '@/components/comprobantes/StatusBadge';
 
 export default function VentasPage() {
 	const [anio, setAnio] = useState(String(new Date().getFullYear()));
@@ -67,17 +68,7 @@ export default function VentasPage() {
 		},
 		{
 			key: 'estado', label: 'Estado', width: '70px',
-			render: (val) => (
-				<span
-					className="text-xs px-2 py-0.5 rounded-full"
-					style={{
-						background: val === 'AUT' ? 'var(--color-success-muted)' : 'var(--color-warning-muted)',
-						color: val === 'AUT' ? 'var(--color-success)' : 'var(--color-warning)',
-					}}
-				>
-					{val}
-				</span>
-			),
+			render: (val) => <StatusBadge estado={val} size="sm" />,
 		},
 	];
 
@@ -107,9 +98,9 @@ export default function VentasPage() {
 					<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 						{[
 							{ label: 'Facturas', value: datos.resumen.totalFacturas, color: 'var(--text-primary)' },
-							{ label: 'Ventas Netas', value: `$${datos.resumen.ventasNetas.toFixed(2)}`, color: 'var(--color-success)' },
+							{ label: 'Ventas Netas', value: `$${datos.resumen.ventasNetas.toFixed(2)}`, color: 'var(--text-primary)' },
 							{ label: 'IVA Cobrado', value: `$${datos.resumen.totalIVA.toFixed(2)}`, color: 'var(--text-primary)' },
-							{ label: 'Notas de Crédito', value: datos.resumen.totalNC, color: 'var(--color-danger)' },
+							{ label: 'Notas de Crédito', value: datos.resumen.totalNC, color: 'var(--text-primary)' },
 						].map((item) => (
 							<GlassCard key={item.label} className="p-4">
 								<p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.label}</p>
@@ -160,7 +151,7 @@ export default function VentasPage() {
 					</GlassCard>
 
 					<div className="flex gap-3">
-						<GlassButton onClick={handleExportar} variant="ghost" size="sm">
+						<GlassButton onClick={handleExportar} variant="secondary" size="sm">
 							<FileSpreadsheet className="w-4 h-4 mr-1" /> Exportar a Excel
 						</GlassButton>
 					</div>

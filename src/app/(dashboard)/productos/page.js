@@ -11,7 +11,7 @@ import GlassTable from '@/components/ui/GlassTable';
 import GlassButton from '@/components/ui/GlassButton';
 import GlassInput from '@/components/ui/GlassInput';
 import GlassSelect from '@/components/ui/GlassSelect';
-import GlassBadge from '@/components/ui/GlassBadge';
+import StatusBadge from '@/components/comprobantes/StatusBadge';
 
 export default function ProductosPage() {
 	const [productos, setProductos] = useState([]);
@@ -60,7 +60,7 @@ export default function ProductosPage() {
 		{ key: 'categoria', label: 'Categoría', render: (val) => val || '-' },
 		{
 			key: 'activo', label: 'Estado', width: '90px',
-			render: (val) => <GlassBadge status={val ? 'active' : 'inactive'} size="sm" />,
+			render: (val) => <StatusBadge estado={val ? 'active' : 'inactive'} size="sm" />,
 		},
 		{
 			key: 'actions', label: '', width: '90px',
@@ -103,6 +103,7 @@ export default function ProductosPage() {
 					className="flex-1"
 				/>
 				<GlassSelect
+					label="Estado"
 					options={[
 						{ value: '', label: 'Todos' },
 						{ value: 'true', label: 'Activos' },
@@ -125,7 +126,7 @@ export default function ProductosPage() {
 					<div className="space-y-2">
 						<div className="flex items-center justify-between">
 							<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{row.nombre}</span>
-							<GlassBadge status={row.activo ? 'active' : 'inactive'} size="sm" />
+							<StatusBadge estado={row.activo ? 'active' : 'inactive'} size="sm" />
 						</div>
 						<div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
 							<span className="font-mono px-1.5 py-0.5 rounded" style={{ background: 'var(--glass-active)', color: 'var(--text-muted)' }}>{row.codigo_principal}</span>

@@ -12,7 +12,7 @@ import GlassButton from '@/components/ui/GlassButton';
 import GlassModal from '@/components/ui/GlassModal';
 import GlassInput from '@/components/ui/GlassInput';
 import GlassSelect from '@/components/ui/GlassSelect';
-import GlassBadge from '@/components/ui/GlassBadge';
+import StatusBadge from '@/components/comprobantes/StatusBadge';
 import GlassAlert from '@/components/ui/GlassAlert';
 
 export default function PuntosEmisionPage() {
@@ -57,7 +57,7 @@ export default function PuntosEmisionPage() {
 		{ key: 'descripcion', label: 'Descripción' },
 		{
 			key: 'activo', label: 'Estado', width: '100px',
-			render: (val) => <GlassBadge status={val ? 'active' : 'inactive'} size="sm" />,
+			render: (val) => <StatusBadge estado={val ? 'active' : 'inactive'} size="sm" />,
 		},
 		{
 			key: 'actions', label: '', width: '80px',
@@ -104,7 +104,7 @@ export default function PuntosEmisionPage() {
 					<div className="space-y-2">
 						<div className="flex items-center justify-between">
 							<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{row.descripcion || 'Punto de Emisión'}</span>
-							<GlassBadge status={row.activo ? 'active' : 'inactive'} size="sm" />
+							<StatusBadge estado={row.activo ? 'active' : 'inactive'} size="sm" />
 						</div>
 						<div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
 							<span className="font-mono px-1.5 py-0.5 rounded" style={{ background: 'var(--glass-active)', color: 'var(--text-muted)' }}>{row.codigo}</span>

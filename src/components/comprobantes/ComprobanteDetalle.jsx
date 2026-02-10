@@ -132,12 +132,12 @@ export default function ComprobanteDetalle({ comprobante }) {
 							</GlassButton>
 						)}
 						{tieneXML && (
-							<GlassButton variant="outline" size="sm" icon={Download} onClick={handleDescargarXML}>
+							<GlassButton variant="secondary" size="sm" icon={Download} onClick={handleDescargarXML}>
 								Descargar XML
 							</GlassButton>
 						)}
 						{estaAutorizado && comp.email_comprador && (
-							<GlassButton variant="outline" size="sm" icon={Mail} onClick={handleEnviarEmail} loading={enviandoEmail}>
+							<GlassButton variant="secondary" size="sm" icon={Mail} onClick={handleEnviarEmail} loading={enviandoEmail}>
 								Enviar por Email
 							</GlassButton>
 						)}

@@ -42,21 +42,21 @@ export default function ComprobanteTimeline({ estado, fechaAutorizacion }) {
 						<div key={i} className="flex items-center flex-1">
 							<div className="flex flex-col items-center">
 								{completadoFinal ? (
-									<CheckCircle className="w-5 h-5" style={{ color: 'var(--color-success)' }} />
+									<CheckCircle className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
 								) : actual ? (
-									<Clock className="w-5 h-5" style={{ color: errorEnPaso ? 'var(--color-danger)' : 'var(--color-warning)' }} />
+									<Clock className="w-5 h-5" style={{ color: errorEnPaso ? 'var(--color-danger)' : 'var(--text-primary)' }} />
 								) : (
 									<Circle className="w-5 h-5" style={{ color: 'var(--text-disabled)' }} />
 								)}
 								<span className="text-[10px] mt-1 text-center" style={{
-									color: completadoFinal ? 'var(--color-success)' : actual ? (errorEnPaso ? 'var(--color-danger)' : 'var(--text-primary)') : 'var(--text-disabled)',
+									color: completadoFinal ? 'var(--text-secondary)' : actual ? (errorEnPaso ? 'var(--color-danger)' : 'var(--text-primary)') : 'var(--text-disabled)',
 								}}>
 									{paso.label}
 								</span>
 							</div>
 							{i < PASOS_TIMELINE.length - 1 && (
 								<div className="flex-1 h-px mx-1" style={{
-									background: completadoFinal ? 'var(--color-success)' : 'var(--glass-border)',
+									background: completadoFinal ? 'var(--text-muted)' : 'var(--glass-border)',
 								}} />
 							)}
 						</div>
