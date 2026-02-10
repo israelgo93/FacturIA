@@ -165,7 +165,13 @@ export default function EmpleadosPage() {
 						<div className="space-y-2">
 							<div className="flex items-center justify-between">
 								<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{row.apellidos} {row.nombres}</span>
-								<span className={`text-xs px-2 py-0.5 rounded-full ${row.activo ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+								<span
+									className="text-xs px-2 py-0.5 rounded-full"
+									style={{
+										background: row.activo ? 'var(--color-success-muted)' : 'var(--color-danger-muted)',
+										color: row.activo ? 'var(--color-success)' : 'var(--color-danger)',
+									}}
+								>
 									{row.activo ? 'Activo' : 'Inactivo'}
 								</span>
 							</div>

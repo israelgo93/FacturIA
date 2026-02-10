@@ -120,7 +120,43 @@ export default function VentasPage() {
 
 					<GlassCard className="p-6">
 						<h2 className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Detalle de Comprobantes</h2>
-						<GlassTable columns={columns} data={datos.comprobantes} emptyMessage="Sin comprobantes en este período" />
+						<GlassTable
+							columns={columns}
+							data={datos.comprobantes}
+							emptyMessage="Sin comprobantes en este período"
+							mobileCard={(row) => (
+								<div className="space-y-2">
+									<div className="flex items-center justify-between">
+										<span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+											{row.tipo_comprobante} - {row.numero_completo}
+										</span>
+										<span
+											className="text-[10px] px-1.5 py-0.5 rounded-full"
+											style={{
+												background: row.estado === 'AUT' ? 'var(--color-success-muted)' : 'var(--color-warning-muted)',
+												color: row.estado === 'AUT' ? 'var(--color-success)' : 'var(--color-warning)',
+											}}
+										>
+											{row.estado}
+										</span>
+									</div>
+									<div className="flex flex-col">
+										<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+											{row.razon_social_comprador || 'Consumidor Final'}
+										</span>
+										<span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+											{new Date(row.fecha_emision + 'T00:00:00').toLocaleDateString('es-EC')}
+										</span>
+									</div>
+									<div className="flex justify-between items-center pt-2 border-t" style={{ borderColor: 'var(--divider)' }}>
+										<span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Total</span>
+										<span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+											${parseFloat(row.importe_total || 0).toFixed(2)}
+										</span>
+									</div>
+								</div>
+							)}
+						/>
 					</GlassCard>
 
 					<div className="flex gap-3">

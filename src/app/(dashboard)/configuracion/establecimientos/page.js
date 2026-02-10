@@ -90,7 +90,33 @@ export default function EstablecimientosPage() {
 				</GlassButton>
 			</div>
 
-			<GlassTable columns={columns} data={establecimientos} loading={loading} emptyMessage="No hay establecimientos" />
+			<GlassTable
+				columns={columns}
+				data={establecimientos}
+				loading={loading}
+				emptyMessage="No hay establecimientos"
+				mobileCard={(row) => (
+					<div className="space-y-2">
+						<div className="flex items-center justify-between">
+							<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{row.nombre_comercial || 'Sin nombre comercial'}</span>
+							<GlassBadge status={row.activo ? 'active' : 'inactive'} size="sm" />
+						</div>
+						<div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+							<span className="font-mono px-1.5 py-0.5 rounded" style={{ background: 'var(--glass-active)', color: 'var(--text-muted)' }}>{row.codigo}</span>
+							<span>{row.direccion}</span>
+						</div>
+						<div className="flex justify-end pt-1">
+							<button
+								onClick={() => { setEditItem(row); setModalOpen(true); }}
+								className="p-1.5 rounded-lg transition-colors"
+								style={{ color: 'var(--text-muted)' }}
+							>
+								<Edit2 className="w-3.5 h-3.5" />
+							</button>
+						</div>
+					</div>
+				)}
+			/>
 
 			<GlassModal
 				isOpen={modalOpen}

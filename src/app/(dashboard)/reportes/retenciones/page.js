@@ -87,6 +87,17 @@ export default function RetencionesPage() {
 							columns={rentaColumns}
 							data={datos.retencionesRenta}
 							emptyMessage="Sin retenciones de renta en este período"
+							mobileCard={(row) => (
+								<div className="flex justify-between items-center">
+									<div>
+										<p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Código {row.codigo}</p>
+										<p className="text-xs" style={{ color: 'var(--text-muted)' }}>Base: ${row.baseImponible.toFixed(2)} ({row.porcentaje}%)</p>
+									</div>
+									<span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+										${row.valorRetenido.toFixed(2)}
+									</span>
+								</div>
+							)}
 						/>
 						<div className="flex justify-end mt-3">
 							<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
@@ -101,6 +112,17 @@ export default function RetencionesPage() {
 							columns={rentaColumns}
 							data={datos.retencionesIVA}
 							emptyMessage="Sin retenciones de IVA en este período"
+							mobileCard={(row) => (
+								<div className="flex justify-between items-center">
+									<div>
+										<p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Código {row.codigo}</p>
+										<p className="text-xs" style={{ color: 'var(--text-muted)' }}>Base: ${row.baseImponible.toFixed(2)} ({row.porcentaje}%)</p>
+									</div>
+									<span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+										${row.valorRetenido.toFixed(2)}
+									</span>
+								</div>
+							)}
 						/>
 						<div className="flex justify-end mt-3">
 							<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>

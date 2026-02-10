@@ -103,9 +103,9 @@ export function SeleccionarDocumentoSustento({
 				<div
 					className="mb-4 p-3 rounded-lg text-sm"
 					style={{
-						background: 'rgba(239, 68, 68, 0.1)',
-						color: '#ef4444',
-						border: '1px solid rgba(239, 68, 68, 0.2)',
+						background: 'var(--color-danger-muted)',
+						color: 'var(--color-danger)',
+						border: '1px solid var(--color-danger-muted)',
 					}}
 				>
 					{error}
@@ -182,11 +182,11 @@ export function SeleccionarDocumentoSustento({
 				<div
 					className="mt-4 p-3 rounded-lg"
 					style={{
-						background: 'rgba(34, 197, 94, 0.1)',
-						border: '1px solid rgba(34, 197, 94, 0.2)',
+						background: 'var(--color-success-muted)',
+						border: '1px solid var(--color-success-muted)',
 					}}
 				>
-					<div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#22c55e' }}>
+					<div className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--color-success)' }}>
 						<Check size={16} />
 						Documento seleccionado: {selected.numero}
 					</div>

@@ -6,11 +6,11 @@ import { CheckCircle, XCircle, Clock, AlertTriangle, FileText, Loader2 } from 'l
 import { useRouter } from 'next/navigation';
 
 const ESTADO_CONFIG = {
-	AUT: { icon: CheckCircle, label: 'Autorizado', color: '#10b981', description: 'La factura fue autorizada por el SRI' },
-	NAT: { icon: XCircle, label: 'No Autorizado', color: '#ef4444', description: 'El SRI rechazó la factura' },
-	PPR: { icon: Clock, label: 'En Procesamiento', color: '#f59e0b', description: 'El SRI está procesando la factura' },
-	DEV: { icon: AlertTriangle, label: 'Devuelta', color: '#ef4444', description: 'El SRI devolvió la factura por errores' },
-	ERROR_VALIDACION: { icon: XCircle, label: 'Error de Validación', color: '#ef4444', description: 'Los datos no pasaron la validación' },
+	AUT: { icon: CheckCircle, label: 'Autorizado', color: 'var(--color-success)', description: 'La factura fue autorizada por el SRI' },
+	NAT: { icon: XCircle, label: 'No Autorizado', color: 'var(--color-danger)', description: 'El SRI rechazó la factura' },
+	PPR: { icon: Clock, label: 'En Procesamiento', color: 'var(--color-warning)', description: 'El SRI está procesando la factura' },
+	DEV: { icon: AlertTriangle, label: 'Devuelta', color: 'var(--color-danger)', description: 'El SRI devolvió la factura por errores' },
+	ERROR_VALIDACION: { icon: XCircle, label: 'Error de Validación', color: 'var(--color-danger)', description: 'Los datos no pasaron la validación' },
 };
 
 export default function StepConfirmacion({ wizard }) {
