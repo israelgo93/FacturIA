@@ -11,6 +11,7 @@ export default function GlassTable({
 	pagination,
 	onPageChange,
 	className = '',
+	mobileCard,
 }) {
 	if (loading) {
 		return (
@@ -20,100 +21,131 @@ export default function GlassTable({
 		);
 	}
 
+	const PaginationBar = () => (
+		pagination && (
+			<div
+				className="flex items-center justify-between px-5 py-3"
+				style={{ borderTop: '1px solid var(--glass-border)' }}
+			>
+				<p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+					{pagination.from}-{pagination.to} de {pagination.total}
+				</p>
+				<div className="flex items-center gap-1">
+					<button
+						onClick={() => onPageChange?.(pagination.page - 1)}
+						disabled={pagination.page <= 1}
+						className="p-1.5 rounded-lg disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+						style={{ color: 'var(--text-muted)' }}
+						onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
+						onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+						aria-label="Anterior"
+					>
+						<ChevronLeft className="w-3.5 h-3.5" />
+					</button>
+					<span className="text-xs px-2" style={{ color: 'var(--text-muted)' }}>
+						{pagination.page}/{pagination.totalPages}
+					</span>
+					<button
+						onClick={() => onPageChange?.(pagination.page + 1)}
+						disabled={pagination.page >= pagination.totalPages}
+						className="p-1.5 rounded-lg disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+						style={{ color: 'var(--text-muted)' }}
+						onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
+						onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+						aria-label="Siguiente"
+					>
+						<ChevronRight className="w-3.5 h-3.5" />
+					</button>
+				</div>
+			</div>
+		)
+	);
+
 	return (
 		<div className={`glass rounded-2xl overflow-hidden ${className}`}>
-			<div className="overflow-x-auto">
-				<table className="w-full">
-					<thead>
-						<tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
-							{columns.map((col) => (
-								<th
-									key={col.key}
-									className={`
-										px-5 py-3.5 text-left text-[10px] font-medium
-										uppercase tracking-widest
-										${col.className || ''}
-									`.trim()}
-									style={{ color: 'var(--table-header-text)', width: col.width || undefined }}
+			{/* Vista mobile: cards */}
+			{mobileCard && (
+				<div className="sm:hidden">
+					{data.length === 0 ? (
+						<div className="px-5 py-16 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+							{emptyMessage}
+						</div>
+					) : (
+						<div className="divide-y" style={{ '--tw-divide-opacity': '1', borderColor: 'var(--table-divider)' }}>
+							{data.map((row, idx) => (
+								<div
+									key={row.id || idx}
+									className="p-4"
+									style={{ borderColor: 'var(--table-divider)' }}
 								>
-									{col.label}
-								</th>
+									{mobileCard(row)}
+								</div>
 							))}
-						</tr>
-					</thead>
-					<tbody>
-						{data.length === 0 ? (
-							<tr>
-								<td
-									colSpan={columns.length}
-									className="px-5 py-16 text-center text-sm"
-									style={{ color: 'var(--text-muted)' }}
-								>
-									{emptyMessage}
-								</td>
-							</tr>
-						) : (
-							data.map((row, rowIdx) => (
-								<tr
-									key={row.id || rowIdx}
-									className="transition-colors duration-300"
-									style={{ borderBottom: '1px solid var(--table-divider)' }}
-									onMouseEnter={(e) => e.currentTarget.style.background = 'var(--table-row-hover)'}
-									onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-								>
-									{columns.map((col) => (
-										<td
-											key={col.key}
-											className={`px-5 py-3.5 text-sm ${col.cellClassName || ''}`}
-											style={{ color: 'var(--text-secondary)' }}
-										>
-											{col.render ? col.render(row[col.key], row) : row[col.key]}
-										</td>
-									))}
-								</tr>
-							))
-						)}
-					</tbody>
-				</table>
-			</div>
-
-			{pagination && (
-				<div
-					className="flex items-center justify-between px-5 py-3"
-					style={{ borderTop: '1px solid var(--glass-border)' }}
-				>
-					<p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-						{pagination.from}-{pagination.to} de {pagination.total}
-					</p>
-					<div className="flex items-center gap-1">
-						<button
-							onClick={() => onPageChange?.(pagination.page - 1)}
-							disabled={pagination.page <= 1}
-							className="p-1.5 rounded-lg disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-							style={{ color: 'var(--text-muted)' }}
-							onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
-							onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-							aria-label="Anterior"
-						>
-							<ChevronLeft className="w-3.5 h-3.5" />
-						</button>
-						<span className="text-xs px-2" style={{ color: 'var(--text-muted)' }}>
-							{pagination.page}/{pagination.totalPages}
-						</span>
-						<button
-							onClick={() => onPageChange?.(pagination.page + 1)}
-							disabled={pagination.page >= pagination.totalPages}
-							className="p-1.5 rounded-lg disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-							style={{ color: 'var(--text-muted)' }}
-							onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
-							onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-							aria-label="Siguiente"
-						>
-							<ChevronRight className="w-3.5 h-3.5" />
-						</button>
-					</div>
+						</div>
+					)}
+					<PaginationBar />
 				</div>
 			)}
+
+			{/* Vista desktop: tabla */}
+			<div className={mobileCard ? 'hidden sm:block' : ''}>
+				<div className="overflow-x-auto">
+					<table className="w-full">
+						<thead>
+							<tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
+								{columns.map((col) => (
+									<th
+										key={col.key}
+										className={`
+											px-5 py-3.5 text-left text-[10px] font-medium
+											uppercase tracking-widest
+											${col.className || ''}
+										`.trim()}
+										style={{ color: 'var(--table-header-text)', width: col.width || undefined }}
+									>
+										{col.label}
+									</th>
+								))}
+							</tr>
+						</thead>
+						<tbody>
+							{data.length === 0 ? (
+								<tr>
+									<td
+										colSpan={columns.length}
+										className="px-5 py-16 text-center text-sm"
+										style={{ color: 'var(--text-muted)' }}
+									>
+										{emptyMessage}
+									</td>
+								</tr>
+							) : (
+								data.map((row, rowIdx) => (
+									<tr
+										key={row.id || rowIdx}
+										className="transition-colors duration-300"
+										style={{ borderBottom: '1px solid var(--table-divider)' }}
+										onMouseEnter={(e) => e.currentTarget.style.background = 'var(--table-row-hover)'}
+										onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+									>
+										{columns.map((col) => (
+											<td
+												key={col.key}
+												className={`px-5 py-3.5 text-sm ${col.cellClassName || ''}`}
+												style={{ color: 'var(--text-secondary)' }}
+											>
+												{col.render ? col.render(row[col.key], row) : row[col.key]}
+											</td>
+										))}
+									</tr>
+								))
+							)}
+						</tbody>
+					</table>
+				</div>
+
+				<PaginationBar />
+			</div>
 		</div>
 	);
 }

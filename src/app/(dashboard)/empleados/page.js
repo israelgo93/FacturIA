@@ -155,30 +155,50 @@ export default function EmpleadosPage() {
 					emptyMessage="No hay empleados registrados"
 					pagination={pagination}
 					onPageChange={setPage}
+					mobileCard={(row) => (
+						<div className="space-y-2">
+							<div className="flex items-center justify-between">
+								<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{row.apellidos} {row.nombres}</span>
+								<span className={`text-xs px-2 py-0.5 rounded-full ${row.activo ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+									{row.activo ? 'Activo' : 'Inactivo'}
+								</span>
+							</div>
+							<div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+								<span>{row.identificacion}</span>
+								{row.cargo && <span>· {row.cargo}</span>}
+							</div>
+							<div className="flex items-center justify-between">
+								<span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>${parseFloat(row.sueldo_mensual || 0).toFixed(2)}/mes</span>
+								<button onClick={() => handleEliminar(row.id)} className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)' }}>
+									<Trash2 className="w-3.5 h-3.5" />
+								</button>
+							</div>
+						</div>
+					)}
 				/>
 			</GlassCard>
 
 			<GlassModal isOpen={showModal} title="Registrar Empleado" onClose={() => setShowModal(false)}>
-					<div className="space-y-4">
-						<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-							<GlassSelect label="Tipo ID" value={form.tipo_identificacion} onChange={(e) => updateForm('tipo_identificacion', e.target.value)} options={TIPOS_ID_EMPLEADO} />
-							<GlassInput label="Identificación" value={form.identificacion} onChange={(e) => updateForm('identificacion', e.target.value)} />
-							<GlassSelect label="Tipo Contrato" value={form.tipo_contrato} onChange={(e) => updateForm('tipo_contrato', e.target.value)} options={TIPOS_CONTRATO} />
-						</div>
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-							<GlassInput label="Apellidos" value={form.apellidos} onChange={(e) => updateForm('apellidos', e.target.value)} />
-							<GlassInput label="Nombres" value={form.nombres} onChange={(e) => updateForm('nombres', e.target.value)} />
-						</div>
-						<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-							<GlassInput label="Cargo" value={form.cargo} onChange={(e) => updateForm('cargo', e.target.value)} />
-							<GlassInput label="Fecha Ingreso" type="date" value={form.fecha_ingreso} onChange={(e) => updateForm('fecha_ingreso', e.target.value)} />
-							<GlassInput label="Sueldo Mensual" type="number" step="0.01" value={form.sueldo_mensual} onChange={(e) => updateForm('sueldo_mensual', e.target.value)} />
-						</div>
+				<div className="space-y-4">
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+						<GlassSelect label="Tipo ID" value={form.tipo_identificacion} onChange={(e) => updateForm('tipo_identificacion', e.target.value)} options={TIPOS_ID_EMPLEADO} />
+						<GlassInput label="Identificación" value={form.identificacion} onChange={(e) => updateForm('identificacion', e.target.value)} />
+						<GlassSelect label="Tipo Contrato" value={form.tipo_contrato} onChange={(e) => updateForm('tipo_contrato', e.target.value)} options={TIPOS_CONTRATO} />
 					</div>
-					<div className="flex justify-end gap-3 mt-4 pt-4 border-t" style={{ borderColor: 'var(--glass-border)' }}>
-						<GlassButton variant="ghost" onClick={() => setShowModal(false)}>Cancelar</GlassButton>
-						<GlassButton onClick={handleGuardar} loading={saving}>Guardar</GlassButton>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+						<GlassInput label="Apellidos" value={form.apellidos} onChange={(e) => updateForm('apellidos', e.target.value)} />
+						<GlassInput label="Nombres" value={form.nombres} onChange={(e) => updateForm('nombres', e.target.value)} />
 					</div>
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+						<GlassInput label="Cargo" value={form.cargo} onChange={(e) => updateForm('cargo', e.target.value)} />
+						<GlassInput label="Fecha Ingreso" type="date" value={form.fecha_ingreso} onChange={(e) => updateForm('fecha_ingreso', e.target.value)} />
+						<GlassInput label="Sueldo Mensual" type="number" step="0.01" value={form.sueldo_mensual} onChange={(e) => updateForm('sueldo_mensual', e.target.value)} />
+					</div>
+				</div>
+				<div className="flex justify-end gap-3 mt-4 pt-4 border-t" style={{ borderColor: 'var(--glass-border)' }}>
+					<GlassButton variant="ghost" onClick={() => setShowModal(false)}>Cancelar</GlassButton>
+					<GlassButton onClick={handleGuardar} loading={saving}>Guardar</GlassButton>
+				</div>
 			</GlassModal>
 		</div>
 	);

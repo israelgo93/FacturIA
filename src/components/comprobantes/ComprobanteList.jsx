@@ -75,35 +75,60 @@ export default function ComprobanteList({ comprobantes, total, page, totalPages,
 						<Link
 							key={comp.id}
 							href={`/comprobantes/${comp.id}`}
-							className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3 px-4 py-3 border-b transition-colors items-center"
+							className="block px-4 py-3 border-b transition-colors"
 							style={{ borderColor: 'var(--table-divider)' }}
 							onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--table-row-hover)')}
 							onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
 						>
-							<div className="sm:col-span-2">
-								<span className="font-mono text-xs" style={{ color: 'var(--text-primary)' }}>
-									{comp.numero_completo || comp.secuencial}
-								</span>
+							{/* Desktop row */}
+							<div className="hidden sm:grid grid-cols-12 gap-3 items-center">
+								<div className="col-span-2">
+									<span className="font-mono text-xs" style={{ color: 'var(--text-primary)' }}>
+										{comp.numero_completo || comp.secuencial}
+									</span>
+								</div>
+								<div className="col-span-3">
+									<p className="text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+										{comp.razon_social_comprador || '—'}
+									</p>
+									<p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+										{comp.identificacion_comprador || ''}
+									</p>
+								</div>
+								<div className="col-span-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+									{comp.fecha_emision}
+								</div>
+								<div className="col-span-2 font-mono text-sm" style={{ color: 'var(--text-primary)' }}>
+									${Number(comp.importe_total).toFixed(2)}
+								</div>
+								<div className="col-span-2">
+									<StatusBadge estado={comp.estado} />
+								</div>
+								<div className="col-span-1 flex justify-end">
+									<Eye className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+								</div>
 							</div>
-							<div className="sm:col-span-3">
+
+							{/* Mobile card */}
+							<div className="sm:hidden space-y-2">
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-2">
+										<span className="font-mono text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
+											{comp.numero_completo || comp.secuencial}
+										</span>
+										<StatusBadge estado={comp.estado} />
+									</div>
+									<span className="font-mono text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+										${Number(comp.importe_total).toFixed(2)}
+									</span>
+								</div>
 								<p className="text-sm truncate" style={{ color: 'var(--text-primary)' }}>
 									{comp.razon_social_comprador || '—'}
 								</p>
-								<p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-									{comp.identificacion_comprador || ''}
-								</p>
-							</div>
-							<div className="sm:col-span-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-								{comp.fecha_emision}
-							</div>
-							<div className="sm:col-span-2 font-mono text-sm" style={{ color: 'var(--text-primary)' }}>
-								${Number(comp.importe_total).toFixed(2)}
-							</div>
-							<div className="sm:col-span-2">
-								<StatusBadge estado={comp.estado} />
-							</div>
-							<div className="sm:col-span-1 flex justify-end">
-								<Eye className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+								<div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
+									<span>{comp.identificacion_comprador || ''}</span>
+									<span>{comp.fecha_emision}</span>
+								</div>
 							</div>
 						</Link>
 					))}

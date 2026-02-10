@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { DollarSign, FileText, Users, TrendingUp, ArrowRight, Loader2 } from 'lucide-react';
+import { DollarSign, FileText, Users, TrendingUp, ArrowRight, Loader2, Sparkles } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import StatusBadge from '@/components/comprobantes/StatusBadge';
 import { obtenerDashboardKPIs } from './actions';
@@ -133,31 +133,55 @@ export default function DashboardPage() {
 							)}
 						</GlassCard>
 
-						<GlassCard className="p-6" hover={false}>
-							<h3 className="text-sm font-medium mb-4" style={{ color: 'var(--text-secondary)' }}>Resumen del Mes</h3>
-							<div className="space-y-3">
-								<div className="flex justify-between items-center">
-									<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Autorizados SRI</span>
-									<span className="text-sm font-medium" style={{ color: '#22c55e' }}>{kpis?.autorizados_mes || 0}</span>
+						<div className="space-y-5">
+							<GlassCard className="p-6" hover={false}>
+								<h3 className="text-sm font-medium mb-4" style={{ color: 'var(--text-secondary)' }}>Resumen del Mes</h3>
+								<div className="space-y-3">
+									<div className="flex justify-between items-center">
+										<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Autorizados SRI</span>
+										<span className="text-sm font-medium" style={{ color: '#22c55e' }}>{kpis?.autorizados_mes || 0}</span>
+									</div>
+									<div className="flex justify-between items-center">
+										<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Total emitidos</span>
+										<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{kpis?.comprobantes_mes || 0}</span>
+									</div>
+									<div className="flex justify-between items-center">
+										<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Ventas netas</span>
+										<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+											${kpis ? parseFloat(kpis.ventas_mes).toFixed(2) : '0.00'}
+										</span>
+									</div>
+									<div className="flex justify-between items-center">
+										<span className="text-xs" style={{ color: 'var(--text-muted)' }}>IVA cobrado</span>
+										<span className="text-sm font-medium" style={{ color: '#f59e0b' }}>
+											${kpis ? parseFloat(kpis.iva_cobrado_mes).toFixed(2) : '0.00'}
+										</span>
+									</div>
 								</div>
-								<div className="flex justify-between items-center">
-									<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Total emitidos</span>
-									<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{kpis?.comprobantes_mes || 0}</span>
-								</div>
-								<div className="flex justify-between items-center">
-									<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Ventas netas</span>
-									<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-										${kpis ? parseFloat(kpis.ventas_mes).toFixed(2) : '0.00'}
-									</span>
-								</div>
-								<div className="flex justify-between items-center">
-									<span className="text-xs" style={{ color: 'var(--text-muted)' }}>IVA cobrado</span>
-									<span className="text-sm font-medium" style={{ color: '#f59e0b' }}>
-										${kpis ? parseFloat(kpis.iva_cobrado_mes).toFixed(2) : '0.00'}
-									</span>
-								</div>
-							</div>
-						</GlassCard>
+							</GlassCard>
+
+							<Link href="/reportes/analisis">
+								<GlassCard className="p-5 group cursor-pointer" hover={true}>
+									<div className="flex items-center gap-4">
+										<div
+											className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+											style={{ background: 'rgba(168, 85, 247, 0.12)', border: '1px solid rgba(168, 85, 247, 0.25)' }}
+										>
+											<Sparkles className="w-5 h-5" style={{ color: '#a855f7' }} />
+										</div>
+										<div className="flex-1 min-w-0">
+											<p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+												Asistente Tributario IA
+											</p>
+											<p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+												Consulta IVA, retenciones, vencimientos y mas
+											</p>
+										</div>
+										<ArrowRight className="w-4 h-4 flex-shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--text-muted)' }} />
+									</div>
+								</GlassCard>
+							</Link>
+						</div>
 					</div>
 				</>
 			)}

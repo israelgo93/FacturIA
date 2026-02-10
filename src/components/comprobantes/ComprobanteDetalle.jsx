@@ -86,15 +86,15 @@ export default function ComprobanteDetalle({ comprobante }) {
 	return (
 		<div className="max-w-4xl mx-auto space-y-6">
 			{/* Header */}
-			<div className="flex items-center justify-between">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 				<div className="flex items-center gap-3">
 					<Link href="/comprobantes">
 						<GlassButton variant="ghost" size="sm" icon={ArrowLeft} />
 					</Link>
 					<div>
-						<div className="flex items-center gap-2">
-							<h1 className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
-								{{'01': 'Factura', '03': 'Liquidación de Compra', '04': 'Nota de Crédito', '05': 'Nota de Débito', '06': 'Guía de Remisión', '07': 'Retención'}[comp.tipo_comprobante] || 'Comprobante'} {comp.numero_completo || comp.secuencial}
+						<div className="flex flex-wrap items-center gap-2">
+							<h1 className="text-base sm:text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
+								{{ '01': 'Factura', '03': 'Liquidación de Compra', '04': 'Nota de Crédito', '05': 'Nota de Débito', '06': 'Guía de Remisión', '07': 'Retención' }[comp.tipo_comprobante] || 'Comprobante'} {comp.numero_completo || comp.secuencial}
 							</h1>
 							<StatusBadge estado={comp.estado} />
 						</div>
@@ -103,22 +103,22 @@ export default function ComprobanteDetalle({ comprobante }) {
 						</p>
 					</div>
 				</div>
-				<div className="flex items-center gap-2">
-				{comp.estado === 'draft' && (
-					<GlassButton size="sm" icon={Send} onClick={handleProcesar} loading={procesando}>
-						Procesar
-					</GlassButton>
-				)}
-				{comp.estado === 'PPR' && (
-					<GlassButton size="sm" icon={RefreshCw} onClick={handleReConsultar} loading={procesando}>
-						Re-consultar SRI
-					</GlassButton>
-				)}
-				{(comp.estado === 'draft' || comp.estado === 'NAT' || comp.estado === 'DEV') && (
-					<GlassButton variant="ghost" size="sm" icon={Ban} onClick={handleAnular}>
-						Anular
-					</GlassButton>
-				)}
+				<div className="flex items-center gap-2 pl-10 sm:pl-0">
+					{comp.estado === 'draft' && (
+						<GlassButton size="sm" icon={Send} onClick={handleProcesar} loading={procesando}>
+							Procesar
+						</GlassButton>
+					)}
+					{comp.estado === 'PPR' && (
+						<GlassButton size="sm" icon={RefreshCw} onClick={handleReConsultar} loading={procesando}>
+							Re-consultar SRI
+						</GlassButton>
+					)}
+					{(comp.estado === 'draft' || comp.estado === 'NAT' || comp.estado === 'DEV') && (
+						<GlassButton variant="ghost" size="sm" icon={Ban} onClick={handleAnular}>
+							Anular
+						</GlassButton>
+					)}
 				</div>
 			</div>
 

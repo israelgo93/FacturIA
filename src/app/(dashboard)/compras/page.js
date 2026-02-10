@@ -159,47 +159,68 @@ export default function ComprasPage() {
 					emptyMessage="No hay compras registradas"
 					pagination={pagination}
 					onPageChange={setPage}
+					mobileCard={(row) => (
+						<div className="space-y-2">
+							<div className="flex items-center justify-between">
+								<span className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{row.razon_social_proveedor}</span>
+								<button onClick={() => handleEliminar(row.id)} className="p-1.5 rounded-lg transition-colors flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+									<Trash2 className="w-3.5 h-3.5" />
+								</button>
+							</div>
+							<div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+								<span className="px-1.5 py-0.5 rounded" style={{ background: 'var(--glass-active)', color: 'var(--text-muted)' }}>{getLabelTipoIdProveedorATS(row.tipo_id_proveedor)}</span>
+								<span>{row.identificacion_proveedor}</span>
+							</div>
+							<div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
+								<span>{new Date(row.fecha_emision + 'T00:00:00').toLocaleDateString('es-EC')}</span>
+								<div className="flex gap-3">
+									<span>Base IVA: <strong style={{ color: 'var(--text-primary)' }}>${parseFloat(row.base_imponible_iva || 0).toFixed(2)}</strong></span>
+									<span>IVA: <strong style={{ color: 'var(--text-primary)' }}>${parseFloat(row.monto_iva || 0).toFixed(2)}</strong></span>
+								</div>
+							</div>
+						</div>
+					)}
 				/>
 			</GlassCard>
 
 			<GlassModal isOpen={showModal} title="Registrar Compra Recibida" onClose={() => setShowModal(false)} size="lg">
-					<div className="space-y-4">
-						<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-							<GlassSelect label="Tipo ID Proveedor" value={form.tipo_id_proveedor} onChange={(e) => updateForm('tipo_id_proveedor', e.target.value)} options={TIPO_ID_PROVEEDOR_ATS} />
-							<GlassInput label="Identificación" value={form.identificacion_proveedor} onChange={(e) => updateForm('identificacion_proveedor', e.target.value)} />
-							<GlassInput label="Razón Social" value={form.razon_social_proveedor} onChange={(e) => updateForm('razon_social_proveedor', e.target.value)} />
-						</div>
-						<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-							<GlassSelect label="Tipo Comprobante" value={form.tipo_comprobante} onChange={(e) => updateForm('tipo_comprobante', e.target.value)} options={TIPO_COMPROBANTE_ATS} />
-							<GlassSelect label="Cód. Sustento" value={form.cod_sustento} onChange={(e) => updateForm('cod_sustento', e.target.value)} options={COD_SUSTENTO_ATS} />
-							<GlassSelect label="Forma de Pago" value={form.forma_pago} onChange={(e) => updateForm('forma_pago', e.target.value)} options={FORMA_PAGO_ATS} />
-						</div>
-						<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-							<GlassInput label="Estab." value={form.establecimiento} onChange={(e) => updateForm('establecimiento', e.target.value)} maxLength={3} />
-							<GlassInput label="Pto. Emi." value={form.punto_emision} onChange={(e) => updateForm('punto_emision', e.target.value)} maxLength={3} />
-							<GlassInput label="Secuencial" value={form.secuencial} onChange={(e) => updateForm('secuencial', e.target.value)} maxLength={9} />
-							<GlassInput label="Fecha Emisión" type="date" value={form.fecha_emision} onChange={(e) => updateForm('fecha_emision', e.target.value)} />
-							<GlassInput label="Fecha Registro" type="date" value={form.fecha_registro} onChange={(e) => updateForm('fecha_registro', e.target.value)} />
-						</div>
-						<GlassInput label="Autorización" value={form.autorizacion} onChange={(e) => updateForm('autorizacion', e.target.value)} maxLength={49} />
-						<div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-							<GlassInput label="Base No Grava IVA" type="number" step="0.01" value={form.base_no_grava_iva} onChange={(e) => updateForm('base_no_grava_iva', e.target.value)} />
-							<GlassInput label="Base Imponible 0%" type="number" step="0.01" value={form.base_imponible_0} onChange={(e) => updateForm('base_imponible_0', e.target.value)} />
-							<GlassInput label="Base Imponible IVA" type="number" step="0.01" value={form.base_imponible_iva} onChange={(e) => updateForm('base_imponible_iva', e.target.value)} />
-							<GlassInput label="Base Exenta" type="number" step="0.01" value={form.base_imp_exenta} onChange={(e) => updateForm('base_imp_exenta', e.target.value)} />
-							<GlassInput label="Monto IVA" type="number" step="0.01" value={form.monto_iva} onChange={(e) => updateForm('monto_iva', e.target.value)} />
-							<GlassInput label="Monto ICE" type="number" step="0.01" value={form.monto_ice} onChange={(e) => updateForm('monto_ice', e.target.value)} />
-						</div>
-						<div className="grid grid-cols-2 gap-3">
-							<GlassSelect label="Parte Relacionada" value={form.parte_relacionada} onChange={(e) => updateForm('parte_relacionada', e.target.value)} options={[{ value: 'NO', label: 'No' }, { value: 'SI', label: 'Sí' }]} />
-							<GlassSelect label="Pago Local/Exterior" value={form.pago_loc_ext} onChange={(e) => updateForm('pago_loc_ext', e.target.value)} options={[{ value: '01', label: 'Local' }, { value: '02', label: 'Exterior' }]} />
-						</div>
-						<GlassInput label="Observaciones" value={form.observaciones} onChange={(e) => updateForm('observaciones', e.target.value)} />
+				<div className="space-y-4">
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+						<GlassSelect label="Tipo ID Proveedor" value={form.tipo_id_proveedor} onChange={(e) => updateForm('tipo_id_proveedor', e.target.value)} options={TIPO_ID_PROVEEDOR_ATS} />
+						<GlassInput label="Identificación" value={form.identificacion_proveedor} onChange={(e) => updateForm('identificacion_proveedor', e.target.value)} />
+						<GlassInput label="Razón Social" value={form.razon_social_proveedor} onChange={(e) => updateForm('razon_social_proveedor', e.target.value)} />
 					</div>
-					<div className="flex justify-end gap-3 mt-4 pt-4 border-t" style={{ borderColor: 'var(--glass-border)' }}>
-						<GlassButton variant="ghost" onClick={() => setShowModal(false)}>Cancelar</GlassButton>
-						<GlassButton onClick={handleGuardar} loading={saving}>Guardar Compra</GlassButton>
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+						<GlassSelect label="Tipo Comprobante" value={form.tipo_comprobante} onChange={(e) => updateForm('tipo_comprobante', e.target.value)} options={TIPO_COMPROBANTE_ATS} />
+						<GlassSelect label="Cód. Sustento" value={form.cod_sustento} onChange={(e) => updateForm('cod_sustento', e.target.value)} options={COD_SUSTENTO_ATS} />
+						<GlassSelect label="Forma de Pago" value={form.forma_pago} onChange={(e) => updateForm('forma_pago', e.target.value)} options={FORMA_PAGO_ATS} />
 					</div>
+					<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+						<GlassInput label="Estab." value={form.establecimiento} onChange={(e) => updateForm('establecimiento', e.target.value)} maxLength={3} />
+						<GlassInput label="Pto. Emi." value={form.punto_emision} onChange={(e) => updateForm('punto_emision', e.target.value)} maxLength={3} />
+						<GlassInput label="Secuencial" value={form.secuencial} onChange={(e) => updateForm('secuencial', e.target.value)} maxLength={9} />
+						<GlassInput label="Fecha Emisión" type="date" value={form.fecha_emision} onChange={(e) => updateForm('fecha_emision', e.target.value)} />
+						<GlassInput label="Fecha Registro" type="date" value={form.fecha_registro} onChange={(e) => updateForm('fecha_registro', e.target.value)} />
+					</div>
+					<GlassInput label="Autorización" value={form.autorizacion} onChange={(e) => updateForm('autorizacion', e.target.value)} maxLength={49} />
+					<div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+						<GlassInput label="Base No Grava IVA" type="number" step="0.01" value={form.base_no_grava_iva} onChange={(e) => updateForm('base_no_grava_iva', e.target.value)} />
+						<GlassInput label="Base Imponible 0%" type="number" step="0.01" value={form.base_imponible_0} onChange={(e) => updateForm('base_imponible_0', e.target.value)} />
+						<GlassInput label="Base Imponible IVA" type="number" step="0.01" value={form.base_imponible_iva} onChange={(e) => updateForm('base_imponible_iva', e.target.value)} />
+						<GlassInput label="Base Exenta" type="number" step="0.01" value={form.base_imp_exenta} onChange={(e) => updateForm('base_imp_exenta', e.target.value)} />
+						<GlassInput label="Monto IVA" type="number" step="0.01" value={form.monto_iva} onChange={(e) => updateForm('monto_iva', e.target.value)} />
+						<GlassInput label="Monto ICE" type="number" step="0.01" value={form.monto_ice} onChange={(e) => updateForm('monto_ice', e.target.value)} />
+					</div>
+					<div className="grid grid-cols-2 gap-3">
+						<GlassSelect label="Parte Relacionada" value={form.parte_relacionada} onChange={(e) => updateForm('parte_relacionada', e.target.value)} options={[{ value: 'NO', label: 'No' }, { value: 'SI', label: 'Sí' }]} />
+						<GlassSelect label="Pago Local/Exterior" value={form.pago_loc_ext} onChange={(e) => updateForm('pago_loc_ext', e.target.value)} options={[{ value: '01', label: 'Local' }, { value: '02', label: 'Exterior' }]} />
+					</div>
+					<GlassInput label="Observaciones" value={form.observaciones} onChange={(e) => updateForm('observaciones', e.target.value)} />
+				</div>
+				<div className="flex justify-end gap-3 mt-4 pt-4 border-t" style={{ borderColor: 'var(--glass-border)' }}>
+					<GlassButton variant="ghost" onClick={() => setShowModal(false)}>Cancelar</GlassButton>
+					<GlassButton onClick={handleGuardar} loading={saving}>Guardar Compra</GlassButton>
+				</div>
 			</GlassModal>
 		</div>
 	);

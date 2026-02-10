@@ -333,6 +333,27 @@ Generacion automatica de reportes tributarios con analisis de Inteligencia Artif
 - Boton Descargar XML (descarga directa del XML autorizado o firmado)
 - Boton Enviar por Email (envia RIDE + XML al email del comprador)
 
+**Migracion Chat IA a AI SDK v6**
+- API route migrada a convertToModelMessages() para compatibilidad con UIMessage
+- Frontend migrado a sendMessage, DefaultChatTransport y status (reemplaza handleSubmit/isLoading)
+- Renderizado de mensajes con parts (type text) en lugar de content
+- Card de acceso rapido al Asistente Tributario IA en el Dashboard
+
+**Correccion de estados en ComprobanteTimeline**
+- Fix: estado Autorizado (AUT) ahora muestra CheckCircle verde en lugar de Clock
+- Logica completadoFinal para manejar el caso especial del ultimo paso del timeline
+- StatusBadge con color accent para estado AUT
+
+**Responsive mobile-first**
+- GlassTable con nueva prop mobileCard: vista de cards en movil, tabla en desktop
+- Cards responsive en Clientes (razon social, ID, tipo, email, estado, acciones)
+- Cards responsive en Productos (nombre, codigo, precio, IVA, categoria, estado)
+- Cards responsive en Compras (proveedor, ID, fecha, base IVA, monto IVA)
+- Cards responsive en Empleados (nombre, ID, cargo, sueldo, estado)
+- ComprobanteList con vistas separadas desktop (grid-cols-12) y mobile (cards compactas)
+- ComprobanteDetalle con header responsive (flex-col en movil, flex-row en desktop)
+- Formularios de comprobantes con grid-cols-1 md:grid-cols-2 (ya responsive)
+
 ---
 
 ## Comprobantes electronicos soportados

@@ -3,8 +3,9 @@
 import dynamic from 'next/dynamic';
 import { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Send, Bot, User, Loader2, Sparkles, ArrowLeft, MessageSquare } from 'lucide-react';
+import { Send, Loader2, Sparkles, ArrowLeft, MessageSquare, User } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { obtenerContextoEmpresa } from '../actions';
 import GlassCard from '@/components/ui/GlassCard';
 import GlassButton from '@/components/ui/GlassButton';
@@ -18,13 +19,18 @@ const SUGERENCIAS = [
 
 function AnalisisPageInner() {
 	const [empresa, setEmpresa] = useState(null);
+	const [input, setInput] = useState('');
 	const messagesEnd = useRef(null);
 	const inputRef = useRef(null);
 
-	const { messages, input, setInput, handleSubmit, isLoading } = useChat({
-		api: '/api/reportes/chat',
-		body: { empresaId: empresa?.id },
+	const { messages, sendMessage, status } = useChat({
+		transport: new DefaultChatTransport({
+			api: '/api/reportes/chat',
+			body: { empresaId: empresa?.id },
+		}),
 	});
+
+	const isLoading = status === 'streaming' || status === 'submitted';
 
 	useEffect(() => {
 		obtenerContextoEmpresa().then((result) => {
@@ -36,11 +42,25 @@ function AnalisisPageInner() {
 		messagesEnd.current?.scrollIntoView({ behavior: 'smooth' });
 	}, [messages]);
 
+	const handleSubmit = (e) => {
+		e.preventDefault();
+		if (!input.trim() || isLoading) return;
+		sendMessage({ text: input });
+		setInput('');
+	};
+
 	const handleSugerencia = (texto) => {
-		setInput(texto);
-		setTimeout(() => {
-			inputRef.current?.form?.requestSubmit();
-		}, 50);
+		sendMessage({ text: texto });
+	};
+
+	const getTextContent = (msg) => {
+		if (msg.parts && msg.parts.length > 0) {
+			return msg.parts
+				.filter((part) => part.type === 'text')
+				.map((part) => part.text)
+				.join('');
+		}
+		return msg.content || '';
 	};
 
 	return (
@@ -126,7 +146,7 @@ function AnalisisPageInner() {
 										border: msg.role === 'user' ? 'none' : '1px solid var(--glass-border)',
 									}}
 								>
-									{msg.content}
+									{getTextContent(msg)}
 								</div>
 								{msg.role === 'user' && (
 									<div
@@ -165,7 +185,7 @@ function AnalisisPageInner() {
 					>
 						<input
 							ref={inputRef}
-							value={input || ''}
+							value={input}
 							onChange={(e) => setInput(e.target.value)}
 							placeholder="Escribe tu consulta..."
 							className="flex-1 px-4 py-2.5 rounded-xl backdrop-blur-sm transition-all duration-300 focus:outline-none text-sm"
@@ -177,7 +197,7 @@ function AnalisisPageInner() {
 							onFocus={(e) => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
 							onBlur={(e) => e.currentTarget.style.borderColor = 'var(--input-border)'}
 						/>
-						<GlassButton type="submit" disabled={isLoading || !(input || '').trim()} size="sm">
+						<GlassButton type="submit" disabled={isLoading || !input.trim()} size="sm">
 							<Send className="w-4 h-4" />
 						</GlassButton>
 					</form>

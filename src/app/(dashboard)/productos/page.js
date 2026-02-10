@@ -121,6 +121,28 @@ export default function ProductosPage() {
 				emptyMessage="No hay productos registrados"
 				pagination={pagination}
 				onPageChange={setPage}
+				mobileCard={(row) => (
+					<div className="space-y-2">
+						<div className="flex items-center justify-between">
+							<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{row.nombre}</span>
+							<GlassBadge status={row.activo ? 'active' : 'inactive'} size="sm" />
+						</div>
+						<div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+							<span className="font-mono px-1.5 py-0.5 rounded" style={{ background: 'var(--glass-active)', color: 'var(--text-muted)' }}>{row.codigo_principal}</span>
+							<span className="font-medium">{formatCurrency(row.precio_unitario)}</span>
+							<span>{ivaLabel(row.iva_codigo_porcentaje)}</span>
+						</div>
+						{row.categoria && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{row.categoria}</p>}
+						<div className="flex items-center gap-2 pt-1">
+							<Link href={`/productos/${row.id}`} className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)' }}>
+								<Edit2 className="w-3.5 h-3.5" />
+							</Link>
+							<button onClick={() => handleToggle(row.id, row.activo)} className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)' }}>
+								{row.activo ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
+							</button>
+						</div>
+					</div>
+				)}
 			/>
 		</div>
 	);

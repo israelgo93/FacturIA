@@ -3,7 +3,7 @@
  * Usa Vercel AI SDK con Gemini 3 Flash para streaming
  */
 import { google } from '@ai-sdk/google';
-import { streamText } from 'ai';
+import { streamText, convertToModelMessages } from 'ai';
 import { createClient } from '@/lib/supabase/server';
 import { getAnalisisSystemPrompt } from '@/lib/ia/reportes-prompts';
 
@@ -140,7 +140,7 @@ export async function POST(req) {
 	const result = streamText({
 		model: google('gemini-3-flash-preview', { thinkingLevel: 'low' }),
 		system: systemPrompt,
-		messages,
+		messages: await convertToModelMessages(messages),
 	});
 
 	return result.toUIMessageStreamResponse();

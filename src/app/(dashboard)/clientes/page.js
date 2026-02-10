@@ -124,6 +124,27 @@ export default function ClientesPage() {
 				emptyMessage="No hay clientes registrados"
 				pagination={pagination}
 				onPageChange={setPage}
+				mobileCard={(row) => (
+					<div className="space-y-2">
+						<div className="flex items-center justify-between">
+							<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{row.razon_social}</span>
+							<GlassBadge status={row.activo ? 'active' : 'inactive'} size="sm" />
+						</div>
+						<div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+							<span className="px-1.5 py-0.5 rounded" style={{ background: 'var(--glass-active)', color: 'var(--text-muted)' }}>{tipoLabel(row.tipo_identificacion)}</span>
+							<span>{row.identificacion}</span>
+						</div>
+						{row.email && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{row.email}</p>}
+						<div className="flex items-center gap-2 pt-1">
+							<Link href={`/clientes/${row.id}`} className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)' }}>
+								<Edit2 className="w-3.5 h-3.5" />
+							</Link>
+							<button onClick={() => handleToggle(row.id, row.activo)} className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)' }}>
+								{row.activo ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
+							</button>
+						</div>
+					</div>
+				)}
 			/>
 		</div>
 	);
