@@ -105,10 +105,10 @@ export default function ATSPage() {
 						</div>
 					</div>
 					<div className="flex gap-3">
-						<GlassButton onClick={handleDescargarXML} variant="ghost" size="sm">
+						<GlassButton onClick={handleDescargarXML} variant="secondary" size="sm">
 							<Download className="w-4 h-4 mr-1" /> Descargar XML
 						</GlassButton>
-						<GlassButton onClick={handleDescargarExcel} variant="ghost" size="sm">
+						<GlassButton onClick={handleDescargarExcel} variant="secondary" size="sm">
 							<FileSpreadsheet className="w-4 h-4 mr-1" /> Descargar Excel
 						</GlassButton>
 					</div>

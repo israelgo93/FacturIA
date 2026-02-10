@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Building2, MapPin, Hash, FileKey } from 'lucide-react';
+import { Building2, MapPin, Hash, FileKey, ChevronRight } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 
 const sections = [
@@ -45,14 +45,14 @@ export default function ConfiguracionPage() {
 				{sections.map((section) => (
 					<Link key={section.href} href={section.href}>
 						<GlassCard className="p-5 h-full">
-							<div className="flex items-start gap-4">
+							<div className="flex items-center gap-4">
 								<div
 									className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
 									style={{ background: 'var(--glass-hover)' }}
 								>
 									<section.icon className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
 								</div>
-								<div>
+								<div className="flex-1">
 									<h3 className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
 										{section.title}
 									</h3>
@@ -60,6 +60,7 @@ export default function ConfiguracionPage() {
 										{section.description}
 									</p>
 								</div>
+								<ChevronRight className="w-4 h-4 shrink-0 opacity-40" style={{ color: 'var(--text-muted)' }} />
 							</div>
 						</GlassCard>
 					</Link>

@@ -139,7 +139,7 @@ export default function RetencionesPage() {
 					</GlassCard>
 
 					<div className="flex gap-3">
-						<GlassButton onClick={handleExportar} variant="ghost" size="sm">
+						<GlassButton onClick={handleExportar} variant="secondary" size="sm">
 							<FileSpreadsheet className="w-4 h-4 mr-1" /> Exportar a Excel
 						</GlassButton>
 					</div>

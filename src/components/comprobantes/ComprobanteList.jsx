@@ -36,6 +36,7 @@ export default function ComprobanteList({ comprobantes, total, page, totalPages,
 					/>
 				</div>
 				<GlassSelect
+					label="Estado"
 					value={filtroEstado}
 					onChange={(e) => handleFiltroEstado(e.target.value)}
 					className="w-full sm:w-48"

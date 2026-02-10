@@ -72,7 +72,7 @@ export default function RDEPPage() {
 						{xml.substring(0, 2000)}{xml.length > 2000 ? '\n...(truncado)' : ''}
 					</pre>
 					<div className="mt-4">
-						<GlassButton onClick={handleDescargar} variant="ghost" size="sm">
+						<GlassButton onClick={handleDescargar} variant="secondary" size="sm">
 							<Download className="w-4 h-4 mr-1" /> Descargar XML
 						</GlassButton>
 					</div>
