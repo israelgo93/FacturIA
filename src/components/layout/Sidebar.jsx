@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
 	LayoutDashboard, FileText, Users, Package,
 	BarChart3, Settings, ChevronLeft, ChevronRight, LogOut,
 	ShoppingCart, UserCheck,
 } from 'lucide-react';
 import { useUIStore } from '@/stores/useUIStore';
+import { createClient } from '@/lib/supabase/client';
 import Logo from '@/components/shared/Logo';
 
 const navItems = [
@@ -23,7 +24,14 @@ const navItems = [
 
 export default function Sidebar() {
 	const pathname = usePathname();
+	const router = useRouter();
 	const { sidebarCollapsed, toggleSidebarCollapsed } = useUIStore();
+
+	const handleSignOut = async () => {
+		const supabase = createClient();
+		await supabase.auth.signOut();
+		router.push('/login');
+	};
 
 	return (
 		<aside
@@ -113,6 +121,7 @@ export default function Sidebar() {
 
 			<div className="px-2.5 py-3" style={{ borderTop: '1px solid var(--divider)' }}>
 				<button
+					onClick={handleSignOut}
 					className="flex items-center gap-3 w-full px-3 py-2 rounded-xl transition-all duration-300"
 					style={{ color: 'var(--text-muted)' }}
 					onMouseEnter={(e) => {

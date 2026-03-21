@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
 	LayoutDashboard, FileText, Users, Package,
@@ -10,6 +10,7 @@ import {
 	ShoppingCart, UserCheck,
 } from 'lucide-react';
 import { useUIStore } from '@/stores/useUIStore';
+import { createClient } from '@/lib/supabase/client';
 import Logo from '@/components/shared/Logo';
 
 const navItems = [
@@ -25,7 +26,14 @@ const navItems = [
 
 export default function MobileMenu() {
 	const pathname = usePathname();
+	const router = useRouter();
 	const { mobileMenuOpen, closeMobileMenu } = useUIStore();
+
+	const handleSignOut = async () => {
+		const supabase = createClient();
+		await supabase.auth.signOut();
+		router.push('/login');
+	};
 
 	useEffect(() => {
 		closeMobileMenu();
@@ -96,6 +104,7 @@ export default function MobileMenu() {
 
 						<div className="px-2.5 py-3" style={{ borderTop: '1px solid var(--divider)' }}>
 							<button
+								onClick={handleSignOut}
 								className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all duration-300"
 								style={{ color: 'var(--text-muted)' }}
 							>
