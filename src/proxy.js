@@ -29,7 +29,7 @@ export async function proxy(request) {
 	const { pathname } = request.nextUrl;
 
 	// Rutas que requieren autenticación
-	const protectedPaths = ['/comprobantes', '/clientes', '/productos', '/reportes', '/configuracion', '/onboarding'];
+	const protectedPaths = ['/dashboard', '/comprobantes', '/clientes', '/productos', '/compras', '/empleados', '/reportes', '/configuracion', '/onboarding'];
 	const isProtectedRoute = protectedPaths.some((path) => pathname.startsWith(path));
 
 	// Redirigir a login si no está autenticado en rutas protegidas

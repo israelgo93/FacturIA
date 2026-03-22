@@ -8,6 +8,7 @@ import {
 	ShoppingCart, UserCheck,
 } from 'lucide-react';
 import { useUIStore } from '@/stores/useUIStore';
+import { useEmpresaStore } from '@/stores/useEmpresaStore';
 import { createClient } from '@/lib/supabase/client';
 import Logo from '@/components/shared/Logo';
 
@@ -30,6 +31,9 @@ export default function Sidebar() {
 	const handleSignOut = async () => {
 		const supabase = createClient();
 		await supabase.auth.signOut();
+		// Clear all FacturIA data from localStorage
+		useEmpresaStore.getState().clearEmpresa();
+		useEmpresaStore.persist.clearStorage();
 		router.push('/login');
 	};
 
