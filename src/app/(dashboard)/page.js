@@ -126,13 +126,11 @@ export default function DashboardPage() {
 								className="flex items-center justify-between px-4 py-3.5 min-h-[56px] border-b last:border-0 hover:bg-[var(--glass-hover)] active:bg-[var(--glass-active)] transition-colors"
 								style={{ borderColor: 'var(--glass-border)' }}
 							>
-								<div className="min-w-0 flex-1 mr-4">
-									<div className="flex items-center gap-2 mb-0.5">
-										<span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{item.type} {item.num}</span>
-									</div>
-									<p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{item.client}</p>
-								</div>
-								<div className="text-right">
+							<div className="min-w-0 flex-1 mr-3">
+								<p className="text-xs font-medium truncate mb-0.5" style={{ color: 'var(--text-primary)' }}>{item.type} {item.num}</p>
+								<p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{item.client}</p>
+							</div>
+							<div className="text-right flex-shrink-0">
 									<p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{item.amount}</p>
 									<span
 										className="text-[10px] px-1.5 py-0.5 rounded-full inline-block"
