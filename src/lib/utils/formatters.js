@@ -64,6 +64,17 @@ export function formatRelativeDate(date) {
 }
 
 /**
+ * Devuelve la fecha actual en zona horaria de Ecuador (UTC-5) en formato YYYY-MM-DD.
+ * Usar siempre para fecha_emision de comprobantes; el SRI valida contra su reloj
+ * local (America/Guayaquil), y new Date().toISOString() puede devolver el dia
+ * siguiente cuando la hora local supera las 19:00 ECT.
+ * @returns {string} Fecha YYYY-MM-DD en timezone Ecuador
+ */
+export function fechaHoyEcuador() {
+	return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date());
+}
+
+/**
  * Formatea un RUC o cédula con guiones
  * @param {string} id - Número de identificación
  * @returns {string} Identificación formateada

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import GlassSelect from '@/components/ui/GlassSelect';
 import GlassInput from '@/components/ui/GlassInput';
 import GlassButton from '@/components/ui/GlassButton';
@@ -8,22 +9,24 @@ import { Plus, Trash2, CreditCard } from 'lucide-react';
 
 export default function StepPagos({ wizard }) {
 	const totales = wizard.getTotales();
+	const { pagos, setPagos } = wizard;
 
 	const actualizarPago = (index, campo, valor) => {
-		const pagosActualizados = wizard.pagos.map((p, i) =>
+		const pagosActualizados = pagos.map((p, i) =>
 			i === index ? { ...p, [campo]: valor } : p
 		);
-		wizard.setPagos(pagosActualizados);
+		setPagos(pagosActualizados);
 	};
 
 	const agregarPago = () => {
 		wizard.agregarPago({ formaPago: '01', total: 0, plazo: null, unidadTiempo: 'dias' });
 	};
 
-	// Establecer total automáticamente si solo hay un pago
-	if (wizard.pagos.length === 1 && wizard.pagos[0].total !== totales.importeTotal) {
-		wizard.setPagos([{ ...wizard.pagos[0], total: totales.importeTotal }]);
-	}
+	useEffect(() => {
+		if (pagos.length === 1 && pagos[0].total !== totales.importeTotal) {
+			setPagos([{ ...pagos[0], total: totales.importeTotal }]);
+		}
+	}, [pagos, totales.importeTotal, setPagos]);
 
 	return (
 		<div className="space-y-4">
@@ -37,7 +40,7 @@ export default function StepPagos({ wizard }) {
 				</GlassButton>
 			</div>
 
-			{wizard.pagos.map((pago, i) => (
+			{pagos.map((pago, i) => (
 				<div
 					key={i}
 					className="p-4 rounded-xl border space-y-3"
@@ -47,7 +50,7 @@ export default function StepPagos({ wizard }) {
 						<span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
 							Pago {i + 1}
 						</span>
-						{wizard.pagos.length > 1 && (
+						{pagos.length > 1 && (
 							<button
 								onClick={() => wizard.eliminarPago(i)}
 								className="p-1 rounded-lg transition-colors"

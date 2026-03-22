@@ -6,8 +6,8 @@ import GlassCard from '@/components/ui/GlassCard';
 import GlassButton from '@/components/ui/GlassButton';
 import StatusBadge from './StatusBadge';
 import ComprobanteTimeline from './ComprobanteTimeline';
-import { ArrowLeft, Send, FileText, Download, Mail, Ban, Eye, RefreshCw } from 'lucide-react';
-import { procesarComprobante, anularComprobante, reConsultarAutorizacion } from '@/app/(dashboard)/comprobantes/actions';
+import { ArrowLeft, Send, FileText, Download, Mail, Ban, Eye, RefreshCw, RotateCcw } from 'lucide-react';
+import { procesarComprobante, anularComprobante, reConsultarAutorizacion, reenviarComprobante } from '@/app/(dashboard)/comprobantes/actions';
 import { toast } from 'sonner';
 
 export default function ComprobanteDetalle({ comprobante }) {
@@ -34,6 +34,15 @@ export default function ComprobanteDetalle({ comprobante }) {
 		const result = await reConsultarAutorizacion(comp.id);
 		if (result.error) toast.error(result.error);
 		else toast.success(`Estado actualizado: ${result.data?.estado}`);
+		setProcesando(false);
+	};
+
+	const handleReenviar = async () => {
+		if (!confirm('Se generará una nueva clave de acceso y se re-enviará al SRI. ¿Continuar?')) return;
+		setProcesando(true);
+		const result = await reenviarComprobante(comp.id);
+		if (result.error) toast.error(result.error);
+		else toast.success(`Estado: ${result.data?.estado}`);
 		setProcesando(false);
 	};
 
@@ -109,11 +118,16 @@ export default function ComprobanteDetalle({ comprobante }) {
 							Procesar
 						</GlassButton>
 					)}
-					{comp.estado === 'PPR' && (
+				{comp.estado === 'PPR' && (
+					<>
 						<GlassButton size="sm" icon={RefreshCw} onClick={handleReConsultar} loading={procesando}>
 							Re-consultar SRI
 						</GlassButton>
-					)}
+						<GlassButton size="sm" variant="secondary" icon={RotateCcw} onClick={handleReenviar} loading={procesando}>
+							Re-enviar al SRI
+						</GlassButton>
+					</>
+				)}
 					{(comp.estado === 'draft' || comp.estado === 'NAT' || comp.estado === 'DEV') && (
 						<GlassButton variant="ghost" size="sm" icon={Ban} onClick={handleAnular}>
 							Anular

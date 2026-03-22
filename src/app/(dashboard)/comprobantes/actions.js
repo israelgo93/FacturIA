@@ -9,6 +9,7 @@ import { obtenerSiguienteSecuencial, generarNumeroCompleto } from '@/lib/sri/sec
 import { procesarComprobante as procesarComprobanteMotor } from '@/lib/sri/comprobante-orchestrator';
 import { consultarAutorizacion, getWSUrl } from '@/lib/sri/soap-client';
 import { getTarifaIVA } from '@/lib/utils/sri-catalogs';
+import { fechaHoyEcuador } from '@/lib/utils/formatters';
 
 /**
  * Crea un borrador de comprobante (factura)
@@ -94,7 +95,7 @@ export async function crearBorrador(formData) {
 			serie: `${establecimiento.codigo}${puntoEmision.codigo}`,
 			numero_completo: numeroCompleto,
 			estado: 'draft',
-			fecha_emision: new Date().toISOString().split('T')[0],
+			fecha_emision: fechaHoyEcuador(),
 			tipo_identificacion_comprador: tipoIdentificacionComprador,
 			identificacion_comprador: identificacionComprador,
 			razon_social_comprador: razonSocialComprador,
@@ -498,7 +499,7 @@ export async function crearNotaCredito(formData) {
 		serie: `${establecimiento.codigo}${puntoEmision.codigo}`,
 		numero_completo: numeroCompleto,
 		estado: 'draft',
-		fecha_emision: new Date().toISOString().split('T')[0],
+		fecha_emision: fechaHoyEcuador(),
 		doc_sustento_tipo: docSustentoTipo,
 		doc_sustento_numero: docSustentoNumero,
 		doc_sustento_fecha: docSustentoFecha,
@@ -620,7 +621,7 @@ export async function crearNotaDebito(formData) {
 			serie: `${establecimiento.codigo}${puntoEmision.codigo}`,
 			numero_completo: numeroCompleto,
 			estado: 'draft',
-			fecha_emision: new Date().toISOString().split('T')[0],
+			fecha_emision: fechaHoyEcuador(),
 			doc_sustento_tipo: docSustentoTipo,
 			doc_sustento_numero: docSustentoNumero,
 			doc_sustento_fecha: docSustentoFecha,
@@ -774,7 +775,7 @@ export async function crearRetencion(formData) {
 			serie: `${establecimiento.codigo}${puntoEmision.codigo}`,
 			numero_completo: numeroCompleto,
 			estado: 'draft',
-			fecha_emision: new Date().toISOString().split('T')[0],
+			fecha_emision: fechaHoyEcuador(),
 			periodo_fiscal: periodoFiscal,
 			tipo_identificacion_comprador: tipoIdentificacionSujetoRetenido,
 			identificacion_comprador: identificacionSujetoRetenido,
@@ -885,7 +886,7 @@ export async function crearGuiaRemision(formData) {
 			serie: `${establecimiento.codigo}${puntoEmision.codigo}`,
 			numero_completo: numeroCompleto,
 			estado: 'draft',
-			fecha_emision: new Date().toISOString().split('T')[0],
+			fecha_emision: fechaHoyEcuador(),
 			dir_partida: dirPartida,
 			fecha_inicio_transporte: fechaInicioTransporte,
 			fecha_fin_transporte: fechaFinTransporte,
@@ -1016,7 +1017,7 @@ export async function crearLiquidacionCompra(formData) {
 			serie: `${establecimiento.codigo}${puntoEmision.codigo}`,
 			numero_completo: numeroCompleto,
 			estado: 'draft',
-			fecha_emision: new Date().toISOString().split('T')[0],
+			fecha_emision: fechaHoyEcuador(),
 			tipo_identificacion_proveedor: tipoIdentificacionProveedor,
 			identificacion_proveedor: identificacionProveedor,
 			razon_social_proveedor: razonSocialProveedor,
@@ -1105,6 +1106,60 @@ export async function reConsultarAutorizacion(comprobanteId) {
 	}
 
 	return { data: { estado: autorizacion.estado, mensajes: autorizacion.mensajes } };
+}
+
+/**
+ * Re-envía un comprobante PPR al SRI con nueva clave de acceso.
+ * Resetea el comprobante a draft, actualiza fecha si es antigua, y re-procesa.
+ */
+export async function reenviarComprobante(comprobanteId) {
+	const supabase = await createClient();
+
+	const { data: { user } } = await supabase.auth.getUser();
+	if (!user) return { error: 'No autenticado' };
+
+	const { data: comp, error } = await supabase
+		.from('comprobantes')
+		.select('id, estado, fecha_emision, empresa_id')
+		.eq('id', comprobanteId)
+		.single();
+
+	if (error || !comp) return { error: 'Comprobante no encontrado' };
+	if (comp.estado !== 'PPR') {
+		return { error: `Solo se pueden re-enviar comprobantes en estado PPR. Estado actual: ${comp.estado}` };
+	}
+
+	const hoyEcuador = fechaHoyEcuador();
+	const actualizacion = {
+		estado: 'draft',
+		clave_acceso: null,
+		xml_sin_firma: null,
+		xml_firmado: null,
+		xml_autorizado: null,
+		numero_autorizacion: null,
+		fecha_autorizacion: null,
+	};
+
+	if (comp.fecha_emision < hoyEcuador) {
+		actualizacion.fecha_emision = hoyEcuador;
+	}
+
+	const { error: updateError } = await supabase
+		.from('comprobantes')
+		.update(actualizacion)
+		.eq('id', comprobanteId);
+
+	if (updateError) return { error: `Error reseteando comprobante: ${updateError.message}` };
+
+	try {
+		console.log('[reenviarComprobante] Re-procesando:', comprobanteId);
+		const resultado = await procesarComprobanteMotor(comprobanteId);
+		console.log('[reenviarComprobante] Resultado:', JSON.stringify(resultado, null, 2));
+		return { data: resultado };
+	} catch (err) {
+		console.error('[reenviarComprobante] Error:', err.message);
+		return { error: err.message };
+	}
 }
 
 async function insertarDetallesComprobante(supabase, comprobanteId, empresaId, detalles) {

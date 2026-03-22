@@ -58,6 +58,7 @@ function getXMLBuilder(tipoComprobante) {
 }
 
 const MAX_REINTENTOS_AUTORIZACION = 10;
+const REINTENTOS_COD70 = 3;
 const DELAY_REINTENTO_MS = 5000;
 
 /**
@@ -180,8 +181,6 @@ export async function procesarComprobante(comprobanteId) {
 		});
 
 		if (respuestaRecepcion.estado === 'DEVUELTA') {
-			// Código 70: "CLAVE DE ACCESO EN PROCESAMIENTO" — el SRI ya tiene el comprobante
-			// En este caso, no es un rechazo real, debemos consultar autorización
 			const esEnProcesamiento = respuestaRecepcion.mensajes?.some(
 				(m) => m.codigo === '70' || m.mensaje?.includes('EN PROCESAMIENTO')
 			);
@@ -190,7 +189,89 @@ export async function procesarComprobante(comprobanteId) {
 				await actualizarComprobante(supabase, comprobanteId, { estado: 'DEV' });
 				return { estado: 'DEV', codigo: 'SRI_DEVUELTA', mensajes: respuestaRecepcion.mensajes, claveAcceso, contexto };
 			}
-			// Si está en procesamiento, continuar con la consulta de autorización
+
+			// DEVUELTA+70: verificar si realmente está procesándose (intentos rápidos)
+			console.log(`[Orquestador] DEVUELTA código 70 para clave ${claveAcceso}. Verificando autorización...`);
+
+			const autRapida = await consultarAutorizacionConReintentos(supabase, {
+				claveAcceso, ambiente, empresaId: comprobante.empresa_id,
+				comprobanteId, maxReintentos: REINTENTOS_COD70,
+			});
+
+			const resultadoRapido = await resolverAutorizacion(supabase, comprobanteId, autRapida, claveAcceso, contexto);
+			if (resultadoRapido) return resultadoRapido;
+
+			// Autorización no encontró el comprobante → clave "quemada".
+			// Re-generar clave, reconstruir XML, re-firmar, re-enviar.
+			console.log(`[Orquestador] Clave ${claveAcceso} no encontrada tras ${REINTENTOS_COD70} intentos. Re-enviando con nueva clave...`);
+
+			const nuevaClave = generarClaveAcceso({
+				fechaEmision: fechaParaClave,
+				tipoComprobante: comprobante.tipo_comprobante,
+				ruc: comprobante.empresa.ruc,
+				ambiente: String(comprobante.ambiente),
+				establecimiento: comprobante.establecimiento.codigo,
+				puntoEmision: comprobante.punto_emision.codigo,
+				secuencial: comprobante.secuencial,
+			});
+
+			datosXML.claveAcceso = nuevaClave;
+			const nuevoXml = xmlBuilder(datosXML);
+			const nuevoXmlFirmado = firmarXML(nuevoXml, p12Buffer, p12Password);
+
+			await actualizarComprobante(supabase, comprobanteId, {
+				clave_acceso: nuevaClave,
+				xml_sin_firma: nuevoXml,
+				xml_firmado: nuevoXmlFirmado,
+			});
+
+			const respReenvio = await enviarComprobante(nuevoXmlFirmado, ambiente);
+			await registrarLogSRI(supabase, {
+				empresa_id: comprobante.empresa_id,
+				comprobante_id: comprobanteId,
+				tipo_operacion: 'RECEPCION',
+				url_servicio: getWSUrl(ambiente, 'recepcion'),
+				request_xml: nuevoXmlFirmado.substring(0, 1000),
+				estado_respuesta: respReenvio.estado,
+				mensajes_error: respReenvio.mensajes,
+				duracion_ms: respReenvio.tiempoMs,
+			});
+
+			if (respReenvio.estado === 'DEVUELTA') {
+				const esEnProc2 = respReenvio.mensajes?.some(
+					(m) => m.codigo === '70' || m.mensaje?.includes('EN PROCESAMIENTO')
+				);
+				if (!esEnProc2) {
+					await actualizarComprobante(supabase, comprobanteId, { estado: 'DEV' });
+					return { estado: 'DEV', codigo: 'SRI_DEVUELTA', mensajes: respReenvio.mensajes, claveAcceso: nuevaClave, contexto };
+				}
+				await actualizarComprobante(supabase, comprobanteId, { estado: 'PPR' });
+				return { estado: 'PPR', claveAcceso: nuevaClave, contexto };
+			}
+
+			if (respReenvio.estado === 'ERROR_CONEXION') {
+				return {
+					estado: 'ERROR_CONEXION',
+					codigo: respReenvio.codigo || SRI_ERROR_CODES.CONEXION,
+					mensajes: respReenvio.mensajes,
+					claveAcceso: nuevaClave,
+					contexto,
+				};
+			}
+
+			// RECIBIDA con nueva clave → autorización normal
+			await actualizarComprobante(supabase, comprobanteId, { estado: 'sent' });
+
+			const autReenvio = await consultarAutorizacionConReintentos(supabase, {
+				claveAcceso: nuevaClave, ambiente, empresaId: comprobante.empresa_id,
+				comprobanteId, maxReintentos: MAX_REINTENTOS_AUTORIZACION,
+			});
+
+			const resultadoReenvio = await resolverAutorizacion(supabase, comprobanteId, autReenvio, nuevaClave, contexto);
+			if (resultadoReenvio) return resultadoReenvio;
+
+			await actualizarComprobante(supabase, comprobanteId, { estado: 'PPR' });
+			return { estado: 'PPR', claveAcceso: nuevaClave, contexto };
 		}
 
 		if (respuestaRecepcion.estado === 'ERROR_CONEXION') {
@@ -203,48 +284,20 @@ export async function procesarComprobante(comprobanteId) {
 			};
 		}
 
-		// Actualizar estado: ENVIADO
+		// 8. RECIBIDA: flujo normal de autorización
 		await actualizarComprobante(supabase, comprobanteId, { estado: 'sent' });
 
-		// 8. Consultar autorización (con reintentos)
-		let autorizacion = null;
-		for (let i = 0; i < MAX_REINTENTOS_AUTORIZACION; i++) {
-			await delay(DELAY_REINTENTO_MS);
+		const autorizacion = await consultarAutorizacionConReintentos(supabase, {
+			claveAcceso, ambiente, empresaId: comprobante.empresa_id,
+			comprobanteId, maxReintentos: MAX_REINTENTOS_AUTORIZACION,
+		});
 
-			autorizacion = await consultarAutorizacion(claveAcceso, ambiente);
+		const resultado = await resolverAutorizacion(supabase, comprobanteId, autorizacion, claveAcceso, contexto);
+		if (resultado) return resultado;
 
-			await registrarLogSRI(supabase, {
-				empresa_id: comprobante.empresa_id,
-				comprobante_id: comprobanteId,
-				tipo_operacion: 'AUTORIZACION',
-				url_servicio: getWSUrl(ambiente, 'autorizacion'),
-				estado_respuesta: autorizacion.estado,
-				mensajes_error: autorizacion.mensajes,
-				duracion_ms: autorizacion.tiempoMs,
-			});
-
-			if (autorizacion.estado === 'AUTORIZADO' || autorizacion.estado === 'NO AUTORIZADO') {
-				break;
-			}
-		}
-
-		// 9. Actualizar estado final
-		if (autorizacion?.estado === 'AUTORIZADO') {
-			await actualizarComprobante(supabase, comprobanteId, {
-				estado: 'AUT',
-				numero_autorizacion: autorizacion.numeroAutorizacion,
-				fecha_autorizacion: autorizacion.fechaAutorizacion,
-				xml_autorizado: autorizacion.xmlAutorizado,
-			});
-			return { estado: 'AUT', claveAcceso, autorizacion, contexto };
-		} else if (autorizacion?.estado === 'NO AUTORIZADO') {
-			await actualizarComprobante(supabase, comprobanteId, { estado: 'NAT' });
-			return { estado: 'NAT', codigo: 'SRI_NO_AUTORIZADO', mensajes: autorizacion.mensajes, claveAcceso, contexto };
-		} else {
-			// EN PROCESAMIENTO — polling continuará por separado
-			await actualizarComprobante(supabase, comprobanteId, { estado: 'PPR' });
-			return { estado: 'PPR', claveAcceso, contexto };
-		}
+		// EN PROCESAMIENTO — polling continuará por separado
+		await actualizarComprobante(supabase, comprobanteId, { estado: 'PPR' });
+		return { estado: 'PPR', claveAcceso, contexto };
 	} catch (error) {
 		console.error(`Error procesando comprobante [${contexto.tipoNombre}] id=${comprobanteId}:`, error);
 		throw error;
@@ -710,6 +763,44 @@ function prepararDatosRetencion(comp, datosBase) {
 		},
 		documentosSustento: Array.from(docsMap.values()),
 	};
+}
+
+async function consultarAutorizacionConReintentos(supabase, { claveAcceso, ambiente, empresaId, comprobanteId, maxReintentos }) {
+	let autorizacion = null;
+	for (let i = 0; i < maxReintentos; i++) {
+		await delay(DELAY_REINTENTO_MS);
+		autorizacion = await consultarAutorizacion(claveAcceso, ambiente);
+		await registrarLogSRI(supabase, {
+			empresa_id: empresaId,
+			comprobante_id: comprobanteId,
+			tipo_operacion: 'AUTORIZACION',
+			url_servicio: getWSUrl(ambiente, 'autorizacion'),
+			estado_respuesta: autorizacion.estado,
+			mensajes_error: autorizacion.mensajes,
+			duracion_ms: autorizacion.tiempoMs,
+		});
+		if (autorizacion.estado === 'AUTORIZADO' || autorizacion.estado === 'NO AUTORIZADO') {
+			break;
+		}
+	}
+	return autorizacion;
+}
+
+async function resolverAutorizacion(supabase, comprobanteId, autorizacion, claveAcceso, contexto) {
+	if (autorizacion?.estado === 'AUTORIZADO') {
+		await actualizarComprobante(supabase, comprobanteId, {
+			estado: 'AUT',
+			numero_autorizacion: autorizacion.numeroAutorizacion,
+			fecha_autorizacion: autorizacion.fechaAutorizacion,
+			xml_autorizado: autorizacion.xmlAutorizado,
+		});
+		return { estado: 'AUT', claveAcceso, autorizacion, contexto };
+	}
+	if (autorizacion?.estado === 'NO AUTORIZADO') {
+		await actualizarComprobante(supabase, comprobanteId, { estado: 'NAT' });
+		return { estado: 'NAT', codigo: 'SRI_NO_AUTORIZADO', mensajes: autorizacion.mensajes, claveAcceso, contexto };
+	}
+	return null;
 }
 
 function delay(ms) {
