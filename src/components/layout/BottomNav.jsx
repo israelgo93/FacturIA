@@ -17,15 +17,15 @@ export default function BottomNav() {
 
 	return (
 		<nav
-			className="lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-2xl safe-area-inset-bottom"
+			className="lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-2xl safe-area-bottom"
 			style={{
 				background: 'var(--bottomnav-bg)',
 				borderTop: '1px solid var(--divider)',
 			}}
 		>
-			<div className="flex items-center justify-around h-14 px-2">
+			<div className="flex items-center justify-around h-16 px-2">
 				{items.map((item) => {
-				const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+					const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
 					const Icon = item.icon;
 
 					if (item.isMain) {
@@ -33,7 +33,7 @@ export default function BottomNav() {
 							<Link
 								key={item.href}
 								href={item.href}
-								className="flex items-center justify-center -mt-5 w-12 h-12 rounded-2xl"
+								className="flex items-center justify-center -mt-5 w-14 h-14 rounded-2xl active:scale-95 transition-transform"
 								style={{
 									background: 'var(--btn-primary-bg)',
 									color: 'var(--btn-primary-text)',
@@ -50,11 +50,11 @@ export default function BottomNav() {
 						<Link
 							key={item.href}
 							href={item.href}
-							className="flex flex-col items-center gap-0.5 px-3 py-1 transition-all duration-300"
+							className="flex flex-col items-center justify-center gap-0.5 min-w-[48px] min-h-[48px] px-2 py-1 transition-all duration-300 active:scale-95"
 							style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-muted)' }}
 						>
-							<Icon className="w-[18px] h-[18px]" />
-							<span className="text-[9px] font-medium tracking-wide">{item.label}</span>
+							<Icon className="w-5 h-5" />
+							<span className="text-[10px] font-medium tracking-wide">{item.label}</span>
 						</Link>
 					);
 				})}

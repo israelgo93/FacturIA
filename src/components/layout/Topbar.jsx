@@ -21,7 +21,7 @@ export default function Topbar() {
 			<div className="flex items-center gap-3">
 				<button
 					onClick={() => setMobileMenuOpen(true)}
-					className="lg:hidden p-2 rounded-xl transition-colors duration-300"
+					className="lg:hidden p-2.5 rounded-xl transition-colors duration-300 touch-target flex items-center justify-center"
 					style={{ color: 'var(--text-muted)' }}
 					onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
 					onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
@@ -53,22 +53,22 @@ export default function Topbar() {
 			<div className="flex items-center gap-1">
 				<ThemeToggle />
 				<button
-					className="relative p-2 rounded-xl transition-colors duration-300"
+					className="relative p-2.5 rounded-xl transition-colors duration-300 touch-target flex items-center justify-center"
 					style={{ color: 'var(--text-muted)' }}
 					onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
 					onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
 					aria-label="Notificaciones"
 				>
-					<Bell className="w-[18px] h-[18px]" />
+					<Bell className="w-5 h-5" />
 				</button>
 				<button
-					className="p-2 rounded-xl transition-colors duration-300"
+					className="p-2.5 rounded-xl transition-colors duration-300 touch-target flex items-center justify-center"
 					style={{ color: 'var(--text-muted)' }}
 					onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
 					onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
 					aria-label="Perfil"
 				>
-					<User className="w-[18px] h-[18px]" />
+					<User className="w-5 h-5" />
 				</button>
 			</div>
 		</header>

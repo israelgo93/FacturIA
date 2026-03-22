@@ -76,7 +76,7 @@ export default function ComprobanteList({ comprobantes, total, page, totalPages,
 						<Link
 							key={comp.id}
 							href={`/comprobantes/${comp.id}`}
-							className="block px-4 py-3 border-b transition-colors"
+							className="block px-4 py-3.5 min-h-[56px] border-b transition-colors active:bg-[var(--glass-active)]"
 							style={{ borderColor: 'var(--table-divider)' }}
 							onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--table-row-hover)')}
 							onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
@@ -111,7 +111,7 @@ export default function ComprobanteList({ comprobantes, total, page, totalPages,
 							</div>
 
 							{/* Mobile card */}
-							<div className="sm:hidden space-y-2">
+							<div className="sm:hidden space-y-2.5">
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">
 										<span className="font-mono text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
@@ -147,6 +147,7 @@ export default function ComprobanteList({ comprobantes, total, page, totalPages,
 							icon={ChevronLeft}
 							disabled={page <= 1}
 							onClick={() => onFilter?.({ busqueda, estado: filtroEstado, page: page - 1 })}
+							className="touch-target"
 						/>
 						<span>{page} / {totalPages}</span>
 						<GlassButton
@@ -155,6 +156,7 @@ export default function ComprobanteList({ comprobantes, total, page, totalPages,
 							icon={ChevronRight}
 							disabled={page >= totalPages}
 							onClick={() => onFilter?.({ busqueda, estado: filtroEstado, page: page + 1 })}
+							className="touch-target"
 						/>
 					</div>
 				</div>

@@ -28,7 +28,8 @@ const GlassSelect = forwardRef(function GlassSelect({
 				<select
 					ref={ref}
 					className={`
-						w-full px-4 py-2.5 pr-10 rounded-xl appearance-none
+						w-full px-4 py-3 pr-10 rounded-xl appearance-none
+						text-base md:text-sm
 						backdrop-blur-sm
 						transition-all duration-300
 						focus:outline-none
@@ -69,7 +70,7 @@ const GlassSelect = forwardRef(function GlassSelect({
 					)}
 				</select>
 				<ChevronDown
-					className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+					className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none"
 					style={{ color: 'var(--text-muted)' }}
 				/>
 			</div>

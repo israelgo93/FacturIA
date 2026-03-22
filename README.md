@@ -86,11 +86,11 @@ Todos los colores se definen como variables CSS en `src/styles/globals.css` y ca
 | Componente | Proposito |
 |-----------|-----------|
 | GlassCard | Contenedor con variantes y animacion |
-| GlassButton | Primario, secundario, ghost, danger, accent |
-| GlassInput | Input con label uppercase e icono |
-| GlassSelect | Select con chevron |
-| GlassModal | Modal con backdrop blur |
-| GlassTable | Tabla con paginacion y loading |
+| GlassButton | Primario, secundario, ghost, danger, accent. Touch feedback (active:scale) y min-height 44px |
+| GlassInput | Input con label uppercase e icono. text-base en movil para prevenir zoom iOS |
+| GlassSelect | Select con chevron. text-base en movil para prevenir zoom iOS |
+| GlassModal | Modal centrado en desktop, bottom-sheet con animacion spring en movil |
+| GlassTable | Tabla con paginacion, loading y botones touch-target (44px) |
 | GlassAlert | Alertas diferenciadas por opacidad |
 | GlassBadge | Estados SRI por nivel de brillo |
 | ThemeToggle | Selector de tema (claro/oscuro/sistema) |
@@ -353,6 +353,17 @@ Generacion automatica de reportes tributarios con analisis de Inteligencia Artif
 - ComprobanteList con vistas separadas desktop (grid-cols-12) y mobile (cards compactas)
 - ComprobanteDetalle con header responsive (flex-col en movil, flex-row en desktop)
 - Formularios de comprobantes con grid-cols-1 md:grid-cols-2 (ya responsive)
+
+**Mejoras touch y mobile UX**
+- GlassButton: tamanos aumentados con min-height (36/44/48px), efecto active:scale-[0.97]
+- GlassInput y GlassSelect: padding py-3 y text-base en movil para prevenir zoom en iOS
+- GlassModal: comportamiento bottom-sheet en movil (animacion spring, drag handle, safe-area-bottom); centrado en desktop
+- GlassTable: botones de paginacion con touch-target (44px minimo)
+- BottomNav: barra mas alta (h-16), iconos de 20px, targets de 48px, efecto active:scale-95, safe-area-bottom
+- Topbar: botones hamburguesa, notificaciones y perfil con touch-target (44px)
+- Dropdown "Nuevo Comprobante" en comprobantes: bottom-sheet con AnimatePresence en movil, dropdown clasico en desktop
+- Paginas CRUD (clientes, productos, compras, empleados): layout flex-col en movil, flex-row en desktop
+- Utilidades CSS nuevas en globals.css: .touch-target (44px minimo), .safe-area-bottom (env safe-area-inset), .scrollbar-hide, prevencion de zoom iOS en inputs
 
 ---
 

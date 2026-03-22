@@ -66,11 +66,11 @@ export default function ProductosPage() {
 			key: 'actions', label: '', width: '90px',
 			render: (_, row) => (
 				<div className="flex gap-1">
-					<Link href={`/productos/${row.id}`} className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)' }}>
-						<Edit2 className="w-3.5 h-3.5" />
+					<Link href={`/productos/${row.id}`} className="p-2 rounded-xl transition-colors touch-target flex items-center justify-center" style={{ color: 'var(--text-muted)' }}>
+						<Edit2 className="w-4 h-4" />
 					</Link>
-					<button onClick={() => handleToggle(row.id, row.activo)} className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)' }}>
-						{row.activo ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
+					<button onClick={() => handleToggle(row.id, row.activo)} className="p-2 rounded-xl transition-colors touch-target flex items-center justify-center" style={{ color: 'var(--text-muted)' }}>
+						{row.activo ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
 					</button>
 				</div>
 			),
@@ -78,22 +78,24 @@ export default function ProductosPage() {
 	];
 
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between">
+		<div className="space-y-5">
+			{/* Header responsive */}
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<h1 className="text-xl font-medium" style={{ color: 'var(--text-primary)' }}>Productos</h1>
 					<p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Catálogo de productos y servicios</p>
 				</div>
 				<div className="flex gap-2">
-					<Link href="/productos/importar">
-						<GlassButton variant="secondary" icon={Upload} size="sm">Importar</GlassButton>
+					<Link href="/productos/importar" className="flex-1 sm:flex-none">
+						<GlassButton variant="secondary" icon={Upload} size="sm" className="w-full sm:w-auto">Importar</GlassButton>
 					</Link>
-					<Link href="/productos/nuevo">
-						<GlassButton icon={Plus}>Nuevo</GlassButton>
+					<Link href="/productos/nuevo" className="flex-1 sm:flex-none">
+						<GlassButton icon={Plus} className="w-full sm:w-auto">Nuevo</GlassButton>
 					</Link>
 				</div>
 			</div>
 
+			{/* Filtros */}
 			<div className="flex flex-col sm:flex-row gap-3">
 				<GlassInput
 					icon={Search}
@@ -123,7 +125,7 @@ export default function ProductosPage() {
 				pagination={pagination}
 				onPageChange={setPage}
 				mobileCard={(row) => (
-					<div className="space-y-2">
+					<div className="space-y-2.5">
 						<div className="flex items-center justify-between">
 							<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{row.nombre}</span>
 							<StatusBadge estado={row.activo ? 'active' : 'inactive'} size="sm" />
@@ -134,12 +136,12 @@ export default function ProductosPage() {
 							<span>{ivaLabel(row.iva_codigo_porcentaje)}</span>
 						</div>
 						{row.categoria && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{row.categoria}</p>}
-						<div className="flex items-center gap-2 pt-1">
-							<Link href={`/productos/${row.id}`} className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)' }}>
-								<Edit2 className="w-3.5 h-3.5" />
+						<div className="flex items-center gap-1 pt-1">
+							<Link href={`/productos/${row.id}`} className="p-2.5 rounded-xl transition-colors touch-target flex items-center justify-center active:bg-[var(--glass-active)]" style={{ color: 'var(--text-muted)' }}>
+								<Edit2 className="w-5 h-5" />
 							</Link>
-							<button onClick={() => handleToggle(row.id, row.activo)} className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)' }}>
-								{row.activo ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
+							<button onClick={() => handleToggle(row.id, row.activo)} className="p-2.5 rounded-xl transition-colors touch-target flex items-center justify-center active:bg-[var(--glass-active)]" style={{ color: 'var(--text-muted)' }}>
+								{row.activo ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
 							</button>
 						</div>
 					</div>

@@ -32,7 +32,8 @@ const GlassInput = forwardRef(function GlassInput({
 					ref={ref}
 					type={type}
 					className={`
-						w-full px-4 py-2.5 rounded-xl
+						w-full px-4 py-3 rounded-xl
+						text-base md:text-sm
 						backdrop-blur-sm
 						transition-all duration-300
 						focus:outline-none

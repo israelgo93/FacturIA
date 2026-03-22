@@ -34,8 +34,8 @@ export default function DashboardPage() {
 			{/* Stats Grid - 2 columnas en móvil */}
 			<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
 				{stats.map((stat) => (
-					<GlassCard key={stat.label} className="p-4 md:p-5 relative overflow-hidden group" hover={true}>
-						<div className="flex justify-between items-start mb-2">
+					<GlassCard key={stat.label} className="p-5 md:p-5 relative overflow-hidden group" hover={true}>
+						<div className="flex justify-between items-start mb-3">
 							<span
 								className="text-[10px] uppercase tracking-widest font-medium"
 								style={{ color: 'var(--text-muted)' }}
@@ -77,7 +77,7 @@ export default function DashboardPage() {
 					<div className="p-5 border-b" style={{ borderColor: 'var(--glass-border)' }}>
 						<div className="flex items-center justify-between">
 							<h3 className="text-base font-medium" style={{ color: 'var(--text-primary)' }}>Ventas Mensuales</h3>
-							<GlassButton variant="ghost" size="sm" icon={ArrowRight} className="!p-1.5" />
+							<GlassButton variant="ghost" size="sm" icon={ArrowRight} className="!p-2" />
 						</div>
 					</div>
 					<div className="flex-1 flex flex-col items-center justify-center relative p-6">
@@ -123,7 +123,7 @@ export default function DashboardPage() {
 						].map((item, i) => (
 							<div
 								key={i}
-								className="flex items-center justify-between p-4 border-b last:border-0 hover:bg-[var(--glass-hover)] transition-colors"
+								className="flex items-center justify-between px-4 py-3.5 min-h-[56px] border-b last:border-0 hover:bg-[var(--glass-hover)] active:bg-[var(--glass-active)] transition-colors"
 								style={{ borderColor: 'var(--glass-border)' }}
 							>
 								<div className="min-w-0 flex-1 mr-4">

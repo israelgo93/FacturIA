@@ -24,7 +24,7 @@ export default function GlassTable({
 	const PaginationBar = () => (
 		pagination && (
 			<div
-				className="flex items-center justify-between px-5 py-3"
+				className="flex items-center justify-between px-4 sm:px-5 py-3"
 				style={{ borderTop: '1px solid var(--glass-border)' }}
 			>
 				<p className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -34,13 +34,13 @@ export default function GlassTable({
 					<button
 						onClick={() => onPageChange?.(pagination.page - 1)}
 						disabled={pagination.page <= 1}
-						className="p-1.5 rounded-lg disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+						className="p-2.5 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-colors touch-target flex items-center justify-center"
 						style={{ color: 'var(--text-muted)' }}
 						onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
 						onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
 						aria-label="Anterior"
 					>
-						<ChevronLeft className="w-3.5 h-3.5" />
+						<ChevronLeft className="w-4 h-4" />
 					</button>
 					<span className="text-xs px-2" style={{ color: 'var(--text-muted)' }}>
 						{pagination.page}/{pagination.totalPages}
@@ -48,13 +48,13 @@ export default function GlassTable({
 					<button
 						onClick={() => onPageChange?.(pagination.page + 1)}
 						disabled={pagination.page >= pagination.totalPages}
-						className="p-1.5 rounded-lg disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+						className="p-2.5 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-colors touch-target flex items-center justify-center"
 						style={{ color: 'var(--text-muted)' }}
 						onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
 						onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
 						aria-label="Siguiente"
 					>
-						<ChevronRight className="w-3.5 h-3.5" />
+						<ChevronRight className="w-4 h-4" />
 					</button>
 				</div>
 			</div>

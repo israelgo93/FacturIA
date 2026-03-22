@@ -268,3 +268,30 @@ body {
 	background: var(--selection-bg);
 	color: var(--text-primary);
 }
+
+/* ========================================
+   Responsive / Touch utilities
+   ======================================== */
+.touch-target {
+	min-height: 44px;
+	min-width: 44px;
+}
+
+.safe-area-bottom {
+	padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.scrollbar-hide {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+	display: none;
+}
+
+/* Prevent iOS zoom on input focus (font-size < 16px triggers zoom) */
+@media (max-width: 767px) {
+	input, select, textarea {
+		font-size: 16px !important;
+	}
+}

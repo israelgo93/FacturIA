@@ -59,38 +59,34 @@ export default function EmpleadosPage() {
 		{
 			key: 'actions', label: '', width: '50px',
 			render: (_, row) => (
-				<button onClick={() => handleEliminar(row.id)} className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)' }}>
-					<Trash2 className="w-3.5 h-3.5" />
+				<button onClick={() => handleEliminar(row.id)} className="p-2 rounded-xl transition-colors touch-target flex items-center justify-center" style={{ color: 'var(--text-muted)' }}>
+					<Trash2 className="w-4 h-4" />
 				</button>
 			),
 		},
 	];
 
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between">
+		<div className="space-y-5">
+			{/* Header responsive */}
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<h1 className="text-xl font-medium" style={{ color: 'var(--text-primary)' }}>Empleados</h1>
-					<p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Registro de empleados para el RDEP</p>
+					<p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Registro de empleados para el RDEP</p>
 				</div>
-				<Link href="/empleados/nuevo">
-					<GlassButton size="sm">
-						<Plus className="w-4 h-4 mr-1" /> Nuevo Empleado
-					</GlassButton>
+				<Link href="/empleados/nuevo" className="sm:flex-none">
+					<GlassButton icon={Plus} className="w-full sm:w-auto">Nuevo Empleado</GlassButton>
 				</Link>
 			</div>
 
 			<GlassCard className="p-4">
-				<div className="flex gap-3 mb-4">
-					<div className="flex-1 relative">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-						<GlassInput
-							placeholder="Buscar por nombre o identificación..."
-							value={busqueda}
-							onChange={(e) => { setBusqueda(e.target.value); setPage(1); }}
-							className="pl-9"
-						/>
-					</div>
+				<div className="mb-4">
+					<GlassInput
+						icon={Search}
+						placeholder="Buscar por nombre o identificación..."
+						value={busqueda}
+						onChange={(e) => { setBusqueda(e.target.value); setPage(1); }}
+					/>
 				</div>
 				<GlassTable
 					columns={columns}
@@ -100,7 +96,7 @@ export default function EmpleadosPage() {
 					pagination={pagination}
 					onPageChange={setPage}
 					mobileCard={(row) => (
-						<div className="space-y-2">
+						<div className="space-y-2.5">
 							<div className="flex items-center justify-between">
 								<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{row.apellidos} {row.nombres}</span>
 								<StatusBadge estado={row.activo ? 'active' : 'inactive'} size="sm" />
@@ -111,8 +107,8 @@ export default function EmpleadosPage() {
 							</div>
 							<div className="flex items-center justify-between">
 								<span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>${parseFloat(row.sueldo_mensual || 0).toFixed(2)}/mes</span>
-								<button onClick={() => handleEliminar(row.id)} className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--text-muted)' }}>
-									<Trash2 className="w-3.5 h-3.5" />
+								<button onClick={() => handleEliminar(row.id)} className="p-2.5 rounded-xl transition-colors touch-target flex items-center justify-center active:bg-[var(--glass-active)]" style={{ color: 'var(--text-muted)' }}>
+									<Trash2 className="w-5 h-5" />
 								</button>
 							</div>
 						</div>
