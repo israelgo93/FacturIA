@@ -53,7 +53,7 @@ export default function DashboardPage() {
 	const ultimos = kpis?.ultimos_comprobantes || [];
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 min-w-0">
 			<div>
 				<h1 className="text-xl font-medium" style={{ color: 'var(--text-primary)' }}>Dashboard</h1>
 				<p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
@@ -67,9 +67,9 @@ export default function DashboardPage() {
 				</div>
 			) : (
 				<>
-					<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+					<div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 min-w-0">
 						{stats.map((stat) => (
-							<GlassCard key={stat.label} className="p-5" hover={false}>
+							<GlassCard key={stat.label} className="min-w-0 p-4 sm:p-5 overflow-hidden" hover={false}>
 								<div className="flex items-center justify-between mb-3">
 									<span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
 										{stat.label}
@@ -86,51 +86,69 @@ export default function DashboardPage() {
 						))}
 					</div>
 
-					<div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-						<GlassCard className="p-6" hover={false}>
-							<div className="flex items-center justify-between mb-4">
-								<h3 className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Actividad Reciente</h3>
-								<Link href="/comprobantes" className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-									Ver todos <ArrowRight className="w-3 h-3" />
+					<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 min-w-0">
+						<GlassCard className="min-w-0 p-4 sm:p-6 overflow-hidden" hover={false}>
+							<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 mb-4">
+								<h3 className="text-sm font-medium min-w-0" style={{ color: 'var(--text-secondary)' }}>
+									Actividad Reciente
+								</h3>
+								<Link
+									href="/comprobantes"
+									className="text-xs inline-flex items-center gap-1 self-start sm:self-auto min-h-11 sm:min-h-0 px-1 -mx-1 rounded-lg transition-colors touch-target"
+									style={{ color: 'var(--text-muted)' }}
+								>
+									Ver todos <ArrowRight className="w-3 h-3 shrink-0" aria-hidden />
 								</Link>
 							</div>
 							{ultimos.length === 0 ? (
-								<div className="h-32 flex items-center justify-center text-xs" style={{ color: 'var(--text-disabled)' }}>
+								<div className="min-h-[8rem] flex items-center justify-center text-xs px-2 text-center" style={{ color: 'var(--text-disabled)' }}>
 									Sin comprobantes registrados
 								</div>
 							) : (
-								<div className="space-y-2">
+								<ul className="space-y-2 sm:space-y-1.5 list-none p-0 m-0">
 									{ultimos.map((comp) => (
-										<Link
-											key={comp.id}
-											href={`/comprobantes/${comp.id}`}
-											className="flex items-center justify-between py-2 px-3 rounded-lg transition-all duration-200"
-											style={{ background: 'var(--glass-bg)' }}
-										>
-											<div className="flex items-center gap-3 min-w-0">
-												<div>
-													<p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-														{TIPO_LABELS[comp.tipo_comprobante] || comp.tipo_comprobante} {comp.numero_completo}
+										<li key={comp.id}>
+											<Link
+												href={`/comprobantes/${comp.id}`}
+												className="flex flex-col gap-2.5 rounded-xl px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-2.5 transition-[transform,background-color] duration-200 active:scale-[0.99] touch-manipulation"
+												style={{ background: 'var(--glass-bg)' }}
+											>
+												<div className="min-w-0 flex-1 w-full space-y-0.5">
+													<p
+														className="text-xs font-medium leading-snug line-clamp-2 sm:line-clamp-1 sm:truncate"
+														style={{ color: 'var(--text-primary)' }}
+													>
+														<span className="text-[var(--text-muted)]">
+															{TIPO_LABELS[comp.tipo_comprobante] || comp.tipo_comprobante}
+														</span>
+														{' '}
+														<span className="break-words sm:break-normal">{comp.numero_completo || '—'}</span>
 													</p>
-													<p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
+													<p
+														className="text-[10px] leading-snug line-clamp-2 sm:truncate"
+														style={{ color: 'var(--text-muted)' }}
+													>
 														{comp.razon_social_comprador || '—'}
 													</p>
 												</div>
-											</div>
-											<div className="flex items-center gap-3 shrink-0">
-												<span className="text-xs font-medium tabular-nums" style={{ color: 'var(--text-primary)' }}>
-													${parseFloat(comp.importe_total).toFixed(2)}
-												</span>
-												<StatusBadge estado={comp.estado} />
-											</div>
-										</Link>
+												<div
+													className="flex flex-row items-center justify-between gap-3 shrink-0 w-full sm:w-auto sm:justify-end border-t sm:border-t-0 pt-2.5 sm:pt-0"
+													style={{ borderColor: 'var(--glass-border)' }}
+												>
+													<span className="text-xs font-medium tabular-nums text-left sm:text-right" style={{ color: 'var(--text-primary)' }}>
+														${parseFloat(comp.importe_total ?? 0).toFixed(2)}
+													</span>
+													<StatusBadge estado={comp.estado} size="sm" className="shrink-0" />
+												</div>
+											</Link>
+										</li>
 									))}
-								</div>
+								</ul>
 							)}
 						</GlassCard>
 
-						<div className="space-y-5">
-							<GlassCard className="p-6" hover={false}>
+						<div className="min-w-0 space-y-5">
+							<GlassCard className="min-w-0 p-4 sm:p-6 overflow-hidden" hover={false}>
 								<h3 className="text-sm font-medium mb-4" style={{ color: 'var(--text-secondary)' }}>Resumen del Mes</h3>
 								<div className="space-y-3">
 									<div className="flex justify-between items-center">
@@ -156,8 +174,8 @@ export default function DashboardPage() {
 								</div>
 							</GlassCard>
 
-							<Link href="/reportes/analisis">
-								<GlassCard className="p-5 group cursor-pointer" hover={true}>
+							<Link href="/reportes/analisis" className="min-w-0 block">
+								<GlassCard className="min-w-0 p-4 sm:p-5 group cursor-pointer overflow-hidden" hover={true}>
 									<div className="flex items-center gap-4">
 										<div
 											className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
