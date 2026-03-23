@@ -1,10 +1,33 @@
 {
+	"id": "facturia-app",
 	"name": "facturIA",
 	"short_name": "facturIA",
 	"description": "Facturación Electrónica con Inteligencia Artificial",
-	"start_url": "/",
+	"start_url": "/dashboard",
+	"scope": "/",
 	"display": "standalone",
+	"orientation": "any",
 	"background_color": "#09090b",
-	"theme_color": "#ffffff",
-	"icons": []
+	"theme_color": "#09090b",
+	"categories": ["business", "finance"],
+	"icons": [
+		{
+			"src": "/icons/icon-192x192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/icon-512x512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/maskable-512x512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable"
+		}
+	]
 }

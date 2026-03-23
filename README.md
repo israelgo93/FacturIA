@@ -52,6 +52,7 @@ El nombre fusiona "factura" + "IA", comunicando que la inteligencia artificial e
 | IA | Google Gemini API (ai SDK + @ai-sdk/google) | 3.0 Flash |
 | Chat IA | Vercel AI SDK (@ai-sdk/react) | 3.x |
 | Graficos | Recharts | 3.7 |
+| PWA / Service Worker | Serwist (@serwist/turbopack) | 10+ |
 | Despliegue | Google Cloud Run | - |
 | CI/CD | GitHub Actions | - |
 
@@ -94,6 +95,33 @@ Todos los colores se definen como variables CSS en `src/styles/globals.css` y ca
 | GlassAlert | Alertas diferenciadas por opacidad |
 | GlassBadge | Estados SRI por nivel de brillo |
 | ThemeToggle | Selector de tema (claro/oscuro/sistema) |
+
+---
+
+## PWA (Progressive Web App)
+
+facturIA es una PWA instalable en dispositivos moviles y escritorio. La configuracion incluye:
+
+### Manifest
+- `public/manifest.json` con `display: "standalone"`, `start_url: "/dashboard"`, `scope: "/"`
+- Iconos PWA en `public/icons/` (192x192, 512x512, maskable, apple-touch-icon)
+
+### Service Worker (Serwist + Turbopack)
+- Integrado con `@serwist/turbopack` para compatibilidad nativa con Next.js 16 y Turbopack
+- Route handler en `src/app/serwist/[path]/route.js` genera y sirve `sw.js`
+- Estrategias de cache: NetworkFirst (paginas), StaleWhileRevalidate (JS/CSS), CacheFirst (imagenes/fuentes)
+- Precache automatico de todas las paginas estaticas (67 entries)
+- `SerwistProvider` en el layout raiz para registro automatico del SW
+
+### Soporte Offline
+- Pagina fallback en `/~offline` cuando no hay conexion
+- El service worker intercepta navegacion y sirve contenido cacheado
+- `navigationPreload`, `skipWaiting` y `clientsClaim` habilitados
+
+### Meta tags PWA
+- `manifest`, `themeColor`, `appleWebApp` (capable, statusBarStyle) configurados en metadata de Next.js
+- `viewport` con `viewportFit: cover` para safe areas en iOS
+- Apple touch icon en raiz y en `/icons/`
 
 ---
 
@@ -343,6 +371,24 @@ Generacion automatica de reportes tributarios con analisis de Inteligencia Artif
 - Fix: estado Autorizado (AUT) ahora muestra CheckCircle verde en lugar de Clock
 - Logica completadoFinal para manejar el caso especial del ultimo paso del timeline
 - StatusBadge con color accent para estado AUT
+
+### Fase 5.1 - PWA Completa (Completada)
+
+Configuracion completa de Progressive Web App con service worker, cache offline e instalacion nativa.
+
+- Service worker con Serwist (@serwist/turbopack) compatible con Next.js 16 y Turbopack
+- Route handler `src/app/serwist/[path]/route.js` para generacion dinamica del SW
+- Precache automatico de 67 paginas estaticas con versionado por git commit
+- Estrategias de cache: NetworkFirst (HTML), StaleWhileRevalidate (JS/CSS), CacheFirst (imagenes)
+- SerwistProvider en layout raiz para registro automatico del service worker
+- Manifest PWA completo: id, scope, start_url, display standalone, orientation, categories
+- Iconos PWA generados: 192x192, 512x512, maskable-512x512, apple-touch-icon (180x180)
+- Meta tags PWA en Next.js metadata: manifest link, appleWebApp, icons, mobile-web-app-capable
+- Viewport con themeColor y viewportFit cover para safe areas iOS
+- Pagina offline fallback `/~offline` con diseno Glass UI (icono WifiOff + boton reintentar)
+- navigationPreload, skipWaiting y clientsClaim habilitados para actualizacion inmediata del SW
+- Matcher del proxy actualizado para excluir rutas de serwist
+- .gitignore actualizado para excluir archivos SW generados
 
 **Responsive mobile-first**
 - GlassTable con nueva prop mobileCard: vista de cards en movil, tabla en desktop
@@ -667,8 +713,14 @@ facturia/
 |   +-- commands/             Workflows invocables (3)
 +-- .github/workflows/        CI/CD (3 pipelines)
 +-- public/                   Assets estaticos
+|   +-- manifest.json         PWA manifest
+|   +-- icons/                Iconos PWA (192, 512, maskable, apple-touch)
 +-- src/
 |   +-- app/                  Rutas (App Router)
+|   |   +-- sw.js             Service worker source (Serwist)
+|   |   +-- serwist-provider.js  Client-side SerwistProvider
+|   |   +-- serwist/[path]/   Route handler generacion SW
+|   |   +-- ~offline/         Pagina fallback sin conexion
 |   |   +-- (auth)/           Login, registro, recuperar
 |   |   +-- (dashboard)/      Rutas protegidas
 |   |   |   +-- clientes/     CRUD clientes (lista, nuevo, editar, importar)
@@ -750,6 +802,7 @@ facturia/
 | **Fase 3** | Motor de facturacion electronica (firma, SRI, RIDE, email) | Completada |
 | **Fase 4** | Comprobantes adicionales (NC, ND, Ret, GR, LC) + XML builders + RIDE | Completada |
 | **Fase 5** | Reportes IA + ATS/RDEP + compras + empleados + chat tributario | Completada |
+| **Fase 5.1** | PWA completa: service worker, cache offline, iconos, manifest, meta tags | Completada |
 | Fase 6 | Dashboard analitico + suscripciones | Pendiente |
 | Fase 7 | Produccion, testing y calidad | Pendiente |
 

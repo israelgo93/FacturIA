@@ -35,6 +35,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Serwist (service worker generado)
+public/sw*
+public/swe-worker*
+
 # IDEs
 .idea
 .vscode
