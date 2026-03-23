@@ -3,7 +3,7 @@
   <img src="https://img.shields.io/badge/React-19-000?style=for-the-badge&logo=react" alt="React" />
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-000?style=for-the-badge&logo=supabase" alt="Supabase" />
   <img src="https://img.shields.io/badge/Tailwind-4-000?style=for-the-badge&logo=tailwindcss" alt="Tailwind" />
-  <img src="https://img.shields.io/badge/Cloud_Run-Deploy-000?style=for-the-badge&logo=googlecloud" alt="Cloud Run" />
+  <img src="https://img.shields.io/badge/App_Runner-Deploy-000?style=for-the-badge&logo=amazonaws" alt="App Runner" />
 </p>
 
 <h1 align="center">facturIA</h1>
@@ -53,7 +53,7 @@ El nombre fusiona "factura" + "IA", comunicando que la inteligencia artificial e
 | Chat IA | Vercel AI SDK (@ai-sdk/react) | 3.x |
 | Graficos | Recharts | 3.7 |
 | PWA / Service Worker | Serwist (@serwist/turbopack) | 10+ |
-| Despliegue | Google Cloud Run | - |
+| Despliegue | AWS App Runner (ECR) | - |
 | CI/CD | GitHub Actions | - |
 
 ---
@@ -128,7 +128,7 @@ facturIA es una PWA instalable en dispositivos moviles y escritorio. La configur
 ## Arquitectura
 
 ```
-facturia.app (Google Cloud Run)
+facturia.app (AWS App Runner — us-east-1)
     |
     +-- Next.js 16 (App Router, SSR, Server Actions)
     |       |
@@ -168,7 +168,7 @@ facturia.app (Google Cloud Run)
     |       +-- Auth (email/password, refresh tokens)
     |       +-- Storage (certificados .p12, cifrado AES-256)
     |
-    +-- Google Gemini API (IA tributaria, chat streaming)
+    +-- Google Gemini API — gemini-3-flash-preview (principal) + gemini-2.5-flash (fallback)
     |
     +-- SRI Ecuador (Web Services SOAP)
 ```
@@ -236,8 +236,8 @@ Infraestructura base del proyecto con autenticacion, base de datos y despliegue 
 - Layout responsive mobile-first (Sidebar colapsable, Topbar, BottomNav mobile)
 - Autenticacion completa con Supabase Auth (login, registro, recuperar contrasena, middleware)
 - Schema de base de datos multi-tenant con Row Level Security (15 tablas iniciales)
-- CI/CD con GitHub Actions: pipeline CI en pull requests, deploy staging en `develop`, deploy produccion en `main`
-- Dockerfile multi-stage optimizado para Cloud Run (standalone output de Next.js)
+- CI/CD con GitHub Actions: pipeline CI en pull requests, deploy produccion en `main` via ECR + App Runner
+- Dockerfile multi-stage optimizado para App Runner (standalone output de Next.js)
 - Landing page publica con deteccion automatica de sesion
 
 ### Fase 2 - Onboarding, Catalogos y Temas (Completada)
@@ -254,7 +254,7 @@ Configuracion inicial de la empresa y gestion de catalogos maestros.
 - CRUD de productos con configuracion IVA/ICE por producto e importacion CSV masiva
 - Validacion de identificaciones ecuatorianas (RUC Modulo 11, Cedula Modulo 10)
 - 4 subagentes Cursor especializados (repo-scout, sri-validator, test-writer, db-migrator)
-- 5 skills de conocimiento procedimental (supabase-rls, xml-sri, glass-ui, nextjs-patterns, ci-cd-cloudrun)
+- 5 skills de conocimiento procedimental (supabase-rls, xml-sri, glass-ui, nextjs-patterns, ci-cd-apprunner)
 - Redireccion inteligente post-login (onboarding pendiente o dashboard)
 
 ### Fase 3 - Motor de Facturacion Electronica (Completada)
@@ -557,85 +557,33 @@ npm run test      # Tests unitarios (vitest)
 
 ---
 
-## Guia de despliegue a Google Cloud Run
+## Guia de despliegue a AWS App Runner
 
-Esta guia describe paso a paso como configurar el despliegue automatico a Google Cloud Run usando GitHub Actions. Todo se hace desde las interfaces web (Google Cloud Console y GitHub), sin necesidad de usar la linea de comandos.
+Esta guia describe paso a paso como configurar el despliegue automatico a AWS App Runner usando GitHub Actions. Todo se hace desde las interfaces web (AWS Console y GitHub), sin necesidad de usar la linea de comandos.
 
-### Paso 1: Crear proyecto en Google Cloud
+### Paso 1: Crear repositorio ECR
 
-1. Ir a [Google Cloud Console](https://console.cloud.google.com)
-2. Click en el selector de proyectos (arriba a la izquierda) y luego **Nuevo Proyecto**
-3. Nombre: `facturia-prod` (debe coincidir con `PROJECT_ID` en los workflows)
-4. Click **Crear**
-5. Seleccionar el proyecto recien creado
-
-### Paso 2: Habilitar las APIs necesarias
-
-1. En el menu lateral: **APIs y servicios** > **Biblioteca**
-2. Buscar y habilitar cada una de estas APIs:
-   - **Cloud Run Admin API**
-   - **Artifact Registry API**
-   - **Cloud Build API**
-   - **IAM Service Account Credentials API**
-   - **Secret Manager API**
-
-### Paso 3: Crear repositorio en Artifact Registry
-
-1. Menu lateral: **Artifact Registry** > **Repositorios**
-2. Click **Crear repositorio**
+1. Ir a [Amazon ECR Console](https://us-east-1.console.aws.amazon.com/ecr/home?region=us-east-1)
+2. Click **Create repository**
 3. Configurar:
+   - Visibility: **Private**
    - Nombre: `facturia`
-   - Formato: **Docker**
-   - Modo: **Estandar**
-   - Region: `us-east1` (debe coincidir con `REGION` en los workflows)
-   - Cifrado: **Clave administrada por Google**
-4. Click **Crear**
+   - Region: `us-east-1`
+4. Click **Create repository**
 
-### Paso 4: Crear cuenta de servicio para GitHub Actions
+### Paso 2: Crear usuario IAM para GitHub Actions
 
-1. Menu lateral: **IAM y administracion** > **Cuentas de servicio**
-2. Click **Crear cuenta de servicio**
-3. Configurar:
-   - Nombre: `github-actions-deploy`
-   - ID: `github-actions-deploy`
-   - Descripcion: "Cuenta para despliegues desde GitHub Actions"
-4. Click **Crear y continuar**
-5. Asignar los siguientes roles (agregar uno por uno con "Agregar otro rol"):
-   - `Artifact Registry Writer` (roles/artifactregistry.writer)
-   - `Cloud Run Admin` (roles/run.admin)
-   - `Service Account User` (roles/iam.serviceAccountUser)
-   - `Secret Manager Secret Accessor` (roles/secretmanager.secretAccessor)
-6. Click **Listo**
+1. Ir a [IAM Console](https://console.aws.amazon.com/iam/) > **Users** > **Create user**
+2. Nombre: `github-actions-deploy`
+3. En **Permissions**, click **Attach policies directly** y agregar:
+   - `AmazonEC2ContainerRegistryFullAccess`
+   - `AWSAppRunnerFullAccess`
+4. Click **Create user**
+5. Ir al usuario creado > **Security credentials** > **Create access key**
+6. Seleccionar **Third-party service**, confirmar y **Create access key**
+7. Guardar `Access key ID` y `Secret access key` de forma segura
 
-### Paso 5: Generar clave JSON de la cuenta de servicio
-
-1. En la lista de cuentas de servicio, click en `github-actions-deploy`
-2. Ir a la pestana **Claves**
-3. Click **Agregar clave** > **Crear clave nueva**
-4. Seleccionar **JSON** y click **Crear**
-5. Se descarga un archivo `.json` -- **guardarlo de forma segura**, se usara en GitHub
-
-### Paso 6: Crear secretos en Google Secret Manager
-
-1. Menu lateral: **Seguridad** > **Secret Manager**
-2. Click **Crear secreto** para cada uno de los siguientes (nombre exacto):
-
-| Nombre del secreto | Valor |
-|---|---|
-| `SUPABASE_SERVICE_ROLE_KEY` | Tu service role key de Supabase |
-| `ENCRYPTION_KEY` | Clave AES-256 de 32 caracteres |
-| `GEMINI_API_KEY` | API key de Google Gemini |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | Misma API key de Gemini |
-| `RESEND_API_KEY` | API key de Resend |
-| `SRI_AMBIENTE` | `1` (pruebas) o `2` (produccion) |
-| `SRI_WS_RECEPCION_PRUEBAS` | URL WSDL recepcion pruebas |
-| `SRI_WS_AUTORIZACION_PRUEBAS` | URL WSDL autorizacion pruebas |
-| `SRI_WS_RECEPCION_PROD` | URL WSDL recepcion produccion |
-| `SRI_WS_AUTORIZACION_PROD` | URL WSDL autorizacion produccion |
-
-3. Para cada secreto: poner el nombre, pegar el valor y click **Crear version del secreto**
-
-### Paso 7: Configurar secretos en GitHub
+### Paso 3: Configurar secretos en GitHub
 
 1. Ir al repositorio en GitHub: `github.com/israelgo93/FacturIA`
 2. Click **Settings** > **Secrets and variables** > **Actions**
@@ -643,42 +591,78 @@ Esta guia describe paso a paso como configurar el despliegue automatico a Google
 
 | Nombre del secreto en GitHub | Valor |
 |---|---|
-| `GCP_SA_KEY` | Contenido COMPLETO del archivo JSON descargado en el Paso 5 |
+| `AWS_ACCESS_KEY_ID` | Access key ID del usuario IAM (Paso 2) |
+| `AWS_SECRET_ACCESS_KEY` | Secret access key del usuario IAM (Paso 2) |
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://tu-proyecto.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Tu anon key de Supabase |
-| `NEXT_PUBLIC_APP_URL` | URL de produccion (ej: `https://facturia-app-xxxxx-ue.a.run.app`) |
-| `NEXT_PUBLIC_APP_URL_STAGING` | URL de staging (se obtiene despues del primer deploy) |
+| `NEXT_PUBLIC_APP_URL` | URL de produccion (ej: `https://xxxxx.us-east-1.awsapprunner.com`) |
+| `RESEND_API_KEY` | API key de Resend |
+| `GEMINI_API_KEY` | API key de Google Gemini |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Misma API key de Gemini |
 
-**Nota**: Las variables `NEXT_PUBLIC_*` se necesitan en build-time porque Next.js las embebe en el bundle del cliente. Los demas secretos (Supabase service role, Gemini, Resend, etc.) se inyectan en runtime via Secret Manager de GCP.
+**Nota**: Las variables `NEXT_PUBLIC_*` se necesitan en build-time porque Next.js las embebe en el bundle del cliente. Se pasan como `--build-arg` en el Dockerfile.
 
-### Paso 8: Primer despliegue
+### Paso 4: Crear servicio App Runner
 
-El despliegue se activa automaticamente cuando se hace push a la rama correspondiente:
+1. Ir a [App Runner Console](https://us-east-1.console.aws.amazon.com/apprunner/home?region=us-east-1)
+2. Click **Create service**
+3. Configurar fuente:
+   - Source: **Container registry** > **Amazon ECR**
+   - Repository: seleccionar `facturia`
+   - Deployment trigger: **Automatic** (deploy al detectar nueva imagen)
+4. Configurar servicio:
+   - CPU: **1 vCPU**
+   - Memory: **2 GB**
+   - Port: **8080**
+5. Click **Create & deploy**
 
-- **Push a `main`**: Despliega a produccion (`facturia-app`)
-- **Push a `develop`**: Despliega a staging (`facturia-staging`)
+### Paso 5: Configurar variables de entorno runtime
+
+En App Runner Console, ir al servicio creado > **Configuration** > **Environment variables**:
+
+| Variable | Valor |
+|---|---|
+| `SUPABASE_SERVICE_ROLE_KEY` | Tu service role key de Supabase |
+| `ENCRYPTION_KEY` | Clave AES-256 de 32 caracteres |
+| `SRI_AMBIENTE` | `1` (pruebas) o `2` (produccion) |
+| `SRI_WS_RECEPCION_PRUEBAS` | URL WSDL recepcion pruebas |
+| `SRI_WS_AUTORIZACION_PRUEBAS` | URL WSDL autorizacion pruebas |
+| `SRI_WS_RECEPCION_PROD` | URL WSDL recepcion produccion |
+| `SRI_WS_AUTORIZACION_PROD` | URL WSDL autorizacion produccion |
+| `GEMINI_API_KEY` | API key de Google Gemini |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Misma API key de Gemini |
+| `RESEND_API_KEY` | API key de Resend |
+
+Los secretos sensibles se configuran directamente en la consola de App Runner como variables de entorno runtime (no se exponen en el repositorio ni en los workflows de CI/CD).
+
+### Paso 6: Deploy automatico
+
+El despliegue se activa automaticamente cuando se hace push a `main`:
+
+1. GitHub Actions ejecuta `deploy-aws.yml`
+2. Build de la imagen Docker con `NEXT_PUBLIC_*` como build-args
+3. Push de la imagen a Amazon ECR (us-east-1)
+4. App Runner detecta la nueva imagen y despliega automaticamente
 
 Para verificar:
 1. En GitHub: ir a **Actions** y ver el workflow ejecutandose
-2. Una vez completado, en Google Cloud Console: **Cloud Run** > click en el servicio
-3. Copiar la URL del servicio (formato: `https://facturia-app-xxxxx-ue.a.run.app`)
-4. **Importante**: Volver a GitHub y actualizar el secreto `NEXT_PUBLIC_APP_URL` con esta URL real
+2. Una vez completado, en AWS App Runner Console: verificar que el servicio muestra **Running**
+3. Acceder a la URL del servicio (formato: `https://xxxxx.us-east-1.awsapprunner.com`)
 
-### Paso 9: Configurar dominio personalizado (opcional)
+### Paso 7: Configurar dominio personalizado (opcional)
 
-1. En Cloud Run, click en el servicio desplegado
-2. Ir a la pestana **Dominios**
-3. Click **Agregar asignacion**
-4. Seguir las instrucciones para verificar el dominio y configurar los registros DNS
+1. En App Runner Console, click en el servicio desplegado
+2. Ir a la pestana **Custom domains**
+3. Click **Link domain**
+4. Ingresar el dominio y seguir las instrucciones para configurar los registros DNS (CNAME)
 
 ### Verificacion post-despliegue
 
 Despues del primer despliegue exitoso, verificar:
 
-- [ ] La aplicacion carga correctamente en la URL de Cloud Run
+- [ ] La aplicacion carga correctamente en la URL de App Runner
 - [ ] Login y registro funcionan (Supabase Auth)
-- [ ] Las variables de entorno se inyectan correctamente (verificar en Cloud Run > Revisiones > Variables)
-- [ ] Los secretos de Secret Manager se montan correctamente
+- [ ] Las variables de entorno runtime se inyectan correctamente (verificar en App Runner > Configuration)
 - [ ] El certificado .p12 se puede subir y usar para firmar
 
 ### Resumen de la infraestructura
@@ -686,28 +670,23 @@ Despues del primer despliegue exitoso, verificar:
 ```
 GitHub (repositorio)
     |
-    +-- Push a main --> GitHub Actions (deploy-production.yml)
+    +-- Push a main --> GitHub Actions (deploy-aws.yml)
     |                       |
     |                       +-- Build Docker image con NEXT_PUBLIC_* como build-args
-    |                       +-- Push imagen a Artifact Registry (us-east1)
-    |                       +-- Deploy a Cloud Run con secretos de Secret Manager
-    |
-    +-- Push a develop --> GitHub Actions (deploy-staging.yml)
-    |                       |
-    |                       +-- Mismo flujo, servicio facturia-staging
+    |                       +-- Push imagen a Amazon ECR (us-east-1)
+    |                       +-- App Runner auto-deploy al detectar nueva imagen
     |
     +-- Pull Request --> GitHub Actions (ci.yml)
-                            |
-                            +-- npm ci + lint + build (validacion)
+                            +-- npm ci + lint + build + test
 ```
 
 ### Notas importantes
 
 - El Dockerfile usa `output: 'standalone'` de Next.js para crear una imagen optimizada (~150MB)
 - Las variables `NEXT_PUBLIC_*` deben pasarse como `--build-arg` durante el build de Docker
-- Los secretos sensibles se gestionan via Google Secret Manager (no como env vars en Cloud Run)
-- El servicio de produccion tiene `min-instances: 0` para optimizar costos (cold start ~3s)
-- Staging tiene `max-instances: 3` y produccion `max-instances: 10`
+- Los secretos sensibles se gestionan como variables de entorno en App Runner Console (no en el repositorio)
+- No se usa archivo `apprunner.yaml` — la configuracion se gestiona directamente desde la consola de AWS
+- App Runner escala automaticamente segun la demanda (sin necesidad de configurar min/max instances manualmente)
 
 ---
 
@@ -720,7 +699,7 @@ facturia/
 |   +-- agents/               SubAgentes especializados (4)
 |   +-- skills/               Conocimiento reutilizable (5)
 |   +-- commands/             Workflows invocables (3)
-+-- .github/workflows/        CI/CD (3 pipelines)
++-- .github/workflows/        CI/CD (2 pipelines)
 +-- public/                   Assets estaticos
 |   +-- manifest.json         PWA manifest
 |   +-- icons/                Iconos PWA (192, 512, maskable, apple-touch)
@@ -763,7 +742,7 @@ facturia/
 |   |   +-- ia/               Prompts IA, analisis tributario
 |   +-- stores/               Zustand (auth, empresa, UI)
 |   +-- styles/               Tokens CSS con soporte de temas
-+-- Dockerfile                Multi-stage build para Cloud Run
++-- Dockerfile                Multi-stage build para App Runner (node:20-alpine, puerto 8080)
 +-- Plan_FactuIA/             Documentacion de planificacion
 ```
 
@@ -788,7 +767,7 @@ facturia/
 | xml-sri | Generacion XML comprobantes electronicos |
 | glass-ui | Sistema de diseno con soporte de temas |
 | nextjs-patterns | Patrones Next.js 16+ con App Router |
-| ci-cd-cloudrun | CI/CD GitHub Actions hacia Cloud Run |
+| ci-cd-apprunner | CI/CD GitHub Actions hacia App Runner |
 
 ---
 
@@ -797,8 +776,7 @@ facturia/
 | Pipeline | Trigger | Destino |
 |----------|---------|---------|
 | ci.yml | Pull Request | Lint + Build (validacion) |
-| deploy-staging.yml | Push a develop | Cloud Run staging |
-| deploy-production.yml | Push a main | Cloud Run produccion |
+| deploy-aws.yml | Push a main | ECR + App Runner produccion |
 
 ---
 
