@@ -537,6 +537,15 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_APP_NAME=facturIA
 ```
 
+### Base de datos (Supabase)
+
+El esquema (tablas, RLS, vistas, funciones, bucket `certificados`) esta versionado en `supabase/migrations/`. Para un proyecto Supabase **nuevo**:
+
+1. En el [SQL Editor](https://supabase.com/dashboard) de tu proyecto, ejecuta el archivo `supabase/migrations/20260323120000_facturia_schema.sql`, **o**
+2. Con [Supabase CLI](https://supabase.com/docs/guides/cli): enlaza el proyecto (`supabase link --project-ref <ref>`) y aplica migraciones (`supabase db push`), usando la contrasena de base de datos del panel cuando la CLI la pida.
+
+Luego configura las variables `NEXT_PUBLIC_SUPABASE_*` y `SUPABASE_SERVICE_ROLE_KEY` segun la seccion anterior.
+
 ### Ejecutar
 
 ```bash

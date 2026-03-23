@@ -1,0 +1,1 @@
+-- Semillas opcionales (planes, datos de prueba). El esquema base esta en migrations.
