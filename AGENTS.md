@@ -35,6 +35,10 @@ ENVEOF
 
 Las variables requeridas están listadas en el README (sección "Variables de entorno").
 
+### Credenciales de prueba
+
+Los secretos `TEST_LOGIN_USERNAME` y `TEST_LOGIN_PASSWORD` contienen credenciales de una cuenta real en el proyecto Supabase. Con ellas se puede hacer login y navegar toda la app autenticada (dashboard, comprobantes, clientes, productos, etc.).
+
 ### Notas importantes
 
 - El registro/login requiere un proyecto Supabase funcional con las migraciones aplicadas (`supabase/migrations/`). Sin esto, auth retorna errores genéricos.
@@ -42,3 +46,4 @@ Las variables requeridas están listadas en el README (sección "Variables de en
 - No hay `docker-compose` en el repo. El `Dockerfile` es solo para producción (AWS App Runner).
 - El proyecto usa JavaScript (ES2024), no TypeScript. No hay `tsconfig.json`.
 - El CI pipeline (`.github/workflows/ci.yml`) ejecuta: `npm ci` → `npm run lint` → `npm run build` → `npm test`. Nota: `npm run lint` invoca `next lint` que no existe en Next.js 16; el CI puede fallar por esto hasta que se actualice el script.
+- Tras hacer login, la app redirige al `/dashboard` que muestra KPIs, gráficos Recharts y métricas del negocio. Desde ahí se navega a Comprobantes, Clientes, Productos, Reportes, etc.
