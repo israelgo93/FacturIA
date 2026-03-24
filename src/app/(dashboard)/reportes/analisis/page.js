@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { Send, Loader2, Sparkles, ArrowLeft, MessageSquare, User } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
@@ -19,22 +19,23 @@ const SUGERENCIAS = [
 
 function AnalisisPageInner() {
 	const [empresa, setEmpresa] = useState(null);
+	const [empresaLoading, setEmpresaLoading] = useState(true);
 	const [input, setInput] = useState('');
 	const messagesEnd = useRef(null);
 	const inputRef = useRef(null);
 
-	const { messages, sendMessage, status } = useChat({
-		transport: new DefaultChatTransport({
-			api: '/api/reportes/chat',
-			body: { empresaId: empresa?.id },
-		}),
-	});
+	const transport = useMemo(() => new DefaultChatTransport({
+		api: '/api/reportes/chat',
+	}), []);
 
+	const { messages, sendMessage, status } = useChat({ transport });
 	const isLoading = status === 'streaming' || status === 'submitted';
+	const chatReady = !empresaLoading && !!empresa?.id;
 
 	useEffect(() => {
 		obtenerContextoEmpresa().then((result) => {
 			if (result.data) setEmpresa(result.data);
+			setEmpresaLoading(false);
 		});
 	}, []);
 
@@ -42,16 +43,17 @@ function AnalisisPageInner() {
 		messagesEnd.current?.scrollIntoView({ behavior: 'smooth' });
 	}, [messages]);
 
-	const handleSubmit = (e) => {
+	const handleSubmit = useCallback((e) => {
 		e.preventDefault();
-		if (!input.trim() || isLoading) return;
-		sendMessage({ text: input });
+		if (!input.trim() || isLoading || !empresa?.id) return;
+		sendMessage({ text: input }, { body: { empresaId: empresa.id } });
 		setInput('');
-	};
+	}, [input, isLoading, empresa, sendMessage]);
 
-	const handleSugerencia = (texto) => {
-		sendMessage({ text: texto });
-	};
+	const handleSugerencia = useCallback((texto) => {
+		if (!empresa?.id || isLoading) return;
+		sendMessage({ text: texto }, { body: { empresaId: empresa.id } });
+	}, [empresa, isLoading, sendMessage]);
 
 	const getTextContent = (msg) => {
 		if (msg.parts && msg.parts.length > 0) {
@@ -101,16 +103,19 @@ function AnalisisPageInner() {
 									</p>
 								</div>
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md px-4">
-									{SUGERENCIAS.map((s) => (
-										<button
-											key={s}
-											onClick={() => handleSugerencia(s)}
-											className="text-left px-3 py-2.5 rounded-xl text-xs transition-all duration-200"
-											style={{
-												background: 'var(--glass-bg)',
-												border: '1px solid var(--glass-border)',
-												color: 'var(--text-secondary)',
-											}}
+								{SUGERENCIAS.map((s) => (
+									<button
+										key={s}
+										onClick={() => handleSugerencia(s)}
+										disabled={!chatReady}
+										className="text-left px-3 py-2.5 rounded-xl text-xs transition-all duration-200"
+										style={{
+											background: 'var(--glass-bg)',
+											border: '1px solid var(--glass-border)',
+											color: 'var(--text-secondary)',
+											opacity: chatReady ? 1 : 0.5,
+											cursor: chatReady ? 'pointer' : 'not-allowed',
+										}}
 											onMouseEnter={(e) => {
 												e.currentTarget.style.background = 'var(--glass-hover)';
 												e.currentTarget.style.borderColor = 'var(--accent-primary)';
@@ -184,10 +189,11 @@ function AnalisisPageInner() {
 						style={{ borderTop: '1px solid var(--glass-border)', background: 'var(--glass-bg)' }}
 					>
 						<input
-							ref={inputRef}
-							value={input}
-							onChange={(e) => setInput(e.target.value)}
-							placeholder="Escribe tu consulta..."
+						ref={inputRef}
+						value={input}
+						onChange={(e) => setInput(e.target.value)}
+						disabled={!chatReady}
+						placeholder={chatReady ? 'Escribe tu consulta...' : 'Cargando empresa...'}
 							className="flex-1 px-4 py-2.5 rounded-xl backdrop-blur-sm transition-all duration-300 focus:outline-none text-sm"
 							style={{
 								background: 'var(--input-bg)',
@@ -197,7 +203,7 @@ function AnalisisPageInner() {
 							onFocus={(e) => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
 							onBlur={(e) => e.currentTarget.style.borderColor = 'var(--input-border)'}
 						/>
-						<GlassButton type="submit" disabled={isLoading || !input.trim()} size="sm">
+						<GlassButton type="submit" disabled={isLoading || !input.trim() || !chatReady} size="sm">
 							<Send className="w-4 h-4" />
 						</GlassButton>
 					</form>

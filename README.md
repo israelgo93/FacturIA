@@ -51,6 +51,8 @@ El nombre fusiona "factura" + "IA", comunicando que la inteligencia artificial e
 | Email | Resend | 6 |
 | IA | Google Gemini API (ai SDK + @ai-sdk/google) | 3.0 Flash |
 | Chat IA | Vercel AI SDK (@ai-sdk/react) | 3.x |
+| Chat Markdown | react-markdown | 9+ |
+| Pagos | Stripe (server-side) | 17+ |
 | Graficos | Recharts | 3.7 |
 | PWA / Service Worker | Serwist (@serwist/turbopack) | 10+ |
 | Despliegue | AWS App Runner (ECR) | - |
@@ -151,14 +153,16 @@ facturia.app (AWS App Runner — us-east-1)
     |           +-- /compras           Registro compras recibidas (ATS)
     |           +-- /empleados         CRUD empleados (RDEP)
     |           +-- /dashboard       Dashboard analitico (KPIs, Recharts, IA, vencimientos)
-    |           +-- /suscripcion     Portal de plan y limites (sin pasarela)
+    |           +-- /asistente       Chat IA Premium (server component, markdown, framer-motion)
+    |           +-- /equipo          Multi-usuario: miembros, invitaciones, roles
+    |           +-- /suscripcion     Portal de plan y limites + Stripe checkout
     |           +-- /reportes          Hub de reportes SRI con IA
     |           |   +-- /ats               Anexo Transaccional Simplificado
     |           |   +-- /rdep              Relacion Dependencia
     |           |   +-- /iva               Formulario 104 IVA
     |           |   +-- /retenciones       Formulario 103 Retenciones
     |           |   +-- /ventas            Reporte de ventas
-    |           |   +-- /analisis          Chat IA tributario (streaming)
+    |           |   +-- /analisis          Chat IA tributario (legacy, enlaces redirigen a /asistente)
     |           +-- /configuracion     Hub de configuracion
     |               +-- /empresa           Datos del contribuyente
     |               +-- /establecimientos  CRUD establecimientos
@@ -166,7 +170,7 @@ facturia.app (AWS App Runner — us-east-1)
     |               +-- /certificado       Upload y gestion .p12
     |
     +-- Supabase
-    |       +-- PostgreSQL 15 (26 tablas, RLS multi-tenant)
+    |       +-- PostgreSQL 15 (30 tablas, RLS multi-tenant)
     |       +-- Auth (email/password, refresh tokens)
     |       +-- Storage (certificados .p12, cifrado AES-256)
     |
@@ -191,7 +195,7 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 
 ## Base de datos
 
-26 tablas (23 originales + 3 Fase 6) con RLS habilitado, indices optimizados y funciones de negocio:
+30 tablas (23 originales + 3 Fase 6 + 4 Fase 7) con RLS habilitado, indices optimizados y funciones de negocio:
 
 | Tabla | Proposito |
 |-------|-----------|
@@ -218,15 +222,21 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 | compras_recibidas_retenciones | Retenciones asociadas a compras recibidas |
 | empleados | Empleados en relacion de dependencia (RDEP) |
 | empleados_ingresos_anuales | Ingresos anuales por empleado (RDEP) |
-| suscripciones | Plan activo por empresa, estado trial/activa/suspendida/cancelada, uso mensual |
+| suscripciones | Plan activo por empresa, estado trial/activa/suspendida/cancelada, uso mensual, campos Stripe |
 | notificaciones | Alertas (vencimiento, limite plan, certificado, SRI, etc.) |
 | dashboard_cache | Cache JSON de metricas por empresa y periodo YYYY-MM |
+| perfiles_empresa | Relacion N:N usuarios-empresas con rol (propietario, admin, contador, emisor, visor) |
+| invitaciones | Invitaciones por email con token, rol, expiracion y estado |
+| chat_sesiones | Sesiones de chat IA por empresa y usuario |
+| chat_mensajes | Mensajes individuales del chat IA por sesion |
 
 **Vista**: `v_comprobantes_resumen` (resumen para dashboard con security_invoker)
 
 **Funciones**: `calcular_total_ventas_periodo()` (ventas autorizadas por periodo); Fase 6: `contar_comprobantes_mes`, `verificar_limite_plan`, `calcular_metricas_dashboard` (requieren migracion aplicada en Supabase).
 
 **Migracion Fase 6**: `supabase/migrations/20260323140000_dashboard_suscripciones_fase6.sql` (tablas + RLS + funciones SECURITY DEFINER + seed planes y suscripciones trial).
+
+**Migracion Fase 7**: `supabase/migrations/20260324040000_multiusuario_stripe_chat_fase7.sql` (4 tablas nuevas: perfiles_empresa, invitaciones, chat_sesiones, chat_mensajes; columnas Stripe en suscripciones y planes; 8 indices, 3 triggers, RLS; backfill de propietarios existentes).
 
 **Storage**: Bucket `certificados` (privado, RLS, max 5MB, PKCS12)
 
@@ -449,6 +459,60 @@ Configuracion completa de Progressive Web App con service worker, cache offline 
 - Verificado: `/dashboard` muestra KPIs, secciones de graficos, vencimiento, actividad, estados en listado (Autorizado, Procesando, Anulado); sidebar y topbar con **Suscripcion** y **Notificaciones** (panel se abre).
 - Entorno Supabase del desarrollador: si la migracion Fase 6 **no** esta aplicada, aparecen errores de PostgREST al usar `/suscripcion`, RPC de metricas o prediccion IA hasta ejecutar la migracion en el proyecto enlazado.
 
+### Fase 7 - Chat IA Premium, Stripe, Multi-usuario y Preparacion Produccion (Completada)
+
+Rediseno del asistente IA, integracion de pagos, multi-usuario y cierre formal de Fase 6.
+
+**Fix Bug Critico Chat IA ($0.00)**
+- Corregido closure stale de `empresaId` en `DefaultChatTransport`: el transport se crea con `useMemo` sin `body` estatico
+- `empresaId` se pasa en cada llamada a `sendMessage` via `{ body: { empresaId } }`
+- Guards: input, sugerencias y chips deshabilitados mientras la empresa carga (`chatReady`)
+
+**Chat Premium (`/asistente`)**
+- Nueva ruta con server component que precarga empresa y KPIs (sin race condition)
+- 7 componentes: `ChatContainer` (contenedor principal con auto-scroll inteligente), `ChatMessageBubble` (framer-motion con avatares), `ChatInput` (textarea autosize con Shift+Enter), `ChatSuggestionChips` (acciones rapidas contextuales), `ChatTypingIndicator` (dots animados), `ChatEmptyState` (KPI preview + onboarding), `MarkdownRenderer` (react-markdown con tablas, listas, codigo)
+- Boton "Nuevo Chat" para reiniciar sesion
+- Navegacion actualizada en Sidebar, MobileMenu y BottomNav con enlace directo
+- Enlaces de `/reportes/analisis` y dashboard redirigen a `/asistente`
+
+**Cierre Formal Fase 6**
+- Auditoria de codigo vs entregables de cada issue Linear (DAT-171, 173, 174, 175, 176)
+- Verificacion: todos los componentes existen, imports correctos, funcionalidad coherente
+- 5 issues cerrados en Linear con descripcion detallada de evidencia
+- 22 archivos de test, 190 tests passing (npm test)
+
+**Migracion BD 013 (Multi-usuario + Stripe + Chat)**
+- 4 tablas nuevas: `perfiles_empresa` (roles N:N), `invitaciones` (token + expiracion), `chat_sesiones`, `chat_mensajes`
+- 6 columnas Stripe en `suscripciones` (`stripe_customer_id`, `stripe_subscription_id`, `stripe_price_id`, `current_period_start`, `current_period_end`, `cancel_at_period_end`)
+- 2 columnas Stripe en `planes` (`stripe_price_id`, `stripe_product_id`)
+- 8 indices, 3 triggers `updated_at`, RLS con politicas tenant
+- Backfill: usuarios existentes migrados a `perfiles_empresa` como `propietario`
+- BD total: **30 tablas**, **21 migraciones**
+
+**Stripe (Pasarela de Pago)**
+- Cliente lazy-init (`getStripe()`) para evitar fallo en build sin API key
+- `src/lib/stripe/stripe-client.js`: funciones `crearCheckoutSession` y `crearBillingPortal`
+- `src/lib/stripe/pricing.js`: mapeo de planes a Stripe Price IDs via variables de entorno
+- 3 API routes:
+  - `POST /api/stripe/checkout` — crear sesion de checkout por plan
+  - `POST /api/stripe/webhook` — procesar eventos `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+  - `POST /api/stripe/portal` — crear sesion del portal de facturacion
+
+**Multi-usuario (`/equipo`)**
+- Sistema de permisos por rol en `src/lib/auth/permisos.js`: propietario (todo), admin (emitir+config+equipo), contador (emitir+reportes), emisor (solo emitir), visor (solo lectura)
+- Pagina `/equipo`: listar miembros con roles y estado, invitar por email y rol, revocar invitaciones, desactivar miembros
+- Server actions con verificacion de permisos en servidor (no solo UI)
+- API `POST /api/equipo/aceptar`: procesar invitaciones con token, validar expiracion, crear perfil de empresa, marcar invitacion como aceptada
+
+**Sentry (Monitoreo)**
+- `src/instrumentation.js` con inicializacion condicional (solo si `SENTRY_DSN` esta presente y runtime es Node.js)
+
+**Issues Linear**
+- DAT-183: [F7] Fix Chat IA $0.00 + Chat Premium + Migracion 013 (Done)
+- DAT-184: [F7] Stripe + Multi-usuario + Sentry (Done)
+
+**Dependencias nuevas**: `react-markdown`, `stripe`
+
 #### Checklist Fase 6 (alineado a `Plan_FactuIA/facturia-fase6-plan.md`)
 
 | Bloque | Item | Estado |
@@ -596,6 +660,17 @@ GOOGLE_GENERATIVE_AI_API_KEY=tu-gemini-api-key
 # Email
 RESEND_API_KEY=tu-resend-api-key
 
+# Stripe (Fase 7 — pasarela de pago)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_STARTER=price_...
+STRIPE_PRICE_PROFESSIONAL=price_...
+STRIPE_PRICE_ENTERPRISE=price_...
+
+# Sentry (Fase 7 — monitoreo, opcional)
+SENTRY_DSN=https://...@sentry.io/...
+
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_APP_NAME=facturIA
@@ -663,6 +738,11 @@ Esta guia describe paso a paso como configurar el despliegue automatico a AWS Ap
 | `RESEND_API_KEY` | API key de Resend |
 | `GEMINI_API_KEY` | API key de Google Gemini |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | Misma API key de Gemini |
+| `STRIPE_SECRET_KEY` | Secret key de Stripe (modo test o produccion) |
+| `STRIPE_WEBHOOK_SECRET` | Webhook signing secret de Stripe |
+| `STRIPE_PRICE_STARTER` | Price ID de Stripe para plan Starter |
+| `STRIPE_PRICE_PROFESSIONAL` | Price ID de Stripe para plan Professional |
+| `STRIPE_PRICE_ENTERPRISE` | Price ID de Stripe para plan Enterprise |
 
 **Nota**: Las variables `NEXT_PUBLIC_*` se necesitan en build-time porque Next.js las embebe en el bundle del cliente. Se pasan como `--build-arg` en el Dockerfile.
 
@@ -696,6 +776,12 @@ En App Runner Console, ir al servicio creado > **Configuration** > **Environment
 | `GEMINI_API_KEY` | API key de Google Gemini |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | Misma API key de Gemini |
 | `RESEND_API_KEY` | API key de Resend |
+| `STRIPE_SECRET_KEY` | Secret key de Stripe |
+| `STRIPE_WEBHOOK_SECRET` | Webhook signing secret de Stripe |
+| `STRIPE_PRICE_STARTER` | Price ID de Stripe para plan Starter |
+| `STRIPE_PRICE_PROFESSIONAL` | Price ID de Stripe para plan Professional |
+| `STRIPE_PRICE_ENTERPRISE` | Price ID de Stripe para plan Enterprise |
+| `SENTRY_DSN` | DSN de Sentry (opcional, monitoreo de errores) |
 
 Los secretos sensibles se configuran directamente en la consola de App Runner como variables de entorno runtime (no se exponen en el repositorio ni en los workflows de CI/CD).
 
@@ -744,6 +830,71 @@ GitHub (repositorio)
                             +-- npm ci + lint + build + test
 ```
 
+### Paso 8: Configurar Stripe (Fase 7 — Pasarela de Pago)
+
+Para habilitar pagos con Stripe, seguir estos pasos:
+
+**1. Crear cuenta y productos en Stripe**
+1. Crear cuenta en [stripe.com](https://stripe.com) y activar modo test
+2. En el [Dashboard de Stripe](https://dashboard.stripe.com), ir a **Products** > **Add product**
+3. Crear 3 productos con precios recurrentes (monthly):
+   - **facturIA Starter** — $9.99/mes
+   - **facturIA Professional** — $24.99/mes
+   - **facturIA Enterprise** — $49.99/mes
+4. Copiar el **Price ID** de cada producto (formato `price_...`)
+
+**2. Configurar webhook**
+1. En Stripe Dashboard, ir a **Developers** > **Webhooks**
+2. Click **Add endpoint**
+3. URL: `https://tu-dominio.com/api/stripe/webhook`
+4. Seleccionar eventos:
+   - `checkout.session.completed`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+5. Click **Add endpoint** y copiar el **Signing secret** (formato `whsec_...`)
+
+**3. Configurar variables de entorno**
+
+Agregar en `.env.local` (desarrollo) y en App Runner/GitHub Secrets (produccion):
+
+```
+STRIPE_SECRET_KEY=sk_test_...          # Dashboard > Developers > API keys
+STRIPE_PUBLISHABLE_KEY=pk_test_...     # Dashboard > Developers > API keys
+STRIPE_WEBHOOK_SECRET=whsec_...        # Del paso 2.5
+STRIPE_PRICE_STARTER=price_...         # Price ID del plan Starter
+STRIPE_PRICE_PROFESSIONAL=price_...    # Price ID del plan Professional
+STRIPE_PRICE_ENTERPRISE=price_...      # Price ID del plan Enterprise
+```
+
+**4. Probar en desarrollo con Stripe CLI**
+```bash
+# Instalar Stripe CLI: https://stripe.com/docs/stripe-cli
+stripe login
+stripe listen --forward-to localhost:3000/api/stripe/webhook
+# Copiar el webhook signing secret temporal que muestra la CLI
+```
+
+**5. Flujo de pago implementado**
+```
+Usuario en /suscripcion
+    |
+    +-- Click "Mejorar plan" --> POST /api/stripe/checkout
+    |                               |
+    |                               +-- Crea Stripe Checkout Session
+    |                               +-- Redirect a Stripe hosted checkout
+    |
+    +-- Completa pago en Stripe --> Stripe envia webhook
+    |                               |
+    |                               +-- POST /api/stripe/webhook
+    |                               +-- checkout.session.completed
+    |                               +-- Actualiza suscripcion en BD (estado, customer_id, subscription_id)
+    |
+    +-- Gestionar suscripcion --> POST /api/stripe/portal
+                                    |
+                                    +-- Redirect a Stripe Billing Portal
+                                    +-- Cambiar tarjeta, cancelar, ver facturas
+```
+
 ### Notas importantes
 
 - El Dockerfile usa `output: 'standalone'` de Next.js para crear una imagen optimizada (~150MB)
@@ -779,16 +930,21 @@ facturia/
 |   |   |   +-- productos/    CRUD productos (lista, nuevo, editar, importar)
 |   |   |   +-- compras/      Registro compras recibidas
 |   |   |   +-- empleados/    CRUD empleados
+|   |   |   +-- asistente/    Chat IA Premium (7 componentes)
+|   |   |   +-- equipo/       Multi-usuario (miembros, invitaciones, roles)
 |   |   |   +-- reportes/     Hub + ATS, RDEP, IVA, Retenciones, Ventas, Analisis IA
 |   |   |   +-- configuracion/ Hub + empresa, establecimientos, puntos, certificado
 |   |   |   +-- onboarding/   Wizard 5 pasos con componentes
 |   |   +-- api/              Rutas API
 |   |   |   +-- comprobantes/ RIDE PDF, email
 |   |   |   +-- reportes/     Chat IA streaming
+|   |   |   +-- stripe/       Checkout, webhook, billing portal
+|   |   |   +-- equipo/       Aceptar invitaciones
 |   |   |   +-- ia/           Factura wizard IA
 |   |   +-- auth/callback/    Callback de confirmacion
 |   +-- components/
 |   |   +-- ui/               9 componentes Glass + ThemeToggle
+|   |   +-- chat/             MarkdownRenderer (react-markdown)
 |   |   +-- layout/           Sidebar, Topbar, BottomNav, MobileMenu
 |   |   +-- shared/           Logo, LoadingSpinner, EmptyState
 |   |   +-- providers/        ThemeProvider
@@ -804,6 +960,8 @@ facturia/
 |   |   +-- sri/              Motor SRI: XML builders, firma XAdES-BES (C14N+RSA-SHA1), SOAP, orquestador
 |   |   +-- reportes/         ATS builder/consolidator, RDEP builder, Form 103/104, ventas, Excel
 |   |   +-- ia/               Prompts IA, analisis tributario
+|   |   +-- stripe/           Cliente Stripe, pricing por plan
+|   |   +-- auth/             Permisos por rol (multi-usuario)
 |   +-- stores/               Zustand (auth, empresa, UI)
 |   +-- styles/               Tokens CSS con soporte de temas
 +-- Dockerfile                Multi-stage build para App Runner (node:20-alpine, puerto 8080)
@@ -854,8 +1012,9 @@ facturia/
 | **Fase 4** | Comprobantes adicionales (NC, ND, Ret, GR, LC) + XML builders + RIDE | Completada |
 | **Fase 5** | Reportes IA + ATS/RDEP + compras + empleados + chat tributario | Completada |
 | **Fase 5.1** | PWA completa: service worker, cache offline, iconos, manifest, meta tags | Completada |
-| Fase 6 | Dashboard analitico + suscripciones | Pendiente |
-| Fase 7 | Produccion, testing y calidad | Pendiente |
+| **Fase 6** | Dashboard analitico + suscripciones + notificaciones + StatusBadge + tests | Completada |
+| **Fase 7** | Chat IA Premium + Stripe + Multi-usuario + Sentry + cierre F6 | Completada |
+| Fase 8 | E2E Playwright, optimizaciones rendimiento, PaymentEz Ecuador | Pendiente |
 
 ---
 

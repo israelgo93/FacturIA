@@ -216,7 +216,7 @@ export default function DashboardAnalitico({
 					)}
 				</GlassCard>
 
-				<Link href="/reportes/analisis" className="min-w-0 block">
+				<Link href="/asistente" className="min-w-0 block">
 					<GlassCard className="min-w-0 p-4 sm:p-5 group cursor-pointer overflow-hidden" hover={true}>
 						<div className="flex items-center gap-4">
 							<div

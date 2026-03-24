@@ -39,7 +39,7 @@ const reportes = [
 		title: 'Análisis IA',
 		desc: 'Chat IA para análisis tributario y detección de anomalías',
 		icon: Brain,
-		href: '/reportes/analisis',
+		href: '/asistente',
 	},
 ];
 
