@@ -22,12 +22,25 @@ export async function POST(req) {
 			const { empresaId } = session.metadata;
 			if (!empresaId) break;
 
-			await supabase.from('suscripciones').update({
+			const stripePriceId = session.line_items?.data?.[0]?.price?.id || null;
+			const updateData = {
 				stripe_customer_id: session.customer,
 				stripe_subscription_id: session.subscription,
+				stripe_price_id: stripePriceId,
 				estado: 'activa',
 				fecha_inicio: new Date().toISOString(),
-			}).eq('empresa_id', empresaId);
+			};
+
+			if (stripePriceId) {
+				const { data: plan } = await supabase
+					.from('planes')
+					.select('id')
+					.eq('stripe_price_id', stripePriceId)
+					.maybeSingle();
+				if (plan) updateData.plan_id = plan.id;
+			}
+
+			await supabase.from('suscripciones').update(updateData).eq('empresa_id', empresaId);
 			break;
 		}
 
@@ -36,12 +49,25 @@ export async function POST(req) {
 			const { empresaId } = subscription.metadata;
 			if (!empresaId) break;
 
-			await supabase.from('suscripciones').update({
+			const priceId = subscription.items?.data?.[0]?.price?.id || null;
+			const updateData = {
 				estado: subscription.status === 'active' ? 'activa' : 'suspendida',
 				current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
 				current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
 				cancel_at_period_end: subscription.cancel_at_period_end,
-			}).eq('empresa_id', empresaId);
+				stripe_price_id: priceId,
+			};
+
+			if (priceId) {
+				const { data: plan } = await supabase
+					.from('planes')
+					.select('id')
+					.eq('stripe_price_id', priceId)
+					.maybeSingle();
+				if (plan) updateData.plan_id = plan.id;
+			}
+
+			await supabase.from('suscripciones').update(updateData).eq('empresa_id', empresaId);
 			break;
 		}
 

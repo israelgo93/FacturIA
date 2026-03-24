@@ -443,7 +443,7 @@ Configuracion completa de Progressive Web App con service worker, cache offline 
 **Suscripciones**
 - `src/lib/suscripciones/plan-limits.js`, `subscription-guard.js`, `usage-tracker.js`.
 - `verificarPermisoEmision()` integrado en `src/lib/sri/comprobante-orchestrator.js` antes de firmar (error claro si limite o sin plan).
-- Portal `/suscripcion`: plan actual, comparativa 3 planes, cambio de plan por Server Action (`src/actions/suscripcion-actions.js`, Zod), sin pasarela de pago.
+- Portal `/suscripcion`: plan actual, comparativa 3 planes. Fase 7: integrado con Stripe checkout y billing portal.
 
 **Notificaciones**
 - `src/lib/notificaciones/notification-engine.js`: insercion de alertas (vencimiento, 80%/95% uso, certificado proximo a vencer) al listar; `NotificationBell`, `NotificationPanel`, `NotificationCard` en Topbar; `src/actions/notificacion-actions.js`.
@@ -489,14 +489,20 @@ Rediseno del asistente IA, integracion de pagos, multi-usuario y cierre formal d
 - Backfill: usuarios existentes migrados a `perfiles_empresa` como `propietario`
 - BD total: **30 tablas**, **21 migraciones**
 
-**Stripe (Pasarela de Pago)**
+**Stripe (Pasarela de Pago) — Verificado con pago real en modo test**
 - Cliente lazy-init (`getStripe()`) para evitar fallo en build sin API key
 - `src/lib/stripe/stripe-client.js`: funciones `crearCheckoutSession` y `crearBillingPortal`
 - `src/lib/stripe/pricing.js`: mapeo de planes a Stripe Price IDs via variables de entorno
 - 3 API routes:
-  - `POST /api/stripe/checkout` — crear sesion de checkout por plan
-  - `POST /api/stripe/webhook` — procesar eventos `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
-  - `POST /api/stripe/portal` — crear sesion del portal de facturacion
+  - `POST /api/stripe/checkout` — crear sesion de checkout por plan (solo para usuarios sin suscripcion Stripe)
+  - `POST /api/stripe/webhook` — procesar eventos y sincronizar `plan_id` + `stripe_price_id` en BD
+  - `POST /api/stripe/portal` — portal de facturacion para cambiar plan, cancelar o gestionar tarjeta
+- Pagina `/suscripcion/success` — muestra nombre del plan, precio y descripcion al completar pago
+- Webhook actualiza `plan_id` automaticamente buscando por `stripe_price_id` en tabla `planes`
+- Tabla `planes` sincronizada con `stripe_price_id` y `stripe_product_id` reales de Stripe
+- Portal `/suscripcion` con logica inteligente: checkout para nuevos, portal Stripe para existentes
+- 3 productos creados en Stripe (Datatensei S.A.S. modo test): Starter $9.99, Professional $24.99, Enterprise $49.99
+- Eventos webhook: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
 
 **Multi-usuario (`/equipo`)**
 - Sistema de permisos por rol en `src/lib/auth/permisos.js`: propietario (todo), admin (emitir+config+equipo), contador (emitir+reportes), emisor (solo emitir), visor (solo lectura)
@@ -510,8 +516,15 @@ Rediseno del asistente IA, integracion de pagos, multi-usuario y cierre formal d
 **Issues Linear**
 - DAT-183: [F7] Fix Chat IA $0.00 + Chat Premium + Migracion 013 (Done)
 - DAT-184: [F7] Stripe + Multi-usuario + Sentry (Done)
+- DAT-185: [F7] Stripe checkout verificado + webhook fix plan_id + pagina success (Done)
 
 **Dependencias nuevas**: `react-markdown`, `stripe`
+
+**Verificacion Stripe (24-mar-2026)**
+- Pago completado exitosamente con tarjeta de prueba (4242) en Stripe modo test
+- Checkout redirige correctamente a `/suscripcion/success` con detalles del plan
+- Webhook actualiza suscripcion en BD (estado, stripe_customer_id, plan_id)
+- Portal de facturacion Stripe accesible desde `/suscripcion` para suscriptores activos
 
 #### Checklist Fase 6 (alineado a `Plan_FactuIA/facturia-fase6-plan.md`)
 

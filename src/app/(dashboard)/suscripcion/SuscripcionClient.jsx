@@ -1,25 +1,61 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useFormState } from 'react-dom';
+import { useState } from 'react';
 import { toast } from 'sonner';
-import { cambiarPlan } from '@/actions/suscripcion-actions';
 import { PLAN_LIMITS } from '@/lib/suscripciones/plan-limits';
 import GlassCard from '@/components/ui/GlassCard';
 import GlassButton from '@/components/ui/GlassButton';
 import StatusBadge from '@/components/comprobantes/StatusBadge';
 
-const initialState = {};
-
 const PLAN_ORDER = ['starter', 'professional', 'enterprise'];
 
 export default function SuscripcionClient({ suscripcion }) {
-	const [state, formAction] = useFormState(cambiarPlan, initialState);
+	const [loading, setLoading] = useState(null);
 
-	useEffect(() => {
-		if (state?.error) toast.error(state.error);
-		if (state?.success) toast.success('Plan actualizado');
-	}, [state]);
+	const handleCheckout = async (planSlug) => {
+		setLoading(planSlug);
+		try {
+			const res = await fetch('/api/stripe/checkout', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ planSlug }),
+			});
+			const data = await res.json();
+			if (data.error) {
+				toast.error(data.error);
+				setLoading(null);
+				return;
+			}
+			if (data.url) {
+				window.location.href = data.url;
+			}
+		} catch {
+			toast.error('Error al iniciar el checkout');
+			setLoading(null);
+		}
+	};
+
+	const handlePortal = async () => {
+		setLoading('portal');
+		try {
+			const res = await fetch('/api/stripe/portal', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+			});
+			const data = await res.json();
+			if (data.error) {
+				toast.error(data.error);
+				setLoading(null);
+				return;
+			}
+			if (data.url) {
+				window.location.href = data.url;
+			}
+		} catch {
+			toast.error('Error al abrir portal de facturacion');
+			setLoading(null);
+		}
+	};
 
 	const planRel = suscripcion?.planes;
 	const planRow = Array.isArray(planRel) ? planRel[0] : planRel;
@@ -34,7 +70,7 @@ export default function SuscripcionClient({ suscripcion }) {
 			<div>
 				<h1 className="text-xl font-medium" style={{ color: 'var(--text-primary)' }}>Suscripcion</h1>
 				<p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-					Plan actual y cambio directo (sin pasarela de pago en esta version)
+					Gestiona tu plan y metodo de pago
 				</p>
 			</div>
 
@@ -51,11 +87,23 @@ export default function SuscripcionClient({ suscripcion }) {
 					</div>
 					<StatusBadge estado={estado} size="md" />
 				</div>
-				{trialEnd && estado === 'trial' && (
-					<p className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>
-						Prueba hasta: {trialEnd}
-					</p>
-				)}
+			{trialEnd && estado === 'trial' && (
+				<p className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>
+					Prueba hasta: {trialEnd}
+				</p>
+			)}
+			{suscripcion?.stripe_customer_id && (
+				<div className="mt-4">
+					<GlassButton
+						variant="secondary"
+						size="sm"
+						onClick={handlePortal}
+						disabled={loading === 'portal'}
+					>
+						{loading === 'portal' ? 'Abriendo...' : 'Gestionar facturacion'}
+					</GlassButton>
+				</div>
+			)}
 			</GlassCard>
 
 			<div>
@@ -77,14 +125,16 @@ export default function SuscripcionClient({ suscripcion }) {
 									<li>Reportes IA: {p.reportes_ia ? 'Si' : 'No'}</li>
 									<li>RDEP: {p.rdep ? 'Si' : 'No'}</li>
 								</ul>
-								{!isCurrent && (
-									<form action={formAction}>
-										<input type="hidden" name="planNombre" value={key} />
-										<GlassButton type="submit" variant="secondary" className="w-full">
-											Seleccionar
-										</GlassButton>
-									</form>
-								)}
+						{!isCurrent && (
+							<GlassButton
+								variant="secondary"
+								className="w-full"
+								onClick={() => suscripcion?.stripe_customer_id ? handlePortal() : handleCheckout(key)}
+								disabled={loading === key || loading === 'portal'}
+							>
+								{(loading === key || loading === 'portal') ? 'Redirigiendo...' : suscripcion?.stripe_customer_id ? 'Cambiar plan' : 'Seleccionar'}
+							</GlassButton>
+						)}
 								{isCurrent && (
 									<p className="text-xs text-center py-2" style={{ color: 'var(--text-muted)' }}>Plan actual</p>
 								)}
