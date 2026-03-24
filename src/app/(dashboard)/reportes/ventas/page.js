@@ -117,19 +117,11 @@ export default function VentasPage() {
 							emptyMessage="Sin comprobantes en este período"
 							mobileCard={(row) => (
 								<div className="space-y-2">
-									<div className="flex items-center justify-between">
+									<div className="flex items-center justify-between gap-2">
 										<span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
 											{row.tipo_comprobante} - {row.numero_completo}
 										</span>
-										<span
-											className="text-[10px] px-1.5 py-0.5 rounded-full"
-											style={{
-												background: row.estado === 'AUT' ? 'var(--color-success-muted)' : 'var(--color-warning-muted)',
-												color: row.estado === 'AUT' ? 'var(--color-success)' : 'var(--color-warning)',
-											}}
-										>
-											{row.estado}
-										</span>
+										<StatusBadge estado={row.estado} size="sm" />
 									</div>
 									<div className="flex flex-col">
 										<span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>

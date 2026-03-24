@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Menu, Building2, User, LogOut } from 'lucide-react';
+import { Menu, Building2, User, LogOut } from 'lucide-react';
+import NotificationBell from '@/components/notificaciones/NotificationBell';
 import { useUIStore } from '@/stores/useUIStore';
 import { useEmpresaStore } from '@/stores/useEmpresaStore';
 import { createClient } from '@/lib/supabase/client';
@@ -81,15 +82,7 @@ export default function Topbar() {
 
 			<div className="flex items-center gap-1">
 				<ThemeToggle />
-				<button
-					className="relative p-2.5 rounded-xl transition-colors duration-300 touch-target flex items-center justify-center"
-					style={{ color: 'var(--text-muted)' }}
-					onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
-					onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-					aria-label="Notificaciones"
-				>
-					<Bell className="w-5 h-5" />
-				</button>
+				<NotificationBell />
 
 				{/* Profile dropdown */}
 				<div className="relative" ref={profileRef}>

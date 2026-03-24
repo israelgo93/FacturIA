@@ -93,7 +93,7 @@ Todos los colores se definen como variables CSS en `src/styles/globals.css` y ca
 | GlassModal | Modal centrado en desktop, bottom-sheet con animacion spring en movil |
 | GlassTable | Tabla con paginacion, loading y botones touch-target (44px) |
 | GlassAlert | Alertas diferenciadas por opacidad |
-| GlassBadge | Estados SRI por nivel de brillo |
+| StatusBadge | Estados SRI, CRUD y suscripcion (variables semanticas) |
 | ThemeToggle | Selector de tema (claro/oscuro/sistema) |
 
 ---
@@ -150,6 +150,8 @@ facturia.app (AWS App Runner — us-east-1)
     |           +-- /productos         CRUD productos (tabla, IVA/ICE, CSV)
     |           +-- /compras           Registro compras recibidas (ATS)
     |           +-- /empleados         CRUD empleados (RDEP)
+    |           +-- /dashboard       Dashboard analitico (KPIs, Recharts, IA, vencimientos)
+    |           +-- /suscripcion     Portal de plan y limites (sin pasarela)
     |           +-- /reportes          Hub de reportes SRI con IA
     |           |   +-- /ats               Anexo Transaccional Simplificado
     |           |   +-- /rdep              Relacion Dependencia
@@ -164,7 +166,7 @@ facturia.app (AWS App Runner — us-east-1)
     |               +-- /certificado       Upload y gestion .p12
     |
     +-- Supabase
-    |       +-- PostgreSQL 15 (23 tablas, RLS multi-tenant)
+    |       +-- PostgreSQL 15 (26 tablas, RLS multi-tenant)
     |       +-- Auth (email/password, refresh tokens)
     |       +-- Storage (certificados .p12, cifrado AES-256)
     |
@@ -189,7 +191,7 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 
 ## Base de datos
 
-23 tablas con RLS habilitado, indices optimizados y funciones de negocio:
+26 tablas (23 originales + 3 Fase 6) con RLS habilitado, indices optimizados y funciones de negocio:
 
 | Tabla | Proposito |
 |-------|-----------|
@@ -216,10 +218,15 @@ Cada empresa opera en un espacio aislado mediante Row Level Security (RLS). Toda
 | compras_recibidas_retenciones | Retenciones asociadas a compras recibidas |
 | empleados | Empleados en relacion de dependencia (RDEP) |
 | empleados_ingresos_anuales | Ingresos anuales por empleado (RDEP) |
+| suscripciones | Plan activo por empresa, estado trial/activa/suspendida/cancelada, uso mensual |
+| notificaciones | Alertas (vencimiento, limite plan, certificado, SRI, etc.) |
+| dashboard_cache | Cache JSON de metricas por empresa y periodo YYYY-MM |
 
 **Vista**: `v_comprobantes_resumen` (resumen para dashboard con security_invoker)
 
-**Funcion**: `calcular_total_ventas_periodo()` (ventas autorizadas por periodo)
+**Funciones**: `calcular_total_ventas_periodo()` (ventas autorizadas por periodo); Fase 6: `contar_comprobantes_mes`, `verificar_limite_plan`, `calcular_metricas_dashboard` (requieren migracion aplicada en Supabase).
+
+**Migracion Fase 6**: `supabase/migrations/20260323140000_dashboard_suscripciones_fase6.sql` (tablas + RLS + funciones SECURITY DEFINER + seed planes y suscripciones trial).
 
 **Storage**: Bucket `certificados` (privado, RLS, max 5MB, PKCS12)
 
@@ -350,8 +357,8 @@ Generacion automatica de reportes tributarios con analisis de Inteligencia Artif
 - Pagina Form 103 Retenciones: tablas renta e IVA, total a pagar, exportar Excel
 - Pagina Ventas: cards resumen, tabla detalle, exportar Excel
 - Pagina Analisis IA: chat streaming con Gemini, selector periodo
-- Pagina Compras: listado con modal de registro
-- Pagina Empleados: listado con modal de registro
+- Pagina Compras: listado; registro en pagina `/compras/nuevo`
+- Pagina Empleados: listado; registro en pagina `/empleados/nuevo`
 
 **Navegacion**
 - Sidebar y MobileMenu actualizados con entradas Compras y Empleados
@@ -368,9 +375,9 @@ Generacion automatica de reportes tributarios con analisis de Inteligencia Artif
 - Card de acceso rapido al Asistente Tributario IA en el Dashboard
 
 **Correccion de estados en ComprobanteTimeline**
-- Fix: estado Autorizado (AUT) ahora muestra CheckCircle verde en lugar de Clock
-- Logica completadoFinal para manejar el caso especial del ultimo paso del timeline
-- StatusBadge con color accent para estado AUT
+- Pasos completados con CheckCircle en `--text-secondary` (Fase 6: sin verde decorativo)
+- Logica completadoFinal para el ultimo paso del timeline
+- StatusBadge semantico para estado AUT
 
 ### Fase 5.1 - PWA Completa (Completada)
 
@@ -410,6 +417,63 @@ Configuracion completa de Progressive Web App con service worker, cache offline 
 - Dropdown "Nuevo Comprobante" en comprobantes: bottom-sheet con AnimatePresence en movil, dropdown clasico en desktop
 - Paginas CRUD (clientes, productos, compras, empleados): layout flex-col en movil, flex-row en desktop
 - Utilidades CSS nuevas en globals.css: .touch-target (44px minimo), .safe-area-bottom (env safe-area-inset), .scrollbar-hide, prevencion de zoom iOS en inputs
+
+### Fase 6 - Dashboard analitico, suscripciones, notificaciones y QA (Completada en codigo)
+
+**Backend y datos**
+- Migracion SQL: `supabase/migrations/20260323140000_dashboard_suscripciones_fase6.sql` — tablas `suscripciones`, `notificaciones`, `dashboard_cache`; funciones `contar_comprobantes_mes`, `verificar_limite_plan`, `calcular_metricas_dashboard` (SECURITY DEFINER, `search_path` fijo); RLS; seed de planes (starter, professional, enterprise) y suscripcion trial por empresa.
+- `calcular_total_ventas_periodo()` no se sustituyo: el esquema ya fija `search_path` y devuelve TABLE consumida por ATS (cambiar la firma romperia el RPC).
+- Proteccion de contrasenas filtradas (Supabase Auth): configurar en el panel del proyecto (no es codigo en repo).
+
+**Dashboard (`/dashboard`)**
+- Server Component + `DashboardAnalitico.jsx`: 4 KPIs con variacion % mes anterior; graficos Recharts (ventas 6 meses, tendencia area, pie por tipo de comprobante); top 5 clientes; medidor de uso del plan; bloque vencimiento con `infoVencimiento()` (noveno digito RUC); actividad reciente; enlace a Asistente IA.
+- `src/lib/dashboard/metricas-service.js`: lectura de `dashboard_cache` (~5 min) y RPC `calcular_metricas_dashboard`.
+- APIs: `GET /api/dashboard/metricas`, `GET /api/dashboard/prediccion` (Gemini `gemini-2.5-flash` via `ai` + `@ai-sdk/google`).
+
+**Suscripciones**
+- `src/lib/suscripciones/plan-limits.js`, `subscription-guard.js`, `usage-tracker.js`.
+- `verificarPermisoEmision()` integrado en `src/lib/sri/comprobante-orchestrator.js` antes de firmar (error claro si limite o sin plan).
+- Portal `/suscripcion`: plan actual, comparativa 3 planes, cambio de plan por Server Action (`src/actions/suscripcion-actions.js`, Zod), sin pasarela de pago.
+
+**Notificaciones**
+- `src/lib/notificaciones/notification-engine.js`: insercion de alertas (vencimiento, 80%/95% uso, certificado proximo a vencer) al listar; `NotificationBell`, `NotificationPanel`, `NotificationCard` en Topbar; `src/actions/notificacion-actions.js`.
+
+**UI unificada**
+- `StatusBadge.jsx`: estados SRI (incl. alias BOR, ENV, etc.), CRUD y suscripcion; sin `GlassBadge` en codigo fuente.
+- Rutas pagina: `/compras/nuevo`, `/empleados/nuevo` (formularios completos, no modal principal).
+
+**Tests (Vitest)**
+- `src/__tests__/`: XML builders 6 tipos, clave 49 digitos / Modulo 11, periodos ATS (`getRangoPeriodo`), `PLAN_LIMITS`, catalogo SRI, `resolveEstadoKey` de StatusBadge.
+
+**Validacion manual en navegador (marzo 2026)**
+- Verificado: `/dashboard` muestra KPIs, secciones de graficos, vencimiento, actividad, estados en listado (Autorizado, Procesando, Anulado); sidebar y topbar con **Suscripcion** y **Notificaciones** (panel se abre).
+- Entorno Supabase del desarrollador: si la migracion Fase 6 **no** esta aplicada, aparecen errores de PostgREST al usar `/suscripcion`, RPC de metricas o prediccion IA hasta ejecutar la migracion en el proyecto enlazado.
+
+#### Checklist Fase 6 (alineado a `Plan_FactuIA/facturia-fase6-plan.md`)
+
+| Bloque | Item | Estado |
+|--------|------|--------|
+| A UI | StatusBadge unificado (SRI + genericos + suscripcion) | Hecho |
+| A | GlassBadge eliminado en `src` | Hecho (no existia archivo) |
+| A | Imports GlassBadge | N/A (cero en codigo) |
+| A | `/compras/nuevo`, `/empleados/nuevo` como pagina | Hecho |
+| A | Dashboard / reportes / ventas monochrome | Hecho (revisado UI) |
+| A | ComprobanteTimeline sin verde decorativo | Hecho (iconos `--text-secondary`) |
+| A | Montos ventas | Hecho (`--text-primary` en resumen) |
+| A | Chevron en configuracion | Hecho |
+| A | Botones descarga reportes secondary | Hecho (reportes ATS, etc.) |
+| A | Labels GlassSelect en CRUD | Parcial (componente soporta `label`; revisar pantallas sin label) |
+| B | `calcular_total_ventas_periodo` search_path | Ya en esquema base (no duplicar NUMERIC del PDF) |
+| B | Leaked password protection | Manual en Supabase Dashboard |
+| B | Migracion Fase 6 aplicada en BD | **Pendiente en cada entorno** (archivo en repo listo) |
+| B | 3 tablas + RLS + funciones + seed | Definido en SQL migracion |
+| C | Widgets Recharts + KPIs + vencimientos + IA + API metricas | Hecho (IA falla sin RPC en BD) |
+| D | Guard orquestador + portal + nav | Hecho (portal falla sin tabla `suscripciones`) |
+| D | `verificarAccesoFeature` | Implementado en codigo (uso en features pendiente de cablear) |
+| E | Campanita + panel + acciones | Hecho (listado depende de tabla `notificaciones`) |
+| F | Tests Vitest + build | Hecho (`npm run test`, `npm run build`) |
+| F | Comprobantes 03-07 autorizados en SRI pruebas | Pendiente (manual / Fase 7 seguimiento) |
+| F | Deploy staging | No verificado en esta sesion |
 
 ---
 

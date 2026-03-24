@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
 	LayoutDashboard, FileText, Users, Package,
 	BarChart3, Settings, X, LogOut,
-	ShoppingCart, UserCheck,
+	ShoppingCart, UserCheck, CreditCard,
 } from 'lucide-react';
 import { useUIStore } from '@/stores/useUIStore';
 import { useEmpresaStore } from '@/stores/useEmpresaStore';
@@ -22,6 +22,7 @@ const navItems = [
 	{ label: 'Compras', href: '/compras', icon: ShoppingCart },
 	{ label: 'Empleados', href: '/empleados', icon: UserCheck },
 	{ label: 'Reportes', href: '/reportes', icon: BarChart3 },
+	{ label: 'Suscripción', href: '/suscripcion', icon: CreditCard },
 	{ label: 'Configuración', href: '/configuracion', icon: Settings },
 ];
 

@@ -19,6 +19,7 @@ import { validarFactura, calcularTotalesImpuestos } from './validators';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { decrypt } from '@/lib/crypto/aes';
+import { verificarPermisoEmision } from '@/lib/suscripciones/subscription-guard';
 
 /**
  * Mapa de builders de XML por tipo de comprobante
@@ -74,6 +75,16 @@ export async function procesarComprobante(comprobanteId) {
 	if (!comprobante) throw new Error('Comprobante no encontrado');
 	if (comprobante.estado !== 'draft') {
 		throw new Error(`Estado inválido para procesar: ${comprobante.estado}. Debe ser "draft".`);
+	}
+
+	const permiso = await verificarPermisoEmision(comprobante.empresa_id);
+	if (!permiso.permitido) {
+		const extra = [permiso.plan, permiso.usados, permiso.limite]
+			.filter((x) => x !== undefined)
+			.join(' / ');
+		throw new Error(
+			`${permiso.razon || 'No puedes emitir comprobantes'}${extra ? ` (${extra})` : ''}`,
+		);
 	}
 
 	const contexto = {
