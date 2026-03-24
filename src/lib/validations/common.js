@@ -1,31 +1,46 @@
 import { z } from 'zod';
 
 /**
- * Valida un RUC ecuatoriano (13 dígitos)
+ * Valida un RUC ecuatoriano (13 dígitos).
+ *
+ * NOTA: La verificación del dígito verificador (Módulo 10/11) es advertencia,
+ * no bloqueo. El SRI es la autoridad final — algunos RUC legítimos asignados
+ * por el SRI no pasan los algoritmos estándar (ej: RUC 1391936618001 de
+ * DATATENSEI S.A.S.). El formato, longitud, provincia y tipo de contribuyente
+ * sí se validan de forma estricta.
  */
 export function validarRUC(ruc) {
 	if (!ruc || ruc.length !== 13) return false;
 	if (!/^\d{13}$/.test(ruc)) return false;
-	if (!ruc.endsWith('001')) return false;
+
+	// Los últimos 3 dígitos deben ser >= 001 (código de establecimiento)
+	const sucursal = parseInt(ruc.substring(10, 13), 10);
+	if (sucursal < 1) return false;
 
 	const provincia = parseInt(ruc.substring(0, 2), 10);
 	if (provincia < 1 || (provincia > 24 && provincia !== 30)) return false;
 
-	// Validar dígito verificador (módulo 10 o 11 según tipo)
 	const tercerDigito = parseInt(ruc[2], 10);
 
+	// Tercer dígito debe ser 0-6 o 9 (tipos válidos de contribuyente)
+	if (tercerDigito === 7 || tercerDigito === 8) return false;
+
+	// Verificación del dígito verificador — solo advertencia en consola, no bloquea
+	// El SRI es el validador definitivo; algunos RUC reales no pasan el algoritmo estándar
+	let verificacionOk = true;
 	if (tercerDigito < 6) {
-		// Persona natural: módulo 10
-		return validarModulo10(ruc.substring(0, 10));
+		verificacionOk = validarModulo10(ruc.substring(0, 10));
 	} else if (tercerDigito === 6) {
-		// Entidad pública: módulo 11, coeficientes 3,2,7,6,5,4,3,2
-		return validarModulo11Publico(ruc.substring(0, 9));
+		verificacionOk = validarModulo11Publico(ruc.substring(0, 9));
 	} else if (tercerDigito === 9) {
-		// Sociedad: módulo 11, coeficientes 4,3,2,7,6,5,4,3,2
-		return validarModulo11Sociedad(ruc.substring(0, 10));
+		verificacionOk = validarModulo11Sociedad(ruc.substring(0, 10));
 	}
 
-	return false;
+	if (!verificacionOk) {
+		console.warn(`[validarRUC] RUC ${ruc} no supera verificación Módulo 10/11 — aceptado de todas formas (el SRI es el validador final)`);
+	}
+
+	return true;
 }
 
 /**
