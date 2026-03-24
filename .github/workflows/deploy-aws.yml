@@ -42,6 +42,12 @@ jobs:
             --build-arg RESEND_API_KEY=${{ secrets.RESEND_API_KEY }} \
             --build-arg GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
             --build-arg GOOGLE_GENERATIVE_AI_API_KEY=${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }} \
+            --build-arg STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} \
+            --build-arg STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }} \
+            --build-arg STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }} \
+            --build-arg STRIPE_PRICE_STARTER=${{ secrets.STRIPE_PRICE_STARTER }} \
+            --build-arg STRIPE_PRICE_PROFESSIONAL=${{ secrets.STRIPE_PRICE_PROFESSIONAL }} \
+            --build-arg STRIPE_PRICE_ENTERPRISE=${{ secrets.STRIPE_PRICE_ENTERPRISE }} \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
             .
