@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { verificarPermiso } from '@/lib/auth/permisos';
+import { verificarAccesoCompleto } from '@/lib/auth/feature-gates';
 
 async function obtenerContextoEquipo() {
 	const supabase = await createClient();
@@ -56,6 +57,15 @@ export async function invitarMiembro(email, rol) {
 
 	if (!['admin', 'contador', 'emisor', 'visor'].includes(rol)) {
 		return { error: 'Rol no valido' };
+	}
+
+	const acceso = await verificarAccesoCompleto(ctx.empresaId);
+	if (!acceso.activa) {
+		return { error: acceso.razon || 'Suscripcion inactiva' };
+	}
+	if (!acceso.features.puede_invitar) {
+		const limite = acceso.features.usuarios?.limite;
+		return { error: `Tu plan permite maximo ${limite} usuario${limite !== 1 ? 's' : ''}` };
 	}
 
 	const { data: existente } = await ctx.supabase

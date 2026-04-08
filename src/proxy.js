@@ -28,16 +28,30 @@ export async function proxy(request) {
 
 	const { pathname } = request.nextUrl;
 
-	// Rutas que requieren autenticación
-	const protectedPaths = ['/dashboard', '/comprobantes', '/clientes', '/productos', '/compras', '/empleados', '/reportes', '/configuracion', '/onboarding'];
+	const protectedPaths = [
+		'/dashboard', '/comprobantes', '/clientes', '/productos',
+		'/compras', '/empleados', '/reportes', '/configuracion',
+		'/onboarding', '/asistente', '/equipo', '/suscripcion', '/admin',
+	];
 	const isProtectedRoute = protectedPaths.some((path) => pathname.startsWith(path));
 
-	// Redirigir a login si no está autenticado en rutas protegidas
 	if (!user && isProtectedRoute) {
 		return NextResponse.redirect(new URL('/login', request.url));
 	}
 
-	// Redirigir usuarios autenticados fuera de páginas de auth
+	if (user && pathname.startsWith('/admin')) {
+		const { data: perfil } = await supabase
+			.from('perfiles_empresa')
+			.select('is_platform_admin')
+			.eq('user_id', user.id)
+			.eq('is_platform_admin', true)
+			.maybeSingle();
+
+		if (!perfil) {
+			return NextResponse.redirect(new URL('/dashboard', request.url));
+		}
+	}
+
 	const authPaths = ['/login', '/registro', '/recuperar'];
 	if (user && authPaths.includes(pathname)) {
 		return NextResponse.redirect(new URL('/', request.url));

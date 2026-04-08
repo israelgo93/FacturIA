@@ -2,14 +2,10 @@
 
 import { useEffect } from 'react';
 import { useEmpresaStore } from '@/stores/useEmpresaStore';
-import { obtenerEmpresaActual } from '@/app/(dashboard)/dashboard/actions';
+import { obtenerEmpresaActual, obtenerPerfilPlataforma } from '@/app/(dashboard)/dashboard/actions';
 
-/**
- * Componente invisible que carga la empresa del usuario al montar el dashboard.
- * Popula el zustand store para que Topbar, Sidebar, etc. puedan leer la empresa.
- */
 export default function DashboardInitializer() {
-	const { empresa, setEmpresa } = useEmpresaStore();
+	const { empresa, setEmpresa, setIsPlatformAdmin, setTrialInfo } = useEmpresaStore();
 
 	useEffect(() => {
 		if (!empresa) {
@@ -17,7 +13,15 @@ export default function DashboardInitializer() {
 				if (result.data) setEmpresa(result.data);
 			});
 		}
-	}, [empresa, setEmpresa]);
+		obtenerPerfilPlataforma().then((result) => {
+			if (result.isPlatformAdmin !== undefined) {
+				setIsPlatformAdmin(result.isPlatformAdmin);
+			}
+			if (result.trialInfo) {
+				setTrialInfo(result.trialInfo);
+			}
+		});
+	}, [empresa, setEmpresa, setIsPlatformAdmin, setTrialInfo]);
 
 	return null;
 }

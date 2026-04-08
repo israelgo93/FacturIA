@@ -5,6 +5,7 @@ import { empresaSchema, establecimientoSchema, puntoEmisionSchema } from '@/lib/
 import { encrypt } from '@/lib/crypto/aes';
 import { parseCertificate } from '@/lib/sri/certificate-parser';
 import { revalidatePath } from 'next/cache';
+import { crearTrialAutomatico } from '@/lib/suscripciones/trial-manager';
 
 export async function guardarEmpresaOnboarding(prevState, formData) {
 	const supabase = await createClient();
@@ -173,12 +174,23 @@ export async function completarOnboarding() {
 	const { data: { user } } = await supabase.auth.getUser();
 	if (!user) return { error: 'No autenticado' };
 
+	const { data: empresa } = await supabase
+		.from('empresas')
+		.select('id')
+		.eq('user_id', user.id)
+		.maybeSingle();
+
 	const { error } = await supabase
 		.from('empresas')
 		.update({ onboarding_completado: true, onboarding_paso: 5 })
 		.eq('user_id', user.id);
 
 	if (error) return { error: error.message };
+
+	if (empresa) {
+		await crearTrialAutomatico(empresa.id);
+	}
+
 	revalidatePath('/');
 	return { success: true };
 }

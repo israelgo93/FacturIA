@@ -17,9 +17,7 @@ CREATE TABLE IF NOT EXISTS perfiles_empresa (
 
 ALTER TABLE perfiles_empresa ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "perfiles_empresa_own" ON perfiles_empresa
-  USING (user_id = auth.uid() OR empresa_id IN (
-    SELECT pe.empresa_id FROM perfiles_empresa pe WHERE pe.user_id = auth.uid()
-  ));
+  USING (user_id = auth.uid());
 
 -- 2. Tabla invitaciones
 CREATE TABLE IF NOT EXISTS invitaciones (

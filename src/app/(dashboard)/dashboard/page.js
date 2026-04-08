@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { obtenerMetricasDashboard, obtenerHistoricoVentas } from '@/lib/dashboard/metricas-service';
 import { infoVencimiento } from '@/lib/utils/vencimientos';
+import { obtenerEstadoTrial } from '@/lib/suscripciones/trial-manager';
 import DashboardAnalitico from './DashboardAnalitico';
+import TrialBanner from '../suscripcion/components/TrialBanner';
 
 export default async function DashboardPage() {
 	const supabase = await createClient();
@@ -65,14 +67,29 @@ export default async function DashboardPage() {
 		.order('created_at', { ascending: false })
 		.limit(8);
 
+	let trialData = null;
+	try {
+		trialData = await obtenerEstadoTrial(empresa.id);
+	} catch {
+		trialData = null;
+	}
+
 	return (
-		<DashboardAnalitico
-			mes={mes}
-			metricas={metricas}
-			historico={historico}
-			usoPlan={usoPlan}
-			proximoVencimiento={proximoVencimiento}
-			ultimosComprobantes={ultimos || []}
-		/>
+		<>
+			{trialData?.estado === 'trial' && (
+				<TrialBanner
+					diasRestantes={trialData.dias_restantes}
+					planNombre={trialData.plan}
+				/>
+			)}
+			<DashboardAnalitico
+				mes={mes}
+				metricas={metricas}
+				historico={historico}
+				usoPlan={usoPlan}
+				proximoVencimiento={proximoVencimiento}
+				ultimosComprobantes={ultimos || []}
+			/>
+		</>
 	);
 }

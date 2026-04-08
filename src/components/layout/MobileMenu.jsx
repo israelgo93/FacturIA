@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-	LayoutDashboard, FileText, Users, Package,
+	LayoutDashboard, FileText, Users, Package, Building2,
 	BarChart3, Settings, X, LogOut,
-	ShoppingCart, UserCheck, CreditCard, Sparkles,
+	ShoppingCart, UserCheck, CreditCard, Sparkles, Shield,
 } from 'lucide-react';
 import { useUIStore } from '@/stores/useUIStore';
 import { useEmpresaStore } from '@/stores/useEmpresaStore';
@@ -28,10 +28,18 @@ const navItems = [
 	{ label: 'Configuración', href: '/configuracion', icon: Settings },
 ];
 
+const adminItems = [
+	{ label: 'Panel Admin', href: '/admin', icon: Shield },
+	{ label: 'Empresas', href: '/admin/empresas', icon: Building2 },
+	{ label: 'Suscripciones', href: '/admin/suscripciones', icon: CreditCard },
+	{ label: 'Auditoria', href: '/admin/audit', icon: FileText },
+];
+
 export default function MobileMenu() {
 	const pathname = usePathname();
 	const router = useRouter();
 	const { mobileMenuOpen, closeMobileMenu } = useUIStore();
+	const { isPlatformAdmin } = useEmpresaStore();
 
 	const handleSignOut = async () => {
 		const supabase = createClient();
@@ -107,6 +115,33 @@ export default function MobileMenu() {
 									</Link>
 								);
 							})}
+
+							{isPlatformAdmin && (
+								<>
+									<div className="my-2" style={{ borderTop: '1px solid var(--divider)' }} />
+									<p className="px-3 py-1 text-[9px] uppercase tracking-widest font-medium" style={{ color: 'var(--text-muted)' }}>
+										Administracion
+									</p>
+									{adminItems.map((item) => {
+										const isActive = pathname === item.href;
+										const Icon = item.icon;
+										return (
+											<Link
+												key={item.href}
+												href={item.href}
+												className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300"
+												style={{
+													background: isActive ? 'var(--glass-hover)' : 'transparent',
+													color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+												}}
+											>
+												<Icon className="w-[18px] h-[18px]" />
+												<span className="text-[13px] font-medium">{item.label}</span>
+											</Link>
+										);
+									})}
+								</>
+							)}
 						</nav>
 
 						<div className="px-2.5 py-3" style={{ borderTop: '1px solid var(--divider)' }}>

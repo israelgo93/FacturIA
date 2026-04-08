@@ -8,14 +8,29 @@ import {
 	Minus,
 	Sparkles,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import GlassCard from '@/components/ui/GlassCard';
 import StatusBadge from '@/components/comprobantes/StatusBadge';
-import VentasChart from '@/components/dashboard/VentasChart';
-import ComprobantesPieChart from '@/components/dashboard/ComprobantesPieChart';
-import TendenciaMensual from '@/components/dashboard/TendenciaMensual';
-import TopClientes from '@/components/dashboard/TopClientes';
 import UsageMeter from '@/components/dashboard/UsageMeter';
-import PrediccionIA from '@/components/dashboard/PrediccionIA';
+
+const VentasChart = dynamic(() => import('@/components/dashboard/VentasChart'), {
+	loading: () => <div className="h-64 rounded-2xl animate-pulse" style={{ background: 'var(--glass-bg)' }} />,
+	ssr: false,
+});
+const ComprobantesPieChart = dynamic(() => import('@/components/dashboard/ComprobantesPieChart'), {
+	loading: () => <div className="h-64 rounded-2xl animate-pulse" style={{ background: 'var(--glass-bg)' }} />,
+	ssr: false,
+});
+const TendenciaMensual = dynamic(() => import('@/components/dashboard/TendenciaMensual'), {
+	loading: () => <div className="h-64 rounded-2xl animate-pulse" style={{ background: 'var(--glass-bg)' }} />,
+	ssr: false,
+});
+const TopClientes = dynamic(() => import('@/components/dashboard/TopClientes'), {
+	ssr: false,
+});
+const PrediccionIA = dynamic(() => import('@/components/dashboard/PrediccionIA'), {
+	ssr: false,
+});
 
 function Variacion({ value }) {
 	const n = Number(value);

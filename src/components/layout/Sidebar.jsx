@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-	LayoutDashboard, FileText, Users, Package,
+	LayoutDashboard, FileText, Users, Package, Building2,
 	BarChart3, Settings, ChevronLeft, ChevronRight, LogOut,
-	ShoppingCart, UserCheck, CreditCard, Sparkles,
+	ShoppingCart, UserCheck, CreditCard, Sparkles, Shield,
 } from 'lucide-react';
 import { useUIStore } from '@/stores/useUIStore';
 import { useEmpresaStore } from '@/stores/useEmpresaStore';
@@ -26,10 +26,18 @@ const navItems = [
 	{ label: 'Configuración', href: '/configuracion', icon: Settings },
 ];
 
+const adminItems = [
+	{ label: 'Panel Admin', href: '/admin', icon: Shield },
+	{ label: 'Empresas', href: '/admin/empresas', icon: Building2 },
+	{ label: 'Suscripciones', href: '/admin/suscripciones', icon: CreditCard },
+	{ label: 'Auditoria', href: '/admin/audit', icon: FileText },
+];
+
 export default function Sidebar() {
 	const pathname = usePathname();
 	const router = useRouter();
 	const { sidebarCollapsed, toggleSidebarCollapsed } = useUIStore();
+	const { isPlatformAdmin } = useEmpresaStore();
 
 	const handleSignOut = async () => {
 		const supabase = createClient();
@@ -124,6 +132,50 @@ export default function Sidebar() {
 						</Link>
 					);
 				})}
+
+				{isPlatformAdmin && (
+					<>
+						<div className="my-2" style={{ borderTop: '1px solid var(--divider)' }} />
+						{!sidebarCollapsed && (
+							<p className="px-3 py-1 text-[9px] uppercase tracking-widest font-medium" style={{ color: 'var(--text-muted)' }}>
+								Administracion
+							</p>
+						)}
+						{adminItems.map((item) => {
+							const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
+							const Icon = item.icon;
+							return (
+								<Link
+									key={item.href}
+									href={item.href}
+									className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300"
+									style={{
+										background: isActive ? 'var(--glass-hover)' : 'transparent',
+										color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+									}}
+									onMouseEnter={(e) => {
+										if (!isActive) {
+											e.currentTarget.style.background = 'var(--glass-bg)';
+											e.currentTarget.style.color = 'var(--text-secondary)';
+										}
+									}}
+									onMouseLeave={(e) => {
+										if (!isActive) {
+											e.currentTarget.style.background = 'transparent';
+											e.currentTarget.style.color = 'var(--text-muted)';
+										}
+									}}
+									title={sidebarCollapsed ? item.label : undefined}
+								>
+									<Icon className="w-[18px] h-[18px] shrink-0" />
+									{!sidebarCollapsed && (
+										<span className="text-[13px] font-medium truncate">{item.label}</span>
+									)}
+								</Link>
+							);
+						})}
+					</>
+				)}
 			</nav>
 
 			<div className="px-2.5 py-3" style={{ borderTop: '1px solid var(--divider)' }}>

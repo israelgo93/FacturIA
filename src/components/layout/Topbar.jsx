@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Menu, Building2, User, LogOut } from 'lucide-react';
+import Link from 'next/link';
+import { Menu, Building2, User, LogOut, Clock } from 'lucide-react';
 import NotificationBell from '@/components/notificaciones/NotificationBell';
 import { useUIStore } from '@/stores/useUIStore';
 import { useEmpresaStore } from '@/stores/useEmpresaStore';
@@ -12,7 +13,7 @@ import ThemeToggle from '@/components/ui/ThemeToggle';
 
 export default function Topbar() {
 	const { setMobileMenuOpen } = useUIStore();
-	const { empresa } = useEmpresaStore();
+	const { empresa, trialInfo } = useEmpresaStore();
 	const [profileOpen, setProfileOpen] = useState(false);
 	const profileRef = useRef(null);
 	const router = useRouter();
@@ -81,6 +82,22 @@ export default function Topbar() {
 			</div>
 
 			<div className="flex items-center gap-1">
+				{trialInfo?.estado === 'trial' && trialInfo.diasRestantes !== null && (
+					<Link
+						href="/suscripcion"
+						className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+						style={{
+							background: trialInfo.diasRestantes <= 3 ? 'var(--glass-active)' : 'var(--glass-bg)',
+							color: 'var(--text-secondary)',
+							border: '1px solid var(--glass-border)',
+						}}
+					>
+						<Clock className="w-3 h-3" />
+						{trialInfo.diasRestantes > 0
+							? `${trialInfo.diasRestantes}d trial`
+							: 'Trial expirado'}
+					</Link>
+				)}
 				<ThemeToggle />
 				<NotificationBell />
 

@@ -1,4 +1,5 @@
 export const PERMISOS_ROL = {
+	superadmin: ['*', 'admin_panel', 'admin_empresas', 'admin_suscripciones', 'admin_audit'],
 	propietario: ['*'],
 	admin: ['emitir', 'reportes', 'ats', 'rdep', 'chat', 'config', 'equipo'],
 	contador: ['emitir', 'reportes', 'ats', 'rdep', 'chat'],
@@ -12,7 +13,12 @@ export function verificarPermiso(rol, permiso) {
 	return permisos.includes('*') || permisos.includes(permiso);
 }
 
+export function esSuperAdmin(rol) {
+	return rol === 'superadmin';
+}
+
 export const ROLES_LABEL = {
+	superadmin: 'SuperAdmin',
 	propietario: 'Propietario',
 	admin: 'Administrador',
 	contador: 'Contador',

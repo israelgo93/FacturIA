@@ -7,10 +7,17 @@ export const useEmpresaStore = create(
 			empresa: null,
 			establecimiento: null,
 			puntoEmision: null,
+			isPlatformAdmin: false,
+			trialInfo: null,
 			setEmpresa: (empresa) => set({ empresa }),
 			setEstablecimiento: (establecimiento) => set({ establecimiento }),
 			setPuntoEmision: (puntoEmision) => set({ puntoEmision }),
-			clearEmpresa: () => set({ empresa: null, establecimiento: null, puntoEmision: null }),
+			setIsPlatformAdmin: (isPlatformAdmin) => set({ isPlatformAdmin }),
+			setTrialInfo: (trialInfo) => set({ trialInfo }),
+			clearEmpresa: () => set({
+				empresa: null, establecimiento: null, puntoEmision: null,
+				isPlatformAdmin: false, trialInfo: null,
+			}),
 		}),
 		{ name: 'facturia-empresa' }
 	)
