@@ -129,7 +129,36 @@ RETURNS SETOF UUID LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'publ
 $$;
 
 DROP POLICY IF EXISTS "empresas_own" ON empresas;
-CREATE POLICY "empresas_multi_tenant" ON empresas FOR ALL USING (id IN (SELECT user_empresa_ids()));
+
+-- Politicas separadas para empresas: INSERT permite onboarding sin perfil previo
+CREATE POLICY "empresas_tenant_read" ON empresas FOR SELECT USING (
+  id IN (SELECT user_empresa_ids()) OR user_id = auth.uid()
+);
+CREATE POLICY "empresas_tenant_insert" ON empresas FOR INSERT WITH CHECK (
+  user_id = auth.uid()
+);
+CREATE POLICY "empresas_tenant_update" ON empresas FOR UPDATE USING (
+  id IN (SELECT user_empresa_ids()) OR user_id = auth.uid()
+);
+CREATE POLICY "empresas_tenant_delete" ON empresas FOR DELETE USING (
+  id IN (SELECT user_empresa_ids()) OR user_id = auth.uid()
+);
+
+-- Trigger: crear perfil propietario automaticamente al insertar empresa
+CREATE OR REPLACE FUNCTION auto_crear_perfil_propietario()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
+BEGIN
+  INSERT INTO perfiles_empresa (user_id, empresa_id, rol, activo)
+  VALUES (NEW.user_id, NEW.id, 'propietario', true)
+  ON CONFLICT (user_id, empresa_id) DO NOTHING;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_auto_perfil_propietario ON empresas;
+CREATE TRIGGER trg_auto_perfil_propietario
+  AFTER INSERT ON empresas
+  FOR EACH ROW EXECUTE FUNCTION auto_crear_perfil_propietario();
 DROP POLICY IF EXISTS "clientes_tenant" ON clientes;
 CREATE POLICY "clientes_multi_tenant" ON clientes FOR ALL USING (empresa_id IN (SELECT user_empresa_ids()));
 DROP POLICY IF EXISTS "productos_tenant" ON productos;
