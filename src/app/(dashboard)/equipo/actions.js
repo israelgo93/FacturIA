@@ -27,13 +27,37 @@ export async function obtenerMiembros() {
 	const ctx = await obtenerContextoEquipo();
 	if (ctx.error) return ctx;
 
-	const { data, error } = await ctx.supabase
+	const { data: perfiles, error } = await ctx.supabase
 		.from('perfiles_empresa')
 		.select('id, user_id, rol, activo, created_at')
 		.eq('empresa_id', ctx.empresaId)
 		.order('created_at', { ascending: true });
 
 	if (error) return { error: error.message };
+	if (!perfiles || perfiles.length === 0) return { data: [] };
+
+	const { createAdminClient } = await import('@/lib/supabase/admin');
+	const admin = createAdminClient();
+
+	const userIds = perfiles.map((p) => p.user_id);
+	const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 100 });
+
+	const userMap = {};
+	(users || []).forEach((u) => {
+		if (userIds.includes(u.id)) {
+			userMap[u.id] = {
+				email: u.email,
+				nombre: u.user_metadata?.full_name || u.user_metadata?.name || null,
+			};
+		}
+	});
+
+	const data = perfiles.map((p) => ({
+		...p,
+		email: userMap[p.user_id]?.email || null,
+		nombre: userMap[p.user_id]?.nombre || null,
+	}));
+
 	return { data };
 }
 

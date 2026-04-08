@@ -139,8 +139,13 @@ export default function EquipoPage() {
 								<Shield className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
 								<div className="flex-1 min-w-0">
 									<p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-										{m.user_id?.substring(0, 8)}...
+										{m.nombre || m.email || m.user_id?.substring(0, 8) + '...'}
 									</p>
+									{m.email && m.nombre && (
+										<p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
+											{m.email}
+										</p>
+									)}
 								</div>
 								<StatusBadge estado={m.activo ? 'activo' : 'inactivo'} size="sm" />
 								<span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>
