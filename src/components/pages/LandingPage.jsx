@@ -135,25 +135,25 @@ export default function LandingPage() {
 					<p className="text-xs uppercase tracking-widest text-center mb-3" style={{ color: 'var(--text-muted)' }}>Precios</p>
 					<h2 className="text-2xl font-semibold text-center mb-16" style={{ color: 'var(--text-primary)' }}>Planes simples y transparentes</h2>
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-						{[
-							{
-								name: 'Starter', price: '$9.99', features: [
-									'50 comprobantes/mes', '1 usuario', '1 establecimiento',
-									'Generación ATS con IA', 'Dashboard básico', 'Soporte email',
-								],
-							},
-							{
-								name: 'Professional', price: '$24.99', popular: true, features: [
-									'300 comprobantes/mes', '5 usuarios', '3 establecimientos',
-									'Reportes IA avanzados', 'RDEP automático', 'Soporte email + chat',
-								],
-							},
-							{
-								name: 'Enterprise', price: '$49.99', features: [
-									'Comprobantes ilimitados', 'Usuarios ilimitados', 'Establecimientos ilimitados',
-									'API access', 'Multi-empresa', 'Soporte prioritario',
-								],
-							},
+					{[
+						{
+							name: 'Starter', price: '$9.99', features: [
+								'50 comprobantes/mes', '1 usuario', '1 establecimiento',
+								'1 punto de emision', 'Dashboard basico', 'Soporte email',
+							],
+						},
+						{
+							name: 'Professional', price: '$24.99', popular: true, features: [
+								'300 comprobantes/mes', '5 usuarios', '3 establecimientos',
+								'5 puntos de emision', 'Reportes IA avanzados', 'RDEP automatico',
+							],
+						},
+						{
+							name: 'Enterprise', price: '$49.99', features: [
+								'Comprobantes ilimitados', 'Usuarios ilimitados', 'Establecimientos ilimitados',
+								'Puntos de emision ilimitados', 'Reportes IA avanzados', 'RDEP automatico',
+							],
+						},
 						].map((plan) => (
 							<div
 								key={plan.name}
