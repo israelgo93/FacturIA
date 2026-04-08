@@ -44,3 +44,7 @@ public/swe-worker*
 .vscode
 *.swp
 *.swo
+
+# AI / Agents
+.claude/
+.cursor/settings.json
