@@ -15,18 +15,7 @@
  */
 import { renderToBuffer } from '@react-pdf/renderer';
 import { createElement } from 'react';
-
-/**
- * Mapeo de tipo de comprobante a template RIDE
- */
-const RIDE_TEMPLATES = {
-	'01': '@/components/pdf/RIDETemplate',           // Factura
-	'03': '@/components/pdf/RIDELiquidacionCompra',  // Liquidación de Compra
-	'04': '@/components/pdf/RIDENotaCredito',        // Nota de Crédito
-	'05': '@/components/pdf/RIDENotaDebito',         // Nota de Débito
-	'06': '@/components/pdf/RIDEGuiaRemision',       // Guía de Remisión
-	'07': '@/components/pdf/RIDERetencion',          // Comprobante de Retención
-};
+import { generarCodigoBarras } from '@/lib/utils/barcode';
 
 /**
  * Obtiene el template RIDE correcto según el tipo de comprobante
@@ -48,7 +37,6 @@ async function getRIDETemplate(tipoComprobante) {
 		case '07':
 			return (await import('@/components/pdf/RIDERetencion')).default;
 		default:
-			// Default a factura para compatibilidad
 			return (await import('@/components/pdf/RIDETemplate')).default;
 	}
 }
@@ -59,12 +47,13 @@ async function getRIDETemplate(tipoComprobante) {
  * @returns {Promise<Buffer>} PDF como Buffer
  */
 export async function generarRIDEPDF(comprobante) {
-	// Obtener el template correcto según el tipo de comprobante
 	const tipoComprobante = comprobante.tipo_comprobante || '01';
 	const RIDETemplate = await getRIDETemplate(tipoComprobante);
 
+	const barcodeDataUri = await generarCodigoBarras(comprobante.clave_acceso);
+
 	const pdfBuffer = await renderToBuffer(
-		createElement(RIDETemplate, { comprobante })
+		createElement(RIDETemplate, { comprobante, barcodeDataUri })
 	);
 
 	return Buffer.from(pdfBuffer);

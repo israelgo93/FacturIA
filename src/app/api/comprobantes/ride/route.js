@@ -19,8 +19,8 @@ export async function GET(req) {
 			.from('comprobantes')
 			.select(`
 				*,
-				empresa:empresas(ruc, razon_social, nombre_comercial, direccion_matriz),
-				establecimiento:establecimientos(codigo, direccion),
+				empresa:empresas(ruc, razon_social, nombre_comercial, direccion_matriz, obligado_contabilidad, contribuyente_especial, regimen_fiscal, agente_retencion, logo_url),
+				establecimiento:establecimientos(codigo, direccion, nombre_comercial),
 				punto_emision:puntos_emision(codigo),
 				detalles:comprobante_detalles(*),
 				pagos:comprobante_pagos(*)
