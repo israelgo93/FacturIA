@@ -91,10 +91,10 @@ const s = StyleSheet.create({
 	tdRight: { fontSize: 6.5, textAlign: 'right' },
 	tdCenter: { fontSize: 6.5, textAlign: 'center' },
 
-	/* Bottom */
+	/* Bottom: bottomRight = 40% alineado con ultimas columnas del detalle */
 	bottom: { flexDirection: 'row', width: '100%' },
-	bottomLeft: { width: '55%', marginRight: 6 },
-	bottomRight: { width: '45%' },
+	bottomLeft: { width: '58%', marginRight: 6 },
+	bottomRight: { width: '42%' },
 
 	/* Info adicional (tabla con bordes) */
 	iaTable: { marginBottom: 8 },
@@ -110,10 +110,10 @@ const s = StyleSheet.create({
 	totTable: {},
 	totRow: { flexDirection: 'row' },
 	totLabel: { flex: 1, fontSize: 7, fontWeight: 'bold', paddingVertical: 3, paddingHorizontal: 4, borderBottom: BT, borderLeft: B, borderRight: BT },
-	totVal: { width: 55, fontSize: 7, textAlign: 'right', paddingVertical: 3, paddingHorizontal: 4, borderBottom: BT, borderRight: B },
+	totVal: { width: 60, fontSize: 7, textAlign: 'right', paddingVertical: 3, paddingHorizontal: 4, borderBottom: BT, borderRight: B },
 	totRowFinal: { flexDirection: 'row', backgroundColor: '#f0f0f0' },
 	totLabelFinal: { flex: 1, fontSize: 8, fontWeight: 'bold', paddingVertical: 3, paddingHorizontal: 4, borderBottom: B, borderLeft: B, borderRight: BT, borderTop: B },
-	totValFinal: { width: 55, fontSize: 8, fontWeight: 'bold', textAlign: 'right', paddingVertical: 3, paddingHorizontal: 4, borderBottom: B, borderRight: B, borderTop: B },
+	totValFinal: { width: 60, fontSize: 8, fontWeight: 'bold', textAlign: 'right', paddingVertical: 3, paddingHorizontal: 4, borderBottom: B, borderRight: B, borderTop: B },
 
 	/* Footer */
 	footer: { position: 'absolute', bottom: 14, left: 24, right: 24, textAlign: 'center', fontSize: 5.5, color: '#999' },
@@ -226,21 +226,21 @@ export default function RIDETemplate({ comprobante, barcodeDataUri }) {
 					<View style={s.tRow}>
 						<Cell w="9%" head first>Cod.{'\n'}Principal</Cell>
 						<Cell w="11%" head>Cod.{'\n'}Auxiliar</Cell>
-						<Cell w="7%" head>Cant.</Cell>
-						<Cell w="33%" head>Descripcion</Cell>
-						<Cell w="12%" head>Precio{'\n'}Unit.</Cell>
-						<Cell w="10%" head>Desc.</Cell>
-						<Cell w="12%" head last>Precio{'\n'}Total</Cell>
+						<Cell w="6%" head>Cant.</Cell>
+						<Cell w="34%" head>Descripcion</Cell>
+						<Cell w="11%" head>Precio{'\n'}Unit.</Cell>
+						<Cell w="9%" head>Desc.</Cell>
+						<Cell w="11%" head last>Precio{'\n'}Total</Cell>
 					</View>
 					{detalles.map((det, i) => (
 						<View key={i} style={s.tRow}>
 							<Cell w="9%" first>{det.codigo_principal || ''}</Cell>
 							<Cell w="11%" center>{det.codigo_auxiliar || ''}</Cell>
-							<Cell w="7%" right>{fmt(det.cantidad)}</Cell>
-							<Cell w="33%">{det.descripcion}</Cell>
-							<Cell w="12%" right>{fmt(det.precio_unitario)}</Cell>
-							<Cell w="10%" right>{fmt(det.descuento)}</Cell>
-							<Cell w="12%" right last>{fmt(det.precio_total_sin_impuesto)}</Cell>
+							<Cell w="6%" right>{fmt(det.cantidad)}</Cell>
+							<Cell w="34%">{det.descripcion}</Cell>
+							<Cell w="11%" right>{fmt(det.precio_unitario)}</Cell>
+							<Cell w="9%" right>{fmt(det.descuento)}</Cell>
+							<Cell w="11%" right last>{fmt(det.precio_total_sin_impuesto)}</Cell>
 						</View>
 					))}
 				</View>
