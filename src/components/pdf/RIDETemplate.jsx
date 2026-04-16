@@ -91,29 +91,29 @@ const s = StyleSheet.create({
 	tdRight: { fontSize: 6.5, textAlign: 'right' },
 	tdCenter: { fontSize: 6.5, textAlign: 'center' },
 
-	/* Bottom: bottomRight = 40% alineado con ultimas columnas del detalle */
+	/* Bottom: dos columnas, totales alineados con Precio Total del detalle */
 	bottom: { flexDirection: 'row', width: '100%' },
-	bottomLeft: { width: '58%', marginRight: 6 },
-	bottomRight: { width: '42%' },
+	bottomLeft: { width: '60%' },
+	bottomRight: { width: '40%' },
 
 	/* Info adicional (tabla con bordes) */
-	iaTable: { marginBottom: 8 },
+	iaTable: { marginBottom: 8, marginRight: 6 },
 	iaTitle: { fontSize: 7, fontWeight: 'bold', textAlign: 'center', backgroundColor: '#f0f0f0', border: B, paddingVertical: 3 },
 	iaRow: { flexDirection: 'row' },
 	iaLabel: { width: '28%', fontSize: 6.5, fontWeight: 'bold', paddingVertical: 2, paddingHorizontal: 4, borderBottom: BT, borderLeft: B, borderRight: BT },
 	iaVal: { width: '72%', fontSize: 6.5, paddingVertical: 2, paddingHorizontal: 4, borderBottom: BT, borderRight: B },
 
 	/* Formas de pago (tabla con bordes) */
-	payTable: { marginBottom: 8 },
+	payTable: { marginBottom: 8, marginRight: 6 },
 
-	/* Totales (tabla con bordes) */
-	totTable: {},
+	/* Totales: columna valor usa porcentaje para alinear con detalle */
+	totTable: { width: '100%' },
 	totRow: { flexDirection: 'row' },
-	totLabel: { flex: 1, fontSize: 7, fontWeight: 'bold', paddingVertical: 3, paddingHorizontal: 4, borderBottom: BT, borderLeft: B, borderRight: BT },
-	totVal: { width: 60, fontSize: 7, textAlign: 'right', paddingVertical: 3, paddingHorizontal: 4, borderBottom: BT, borderRight: B },
+	totLabel: { width: '72%', fontSize: 7, fontWeight: 'bold', paddingVertical: 3, paddingHorizontal: 4, borderBottom: BT, borderLeft: B, borderRight: BT },
+	totVal: { width: '28%', fontSize: 7, textAlign: 'right', paddingVertical: 3, paddingHorizontal: 4, borderBottom: BT, borderRight: B },
 	totRowFinal: { flexDirection: 'row', backgroundColor: '#f0f0f0' },
-	totLabelFinal: { flex: 1, fontSize: 8, fontWeight: 'bold', paddingVertical: 3, paddingHorizontal: 4, borderBottom: B, borderLeft: B, borderRight: BT, borderTop: B },
-	totValFinal: { width: 60, fontSize: 8, fontWeight: 'bold', textAlign: 'right', paddingVertical: 3, paddingHorizontal: 4, borderBottom: B, borderRight: B, borderTop: B },
+	totLabelFinal: { width: '72%', fontSize: 8, fontWeight: 'bold', paddingVertical: 3, paddingHorizontal: 4, borderBottom: B, borderLeft: B, borderRight: BT, borderTop: B },
+	totValFinal: { width: '28%', fontSize: 8, fontWeight: 'bold', textAlign: 'right', paddingVertical: 3, paddingHorizontal: 4, borderBottom: B, borderRight: B, borderTop: B },
 
 	/* Footer */
 	footer: { position: 'absolute', bottom: 14, left: 24, right: 24, textAlign: 'center', fontSize: 5.5, color: '#999' },
