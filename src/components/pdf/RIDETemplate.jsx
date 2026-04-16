@@ -5,6 +5,7 @@
  */
 import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer';
 import { FORMAS_PAGO, TARIFAS_IVA } from '@/lib/utils/sri-catalogs';
+import { formatDateTimeEcuador } from '@/lib/utils/formatters';
 
 /* ─── Helpers ─── */
 
@@ -18,20 +19,10 @@ function fmtDate(date) {
 		const [y, m, d] = date.substring(0, 10).split('-');
 		return `${d}/${m}/${y}`;
 	}
-	const d = new Date(date);
-	return `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`;
-}
-
-function fmtDateTime(date) {
-	if (!date) return '';
-	const d = new Date(date);
-	const dd = String(d.getUTCDate()).padStart(2, '0');
-	const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-	const yyyy = d.getUTCFullYear();
-	const hh = String(d.getUTCHours()).padStart(2, '0');
-	const mi = String(d.getUTCMinutes()).padStart(2, '0');
-	const ss = String(d.getUTCSeconds()).padStart(2, '0');
-	return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
+	return new Intl.DateTimeFormat('es-EC', {
+		timeZone: 'America/Guayaquil',
+		day: '2-digit', month: '2-digit', year: 'numeric',
+	}).format(new Date(date));
 }
 
 function getFormaPagoLabel(codigo) {
@@ -60,12 +51,12 @@ const BT = '0.5 solid #000';
 /* ─── Estilos ─── */
 
 const s = StyleSheet.create({
-	page: { padding: 20, fontSize: 7, fontFamily: 'Helvetica' },
+	page: { padding: 24, fontSize: 7, fontFamily: 'Helvetica' },
 
 	/* Cabecera */
-	header: { flexDirection: 'row', marginBottom: 8 },
-	hLeft: { width: '44%', border: B, padding: 8, marginRight: 4, justifyContent: 'center' },
-	hRight: { width: '56%', border: B, padding: 8 },
+	header: { flexDirection: 'row', marginBottom: 10 },
+	hLeft: { width: '44%', border: B, padding: 10, marginRight: 6, justifyContent: 'center' },
+	hRight: { width: '56%', border: B, padding: 10 },
 	noLogo: { fontSize: 14, fontWeight: 'bold', color: '#cc0000', marginBottom: 6, textAlign: 'center' },
 	logo: { width: 120, height: 60, marginBottom: 6, objectFit: 'contain' },
 	companyName: { fontSize: 9, fontWeight: 'bold', marginBottom: 2 },
@@ -82,16 +73,16 @@ const s = StyleSheet.create({
 	barcodeText: { fontSize: 5.5, fontFamily: 'Courier', textAlign: 'center', marginTop: 1 },
 
 	/* Comprador */
-	buyer: { border: B, marginBottom: 8 },
+	buyer: { border: B, marginBottom: 10 },
 	buyerRow: { flexDirection: 'row', borderBottom: BT },
-	buyerLabel: { fontSize: 7, fontWeight: 'bold', padding: 3 },
-	buyerVal: { fontSize: 7, padding: 3, flex: 1 },
+	buyerLabel: { fontSize: 7, fontWeight: 'bold', padding: 4 },
+	buyerVal: { fontSize: 7, padding: 4, flex: 1 },
 	buyerCellBorder: { borderRight: BT },
 
 	/* Tabla detalles — celdas con bordes */
-	table: { marginBottom: 8 },
-	tRow: { flexDirection: 'row' },
-	cell: { borderBottom: BT, borderRight: BT, borderLeft: BT, paddingVertical: 2, paddingHorizontal: 2 },
+	table: { marginBottom: 10, width: '100%' },
+	tRow: { flexDirection: 'row', width: '100%' },
+	cell: { borderBottom: BT, borderRight: BT, borderLeft: BT, paddingVertical: 3, paddingHorizontal: 3 },
 	cellFirst: { borderLeft: B },
 	cellLast: { borderRight: B },
 	cellHead: { backgroundColor: '#f0f0f0', borderBottom: B, borderTop: B },
@@ -100,41 +91,32 @@ const s = StyleSheet.create({
 	tdRight: { fontSize: 6.5, textAlign: 'right' },
 	tdCenter: { fontSize: 6.5, textAlign: 'center' },
 
-	/* Anchos de columna detalle */
-	wCodP: { width: '8%' },
-	wCodA: { width: '10%' },
-	wCant: { width: '7%' },
-	wDesc: { width: '35%' },
-	wPU: { width: '11%' },
-	wDto: { width: '9%' },
-	wPT: { width: '10%' },
-
 	/* Bottom */
-	bottom: { flexDirection: 'row' },
-	bottomLeft: { width: '55%', marginRight: 4 },
+	bottom: { flexDirection: 'row', width: '100%' },
+	bottomLeft: { width: '55%', marginRight: 6 },
 	bottomRight: { width: '45%' },
 
 	/* Info adicional (tabla con bordes) */
-	iaTable: { marginBottom: 6 },
+	iaTable: { marginBottom: 8 },
 	iaTitle: { fontSize: 7, fontWeight: 'bold', textAlign: 'center', backgroundColor: '#f0f0f0', border: B, paddingVertical: 3 },
 	iaRow: { flexDirection: 'row' },
 	iaLabel: { width: '28%', fontSize: 6.5, fontWeight: 'bold', paddingVertical: 2, paddingHorizontal: 4, borderBottom: BT, borderLeft: B, borderRight: BT },
 	iaVal: { width: '72%', fontSize: 6.5, paddingVertical: 2, paddingHorizontal: 4, borderBottom: BT, borderRight: B },
 
 	/* Formas de pago (tabla con bordes) */
-	payTable: { marginBottom: 6 },
+	payTable: { marginBottom: 8 },
 
 	/* Totales (tabla con bordes) */
 	totTable: {},
 	totRow: { flexDirection: 'row' },
-	totLabel: { flex: 1, fontSize: 7, fontWeight: 'bold', paddingVertical: 2, paddingHorizontal: 4, borderBottom: BT, borderLeft: B, borderRight: BT },
-	totVal: { width: 55, fontSize: 7, textAlign: 'right', paddingVertical: 2, paddingHorizontal: 4, borderBottom: BT, borderRight: B },
+	totLabel: { flex: 1, fontSize: 7, fontWeight: 'bold', paddingVertical: 3, paddingHorizontal: 4, borderBottom: BT, borderLeft: B, borderRight: BT },
+	totVal: { width: 55, fontSize: 7, textAlign: 'right', paddingVertical: 3, paddingHorizontal: 4, borderBottom: BT, borderRight: B },
 	totRowFinal: { flexDirection: 'row', backgroundColor: '#f0f0f0' },
 	totLabelFinal: { flex: 1, fontSize: 8, fontWeight: 'bold', paddingVertical: 3, paddingHorizontal: 4, borderBottom: B, borderLeft: B, borderRight: BT, borderTop: B },
 	totValFinal: { width: 55, fontSize: 8, fontWeight: 'bold', textAlign: 'right', paddingVertical: 3, paddingHorizontal: 4, borderBottom: B, borderRight: B, borderTop: B },
 
 	/* Footer */
-	footer: { position: 'absolute', bottom: 12, left: 20, right: 20, textAlign: 'center', fontSize: 5.5, color: '#999' },
+	footer: { position: 'absolute', bottom: 14, left: 24, right: 24, textAlign: 'center', fontSize: 5.5, color: '#999' },
 });
 
 /* ─── Componente principal ─── */
@@ -200,7 +182,7 @@ export default function RIDETemplate({ comprobante, barcodeDataUri }) {
 						{comp.fecha_autorizacion && (
 							<View style={s.hInfoRow}>
 								<Text style={s.hInfoLabel}>FECHA DE AUTORIZACION:</Text>
-								<Text style={s.hInfoVal}>{fmtDateTime(comp.fecha_autorizacion)}</Text>
+								<Text style={s.hInfoVal}>{formatDateTimeEcuador(comp.fecha_autorizacion)}</Text>
 							</View>
 						)}
 						<View style={{ marginTop: 6 }}>
@@ -241,26 +223,24 @@ export default function RIDETemplate({ comprobante, barcodeDataUri }) {
 
 				{/* ═══ TABLA DE DETALLES (celdas con bordes) ═══ */}
 				<View style={s.table}>
-					{/* Header */}
 					<View style={s.tRow}>
-						<Cell w="8%" head first>Cod.{'\n'}Principal</Cell>
-						<Cell w="10%" head>Cod.{'\n'}Auxiliar</Cell>
+						<Cell w="9%" head first>Cod.{'\n'}Principal</Cell>
+						<Cell w="11%" head>Cod.{'\n'}Auxiliar</Cell>
 						<Cell w="7%" head>Cant.</Cell>
-						<Cell w="35%" head>Descripcion</Cell>
-						<Cell w="11%" head>Precio{'\n'}Unit.</Cell>
-						<Cell w="9%" head>Desc.</Cell>
-						<Cell w="10%" head last>Precio{'\n'}Total</Cell>
+						<Cell w="33%" head>Descripcion</Cell>
+						<Cell w="12%" head>Precio{'\n'}Unit.</Cell>
+						<Cell w="10%" head>Desc.</Cell>
+						<Cell w="12%" head last>Precio{'\n'}Total</Cell>
 					</View>
-					{/* Filas */}
 					{detalles.map((det, i) => (
 						<View key={i} style={s.tRow}>
-							<Cell w="8%" first>{det.codigo_principal || ''}</Cell>
-							<Cell w="10%" center>{det.codigo_auxiliar || ''}</Cell>
+							<Cell w="9%" first>{det.codigo_principal || ''}</Cell>
+							<Cell w="11%" center>{det.codigo_auxiliar || ''}</Cell>
 							<Cell w="7%" right>{fmt(det.cantidad)}</Cell>
-							<Cell w="35%">{det.descripcion}</Cell>
-							<Cell w="11%" right>{fmt(det.precio_unitario)}</Cell>
-							<Cell w="9%" right>{fmt(det.descuento)}</Cell>
-							<Cell w="10%" right last>{fmt(det.precio_total_sin_impuesto)}</Cell>
+							<Cell w="33%">{det.descripcion}</Cell>
+							<Cell w="12%" right>{fmt(det.precio_unitario)}</Cell>
+							<Cell w="10%" right>{fmt(det.descuento)}</Cell>
+							<Cell w="12%" right last>{fmt(det.precio_total_sin_impuesto)}</Cell>
 						</View>
 					))}
 				</View>

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { ahoraEcuador } from '@/lib/utils/formatters';
 
 const CACHE_MS = 5 * 60 * 1000;
 
@@ -48,7 +49,7 @@ export async function obtenerHistoricoVentas(empresaId, meses = 6) {
 	const resultados = [];
 
 	for (let i = meses - 1; i >= 0; i--) {
-		const fecha = new Date();
+		const fecha = ahoraEcuador();
 		fecha.setMonth(fecha.getMonth() - i);
 		const y = fecha.getFullYear();
 		const m = fecha.getMonth() + 1;

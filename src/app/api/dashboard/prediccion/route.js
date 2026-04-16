@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { obtenerMetricasDashboard, obtenerHistoricoVentas } from '@/lib/dashboard/metricas-service';
 import { generarPrediccionInsights } from '@/lib/dashboard/prediccion-ia';
+import { mesActualEcuador } from '@/lib/utils/formatters';
 
 export const maxDuration = 30;
 
@@ -23,7 +24,7 @@ export async function GET(req) {
 	}
 
 	const { searchParams } = new URL(req.url);
-	const mes = searchParams.get('mes') || new Date().toISOString().slice(0, 7);
+	const mes = searchParams.get('mes') || mesActualEcuador();
 
 	try {
 		const [metricas, historico] = await Promise.all([

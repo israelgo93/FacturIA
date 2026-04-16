@@ -35,7 +35,7 @@ export default function NuevaCompraPage() {
 	const [form, setForm] = useState(getEmptyForm());
 
 	useEffect(() => {
-		const hoy = new Date().toISOString().split('T')[0];
+		const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date());
 		setForm((prev) => ({
 			...prev,
 			fecha_emision: prev.fecha_emision || hoy,

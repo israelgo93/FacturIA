@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { diasParaVencimiento } from '@/lib/utils/vencimientos';
+import { ahoraEcuador } from '@/lib/utils/formatters';
 
 /**
  * Crea notificacion si no existe una igual reciente (mismo tipo + titulo, 24h).
@@ -36,13 +37,12 @@ async function insertarSiNuevo(supabase, empresaId, payload) {
  */
 export async function sincronizarAlertasAutomaticas(empresaId, ruc) {
 	const supabase = await createClient();
-	const hoy = new Date();
+	const hoy = ahoraEcuador();
 	const mesAnterior = hoy.getMonth() === 0 ? 12 : hoy.getMonth();
 	const anioMes = hoy.getMonth() === 0 ? hoy.getFullYear() - 1 : hoy.getFullYear();
 
 	if (ruc && ruc.length >= 9) {
-		const d = new Date();
-		const periodo = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+		const periodo = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
 		const mesPeriodo = periodo.getMonth() + 1;
 		const anioPeriodo = periodo.getFullYear();
 		const dias = diasParaVencimiento(ruc, anioPeriodo, mesPeriodo);

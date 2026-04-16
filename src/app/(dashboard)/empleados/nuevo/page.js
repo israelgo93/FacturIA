@@ -40,7 +40,7 @@ export default function NuevoEmpleadoPage() {
 	const [form, setForm] = useState(getEmptyForm());
 
 	useEffect(() => {
-		const hoy = new Date().toISOString().split('T')[0];
+		const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date());
 		setForm((prev) => ({
 			...prev,
 			fecha_ingreso: prev.fecha_ingreso || hoy,

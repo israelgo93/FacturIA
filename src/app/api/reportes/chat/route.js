@@ -6,6 +6,7 @@ import { google } from '@ai-sdk/google';
 import { streamText, convertToModelMessages } from 'ai';
 import { createClient } from '@/lib/supabase/server';
 import { getAnalisisSystemPrompt } from '@/lib/ia/reportes-prompts';
+import { periodoActualEcuador, fechaHoyEcuador } from '@/lib/utils/formatters';
 
 export const maxDuration = 30;
 
@@ -38,18 +39,14 @@ export async function POST(req) {
 	// Obtener contexto amplio: mes actual y mes anterior
 	let contexto = {};
 	if (empresaId) {
-		const hoy = new Date();
-		const mesActual = hoy.getMonth() + 1;
-		const anioActual = hoy.getFullYear();
+		const { anio: anioActual, mes: mesActual } = periodoActualEcuador();
 		const mesAnterior = mesActual === 1 ? 12 : mesActual - 1;
 		const anioAnterior = mesActual === 1 ? anioActual - 1 : anioActual;
 
-		// Ventas mes actual
 		const fechaInicioActual = `${anioActual}-${String(mesActual).padStart(2, '0')}-01`;
 		const lastDayActual = new Date(anioActual, mesActual, 0).getDate();
 		const fechaFinActual = `${anioActual}-${String(mesActual).padStart(2, '0')}-${lastDayActual}`;
 
-		// Ventas mes anterior
 		const fechaInicioAnterior = `${anioAnterior}-${String(mesAnterior).padStart(2, '0')}-01`;
 		const lastDayAnterior = new Date(anioAnterior, mesAnterior, 0).getDate();
 		const fechaFinAnterior = `${anioAnterior}-${String(mesAnterior).padStart(2, '0')}-${lastDayAnterior}`;
@@ -127,7 +124,7 @@ export async function POST(req) {
 			.reduce((s, r) => s + parseFloat(r.valor_retenido || 0), 0);
 
 		contexto = {
-			fecha_hoy: hoy.toISOString().split('T')[0],
+			fecha_hoy: fechaHoyEcuador(),
 			mes_actual: { periodo: `${mesActual}/${anioActual}`, ...mesActualData, compras: comprasMesActual },
 			mes_anterior: { periodo: `${mesAnterior}/${anioAnterior}`, ...mesAnteriorData, compras: comprasMesAnterior },
 			retenciones: { renta: totalRetencionesRenta.toFixed(2), iva: totalRetencionesIVA.toFixed(2) },

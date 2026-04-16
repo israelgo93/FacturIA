@@ -75,6 +75,63 @@ export function fechaHoyEcuador() {
 }
 
 /**
+ * Devuelve un objeto Date representando "ahora" en Ecuador.
+ * Util para getFullYear/getMonth/getDate cuando se necesita el calendario ecuatoriano.
+ * @returns {Date}
+ */
+export function ahoraEcuador() {
+	const parts = new Intl.DateTimeFormat('en-CA', {
+		timeZone: 'America/Guayaquil',
+		year: 'numeric', month: '2-digit', day: '2-digit',
+		hour: '2-digit', minute: '2-digit', second: '2-digit',
+		hour12: false,
+	}).formatToParts(new Date());
+
+	const get = (type) => parts.find((p) => p.type === type)?.value || '0';
+	return new Date(
+		parseInt(get('year')),
+		parseInt(get('month')) - 1,
+		parseInt(get('day')),
+		parseInt(get('hour')),
+		parseInt(get('minute')),
+		parseInt(get('second'))
+	);
+}
+
+/**
+ * Devuelve anio y mes actuales en timezone Ecuador.
+ * @returns {{ anio: number, mes: number }}
+ */
+export function periodoActualEcuador() {
+	const d = ahoraEcuador();
+	return { anio: d.getFullYear(), mes: d.getMonth() + 1 };
+}
+
+/**
+ * Devuelve el mes actual en formato YYYY-MM en timezone Ecuador.
+ * @returns {string}
+ */
+export function mesActualEcuador() {
+	const { anio, mes } = periodoActualEcuador();
+	return `${anio}-${String(mes).padStart(2, '0')}`;
+}
+
+/**
+ * Formatea un timestamp ISO (de Supabase) a fecha/hora Ecuador dd/MM/yyyy HH:mm:ss.
+ * @param {string} isoString - Timestamp ISO (ej: 2026-04-15T23:14:30Z)
+ * @returns {string}
+ */
+export function formatDateTimeEcuador(isoString) {
+	if (!isoString) return '';
+	return new Intl.DateTimeFormat('es-EC', {
+		timeZone: 'America/Guayaquil',
+		day: '2-digit', month: '2-digit', year: 'numeric',
+		hour: '2-digit', minute: '2-digit', second: '2-digit',
+		hour12: false,
+	}).format(new Date(isoString));
+}
+
+/**
  * Formatea un RUC o cédula con guiones
  * @param {string} id - Número de identificación
  * @returns {string} Identificación formateada

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { obtenerMetricasDashboard, obtenerHistoricoVentas } from '@/lib/dashboard/metricas-service';
 import { infoVencimiento } from '@/lib/utils/vencimientos';
+import { mesActualEcuador, periodoActualEcuador } from '@/lib/utils/formatters';
 import { obtenerEstadoTrial } from '@/lib/suscripciones/trial-manager';
 import DashboardAnalitico from './DashboardAnalitico';
 import TrialBanner from '../suscripcion/components/TrialBanner';
@@ -26,7 +27,7 @@ export default async function DashboardPage() {
 		);
 	}
 
-	const mes = new Date().toISOString().slice(0, 7);
+	const mes = mesActualEcuador();
 
 	let metricas = {};
 	let historico = [];
@@ -51,10 +52,10 @@ export default async function DashboardPage() {
 		usoPlan = {};
 	}
 
-	const d = new Date();
-	const periodo = new Date(d.getFullYear(), d.getMonth() - 1, 1);
-	const mesV = periodo.getMonth() + 1;
-	const anioV = periodo.getFullYear();
+	const { anio: anioEC, mes: mesEC } = periodoActualEcuador();
+	const mesAnterior = mesEC === 1 ? 12 : mesEC - 1;
+	const anioV = mesEC === 1 ? anioEC - 1 : anioEC;
+	const mesV = mesAnterior;
 	let proximoVencimiento = null;
 	if (empresa.ruc && empresa.ruc.length >= 9) {
 		proximoVencimiento = infoVencimiento(empresa.ruc, anioV, mesV);

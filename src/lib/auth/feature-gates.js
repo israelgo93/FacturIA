@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { ahoraEcuador } from '@/lib/utils/formatters';
 
 /**
  * Verifica acceso completo a features segun plan activo de la empresa.
@@ -51,7 +52,7 @@ export async function verificarAccesoCompleto(empresaId) {
 			.from('comprobantes')
 			.select('*', { count: 'exact', head: true })
 			.eq('empresa_id', empresaId)
-			.gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+			.gte('created_at', new Date(ahoraEcuador().getFullYear(), ahoraEcuador().getMonth(), 1).toISOString()),
 		supabase
 			.from('perfiles_empresa')
 			.select('*', { count: 'exact', head: true })
