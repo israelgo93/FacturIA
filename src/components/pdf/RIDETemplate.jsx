@@ -48,6 +48,16 @@ function getIVARate(detalles) {
 const B = '1 solid #000';
 const BT = '0.5 solid #000';
 
+const DETAIL_COLUMN_WIDTHS = {
+	codigoPrincipal: '9%',
+	codigoAuxiliar: '11%',
+	cantidad: '6%',
+	descripcion: '42.8%',
+	precioUnitario: '11%',
+	descuento: '9%',
+	precioTotal: '11.2%',
+};
+
 /* ─── Estilos ─── */
 
 const s = StyleSheet.create({
@@ -91,7 +101,7 @@ const s = StyleSheet.create({
 	tdRight: { fontSize: 6.5, textAlign: 'right' },
 	tdCenter: { fontSize: 6.5, textAlign: 'center' },
 
-	/* Bottom: dos columnas, totales alineados con Precio Total del detalle */
+	/* Bottom: los totales usan la misma geometria del Precio Total */
 	bottom: { flexDirection: 'row', width: '100%' },
 	bottomLeft: { width: '60%' },
 	bottomRight: { width: '40%' },
@@ -224,23 +234,23 @@ export default function RIDETemplate({ comprobante, barcodeDataUri }) {
 				{/* ═══ TABLA DE DETALLES (celdas con bordes) ═══ */}
 				<View style={s.table}>
 					<View style={s.tRow}>
-						<Cell w="9%" head first>Cod.{'\n'}Principal</Cell>
-						<Cell w="11%" head>Cod.{'\n'}Auxiliar</Cell>
-						<Cell w="6%" head>Cant.</Cell>
-						<Cell w="34%" head>Descripcion</Cell>
-						<Cell w="11%" head>Precio{'\n'}Unit.</Cell>
-						<Cell w="9%" head>Desc.</Cell>
-						<Cell w="11%" head last>Precio{'\n'}Total</Cell>
+						<Cell w={DETAIL_COLUMN_WIDTHS.codigoPrincipal} head first>Cod.{'\n'}Principal</Cell>
+						<Cell w={DETAIL_COLUMN_WIDTHS.codigoAuxiliar} head>Cod.{'\n'}Auxiliar</Cell>
+						<Cell w={DETAIL_COLUMN_WIDTHS.cantidad} head>Cant.</Cell>
+						<Cell w={DETAIL_COLUMN_WIDTHS.descripcion} head>Descripcion</Cell>
+						<Cell w={DETAIL_COLUMN_WIDTHS.precioUnitario} head>Precio{'\n'}Unit.</Cell>
+						<Cell w={DETAIL_COLUMN_WIDTHS.descuento} head>Desc.</Cell>
+						<Cell w={DETAIL_COLUMN_WIDTHS.precioTotal} head last>Precio{'\n'}Total</Cell>
 					</View>
 					{detalles.map((det, i) => (
 						<View key={i} style={s.tRow}>
-							<Cell w="9%" first>{det.codigo_principal || ''}</Cell>
-							<Cell w="11%" center>{det.codigo_auxiliar || ''}</Cell>
-							<Cell w="6%" right>{fmt(det.cantidad)}</Cell>
-							<Cell w="34%">{det.descripcion}</Cell>
-							<Cell w="11%" right>{fmt(det.precio_unitario)}</Cell>
-							<Cell w="9%" right>{fmt(det.descuento)}</Cell>
-							<Cell w="11%" right last>{fmt(det.precio_total_sin_impuesto)}</Cell>
+							<Cell w={DETAIL_COLUMN_WIDTHS.codigoPrincipal} first>{det.codigo_principal || ''}</Cell>
+							<Cell w={DETAIL_COLUMN_WIDTHS.codigoAuxiliar} center>{det.codigo_auxiliar || ''}</Cell>
+							<Cell w={DETAIL_COLUMN_WIDTHS.cantidad} right>{fmt(det.cantidad)}</Cell>
+							<Cell w={DETAIL_COLUMN_WIDTHS.descripcion}>{det.descripcion}</Cell>
+							<Cell w={DETAIL_COLUMN_WIDTHS.precioUnitario} right>{fmt(det.precio_unitario)}</Cell>
+							<Cell w={DETAIL_COLUMN_WIDTHS.descuento} right>{fmt(det.descuento)}</Cell>
+							<Cell w={DETAIL_COLUMN_WIDTHS.precioTotal} right last>{fmt(det.precio_total_sin_impuesto)}</Cell>
 						</View>
 					))}
 				</View>
