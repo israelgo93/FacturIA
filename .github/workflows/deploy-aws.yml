@@ -29,17 +29,6 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Verify ECR registry
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        run: |
-          echo "ECR_REGISTRY=$ECR_REGISTRY"
-          echo "ECR_REPOSITORY=$ECR_REPOSITORY"
-          if [ -z "$ECR_REGISTRY" ]; then
-            echo "ERROR: ECR_REGISTRY is empty"
-            exit 1
-          fi
-
       - name: Build, tag, and push image to ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -57,8 +46,6 @@ jobs:
           BUILD_STRIPE_PRICE_PROFESSIONAL: ${{ secrets.STRIPE_PRICE_PROFESSIONAL }}
           BUILD_STRIPE_PRICE_ENTERPRISE: ${{ secrets.STRIPE_PRICE_ENTERPRISE }}
         run: |
-          set -ex
-          echo "Building image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           docker build \
             --build-arg NEXT_PUBLIC_SUPABASE_URL="$BUILD_SUPABASE_URL" \
             --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="$BUILD_SUPABASE_ANON_KEY" \

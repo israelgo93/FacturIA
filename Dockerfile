@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 
 # --- Etapa 1: Instalar TODAS las dependencias (incluye devDependencies para build) ---
 FROM base AS deps
