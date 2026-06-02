@@ -46,7 +46,31 @@
 
 **Decisión actual:** Stripe fue verificado solo en modo test y queda deshabilitado temporalmente. Los endpoints de checkout, portal y webhook responden `503`. La próxima pasarela a evaluar para producción es PayPal con suscripciones recurrentes, webhooks firmados y pruebas E2E.
 
-## 0.4 Estado Slack (Verificado via MCP)
+## 0.4 Estado Cuentas Internas
+
+Estado validado en Supabase `lszabrdiagkbzcrvwaww`:
+
+| Correo | Empresa/RUC | Rol | Plan | Estado |
+|--------|-------------|-----|------|--------|
+| `israelgo93@gmail.com` | Israel Julio Gomez Calderon / `1313835231001` | Propietario + admin plataforma | Enterprise | Cuenta personal del creador de facturIA |
+| `test@datatensei.com` | DATATENSEI S.A.S. / `1391936618001` | Propietario + admin plataforma | Free | Cuenta corporativa DataTensei |
+
+El intercambio de correos entre ambas cuentas queda versionado en `supabase/migrations/20260326113000_swap_datatensei_account_emails.sql`. La migracion actualiza `auth.users`, `raw_user_meta_data` y `auth.identities.identity_data` para preservar el login por email.
+
+Inventario de usuarios al momento de la auditoria:
+
+- Total usuarios Auth: 5
+- Usuarios con empresa: 2
+- Usuarios sin empresa/onboarding: 3
+- Administradores de plataforma: `israelgo93@gmail.com` y `test@datatensei.com`
+
+Inventario de comprobantes al momento de la auditoria:
+
+- `test@datatensei.com`: 3 comprobantes de produccion, todos `AUT`.
+- Otros usuarios: 37 comprobantes de pruebas (`AUT`: 16, `DEV`: 5, `NAT`: 3, `PPR`: 10, `voided`: 3).
+- Produccion fuera de `test@datatensei.com`: 0 comprobantes.
+
+## 0.5 Estado Slack (Verificado via MCP)
 
 Canal `#facturia` confirma:
 - ✅ Mensaje F7 implementada (24-mar, 23:05)
@@ -54,7 +78,7 @@ Canal `#facturia` confirma:
 - ✅ Migración 012 aplicada exitosamente
 - ✅ Fase 6 implementada
 
-## 0.5 ⚠️ HALLAZGOS CRÍTICOS — Input para Fase 8
+## 0.6 ⚠️ HALLAZGOS CRÍTICOS — Input para Fase 8
 
 ### HALLAZGO 1 — RLS Inconsistente (CRÍTICO)
 

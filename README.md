@@ -643,7 +643,18 @@ Estado actual: solo el plan **Gratuito** esta activo. Los planes pagos estan vis
 - Stripe queda deshabilitado temporalmente porque la integracion disponible corresponde al flujo de prueba y no se ha validado para produccion.
 - `POST /api/stripe/checkout`, `POST /api/stripe/portal` y `POST /api/stripe/webhook` responden `503` con mensaje controlado.
 - La UI de `/suscripcion`, la landing y los modales de upgrade muestran los planes pagos como **Muy pronto**.
-- El plan `starter` existente en Supabase se trata como capa gratuita temporal cuando no hay `stripe_customer_id`, para mantener compatibilidad con las migraciones actuales.
+- Todos los usuarios quedan en plan `free` mientras pagos esta pausado, salvo cuentas internas elevadas manualmente.
+
+### Cuentas internas DataTensei
+
+Estado aplicado en Supabase del proyecto `lszabrdiagkbzcrvwaww`:
+
+| Correo | Empresa/RUC | Rol | Plan | Notas |
+|---|---|---|---|---|
+| `israelgo93@gmail.com` | Israel Julio Gomez Calderon / `1313835231001` | Propietario + admin plataforma | Enterprise | Cuenta personal del creador de facturIA. |
+| `test@datatensei.com` | DATATENSEI S.A.S. / `1391936618001` | Propietario + admin plataforma | Free | Cuenta corporativa DataTensei para la empresa creadora. |
+
+El intercambio de correos esta versionado en `supabase/migrations/20260326113000_swap_datatensei_account_emails.sql`. La migracion actualiza `auth.users`, `raw_user_meta_data` y `auth.identities.identity_data` para mantener coherente el login por correo.
 
 ### Analisis para implementar PayPal
 
