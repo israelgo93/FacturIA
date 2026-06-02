@@ -1,30 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { X, ArrowUpCircle } from 'lucide-react';
 import GlassButton from '@/components/ui/GlassButton';
 
 export default function UpgradeModal({ open, onClose, feature, planRequerido = 'Professional' }) {
-	const [loading, setLoading] = useState(false);
-
 	if (!open) return null;
-
-	const handleUpgrade = async () => {
-		setLoading(true);
-		try {
-			const res = await fetch('/api/stripe/checkout', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ planSlug: planRequerido.toLowerCase() }),
-			});
-			const data = await res.json();
-			if (data.url) {
-				window.location.href = data.url;
-			}
-		} catch {
-			setLoading(false);
-		}
-	};
 
 	return (
 		<div
@@ -50,17 +30,17 @@ export default function UpgradeModal({ open, onClose, feature, planRequerido = '
 
 				<ArrowUpCircle className="w-10 h-10 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
 				<h3 className="text-lg font-medium text-center mb-2" style={{ color: 'var(--text-primary)' }}>
-					Upgrade necesario
+					Plan disponible muy pronto
 				</h3>
 				<p className="text-sm text-center mb-6" style={{ color: 'var(--text-muted)' }}>
-					{feature} esta disponible en el plan {planRequerido}.
+					{feature} estara disponible en el plan {planRequerido}. Por ahora solo esta activa la capa gratuita.
 				</p>
 				<div className="flex gap-2">
 					<GlassButton variant="secondary" className="flex-1" onClick={onClose}>
-						Cancelar
+						Entendido
 					</GlassButton>
-					<GlassButton variant="primary" className="flex-1" loading={loading} onClick={handleUpgrade}>
-						Upgrade
+					<GlassButton variant="primary" className="flex-1" disabled>
+						Muy pronto
 					</GlassButton>
 				</div>
 			</div>

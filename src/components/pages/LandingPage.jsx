@@ -131,26 +131,32 @@ export default function LandingPage() {
 
 			{/* Pricing */}
 			<section id="pricing" className="py-24 px-4">
-				<div className="max-w-4xl mx-auto">
+				<div className="max-w-6xl mx-auto">
 					<p className="text-xs uppercase tracking-widest text-center mb-3" style={{ color: 'var(--text-muted)' }}>Precios</p>
 					<h2 className="text-2xl font-semibold text-center mb-16" style={{ color: 'var(--text-primary)' }}>Planes simples y transparentes</h2>
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+					<div className="grid grid-cols-1 md:grid-cols-4 gap-5">
 					{[
 						{
-							name: 'Starter', price: '$9.99', features: [
-								'50 comprobantes/mes', '1 usuario', '1 establecimiento',
+							name: 'Gratuito', price: '$0.00', annual: '$0.00/anio', available: true, features: [
+								'100 documentos/anio', '1 usuario', '1 establecimiento',
 								'1 punto de emision', 'Dashboard basico', 'Soporte email',
 							],
 						},
 						{
-							name: 'Professional', price: '$24.99', popular: true, features: [
-								'300 comprobantes/mes', '5 usuarios', '3 establecimientos',
+							name: 'Starter', price: '$9.99', annual: '$119.88/anio', soon: true, features: [
+								'500 documentos/anio', '1 usuario', '1 establecimiento',
+								'1 punto de emision', 'Dashboard basico', 'Soporte email',
+							],
+						},
+						{
+							name: 'Professional', price: '$24.99', annual: '$299.88/anio', popular: true, soon: true, features: [
+								'1000 documentos/anio', '5 usuarios', '3 establecimientos',
 								'5 puntos de emision', 'Reportes IA avanzados', 'RDEP automatico',
 							],
 						},
 						{
-							name: 'Enterprise', price: '$49.99', features: [
-								'Comprobantes ilimitados', 'Usuarios ilimitados', 'Establecimientos ilimitados',
+							name: 'Enterprise', price: '$49.99', annual: '$599.88/anio', soon: true, features: [
+								'Documentos ilimitados', 'Usuarios ilimitados', 'Establecimientos ilimitados',
 								'Puntos de emision ilimitados', 'Reportes IA avanzados', 'RDEP automatico',
 							],
 						},
@@ -172,9 +178,15 @@ export default function LandingPage() {
 									</div>
 								)}
 								<h3 className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{plan.name}</h3>
+								{plan.soon && (
+									<p className="text-[10px] uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
+										Muy pronto
+									</p>
+								)}
 								<div className="mb-5">
 									<span className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>{plan.price}</span>
 									<span className="text-xs" style={{ color: 'var(--text-muted)' }}>/mes</span>
+									<p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{plan.annual}</p>
 								</div>
 								<ul className="space-y-2.5 mb-6">
 									{plan.features.map((f) => (
@@ -184,20 +196,31 @@ export default function LandingPage() {
 										</li>
 									))}
 								</ul>
-								<Link
-									href="/registro"
-									className="block text-center py-2.5 rounded-xl text-sm font-medium transition-all duration-300"
-									style={plan.popular ? {
-										background: 'var(--btn-primary-bg)',
-										color: 'var(--btn-primary-text)',
-									} : {
-										background: 'var(--glass-bg)',
-										color: 'var(--text-secondary)',
-										border: '1px solid var(--glass-border)',
-									}}
-								>
-									Comenzar
-								</Link>
+								{plan.available ? (
+									<Link
+										href="/registro"
+										className="block text-center py-2.5 rounded-xl text-sm font-medium transition-all duration-300"
+										style={{
+											background: 'var(--btn-primary-bg)',
+											color: 'var(--btn-primary-text)',
+										}}
+									>
+										Comenzar gratis
+									</Link>
+								) : (
+									<button
+										type="button"
+										disabled
+										className="block w-full text-center py-2.5 rounded-xl text-sm font-medium cursor-not-allowed"
+										style={{
+											background: 'var(--glass-bg)',
+											color: 'var(--text-muted)',
+											border: '1px solid var(--glass-border)',
+										}}
+									>
+										Muy pronto
+									</button>
+								)}
 							</div>
 						))}
 					</div>

@@ -52,7 +52,7 @@ El nombre fusiona "factura" + "IA", comunicando que la inteligencia artificial e
 | IA | Google Gemini API (ai SDK + @ai-sdk/google) | 3.0 Flash |
 | Chat IA | Vercel AI SDK (@ai-sdk/react) | 3.x |
 | Chat Markdown | react-markdown | 9+ |
-| Pagos | Stripe (server-side) | 17+ |
+| Pagos | Gratuito activo; Stripe pausado; PayPal por implementar | - |
 | Graficos | Recharts | 3.7 |
 | PWA / Service Worker | Serwist (@serwist/turbopack) | 10+ |
 | Despliegue | AWS App Runner (ECR) | - |
@@ -155,7 +155,7 @@ facturia.app (AWS App Runner — us-east-1)
     |           +-- /dashboard       Dashboard analitico (KPIs, Recharts, IA, vencimientos)
     |           +-- /asistente       Chat IA Premium (server component, markdown, framer-motion)
     |           +-- /equipo          Multi-usuario: miembros, invitaciones, roles
-    |           +-- /suscripcion     Portal de plan y limites + Stripe checkout
+    |           +-- /suscripcion     Portal de plan y limites; planes pagos marcados como muy pronto
     |           +-- /reportes          Hub de reportes SRI con IA
     |           |   +-- /ats               Anexo Transaccional Simplificado
     |           |   +-- /rdep              Relacion Dependencia
@@ -489,18 +489,23 @@ Rediseno del asistente IA, integracion de pagos, multi-usuario y cierre formal d
 - Backfill: usuarios existentes migrados a `perfiles_empresa` como `propietario`
 - BD total: **30 tablas**, **21 migraciones**
 
-**Stripe (Pasarela de Pago) — Verificado con pago real en modo test**
+**Stripe (Pasarela de Pago) — Estado historico Fase 7, actualmente pausado**
+- Estado actual: Stripe esta deshabilitado temporalmente; el producto opera solo con plan gratuito y los planes pagos aparecen como **Muy pronto**.
+- Los endpoints de checkout, portal y webhook devuelven `503` controlado mientras se define la pasarela de produccion.
+- La siguiente integracion recomendada es PayPal con suscripciones recurrentes y webhooks server-side.
+
+Detalle historico verificado en modo test:
 - Cliente lazy-init (`getStripe()`) para evitar fallo en build sin API key
 - `src/lib/stripe/stripe-client.js`: funciones `crearCheckoutSession` y `crearBillingPortal`
 - `src/lib/stripe/pricing.js`: mapeo de planes a Stripe Price IDs via variables de entorno
 - 3 API routes:
-  - `POST /api/stripe/checkout` — crear sesion de checkout por plan (solo para usuarios sin suscripcion Stripe)
-  - `POST /api/stripe/webhook` — procesar eventos y sincronizar `plan_id` + `stripe_price_id` en BD
-  - `POST /api/stripe/portal` — portal de facturacion para cambiar plan, cancelar o gestionar tarjeta
-- Pagina `/suscripcion/success` — muestra nombre del plan, precio y descripcion al completar pago
+  - `POST /api/stripe/checkout` — pausado, responde `503`
+  - `POST /api/stripe/webhook` — pausado, responde `503`
+  - `POST /api/stripe/portal` — pausado, responde `503`
+- Pagina `/suscripcion/success` — informa que los pagos estan disponibles muy pronto
 - Webhook actualiza `plan_id` automaticamente buscando por `stripe_price_id` en tabla `planes`
 - Tabla `planes` sincronizada con `stripe_price_id` y `stripe_product_id` reales de Stripe
-- Portal `/suscripcion` con logica inteligente: checkout para nuevos, portal Stripe para existentes
+- Portal `/suscripcion` actualizado: gratuito activo y planes pagos como **Muy pronto**
 - 3 productos creados en Stripe (Datatensei S.A.S. modo test): Starter $9.99, Professional $24.99, Enterprise $49.99
 - Eventos webhook: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
 
@@ -520,7 +525,7 @@ Rediseno del asistente IA, integracion de pagos, multi-usuario y cierre formal d
 
 **Dependencias nuevas**: `react-markdown`, `stripe`
 
-**Verificacion Stripe (24-mar-2026)**
+**Verificacion Stripe (24-mar-2026, modo test historico)**
 - Pago completado exitosamente con tarjeta de prueba (4242) en Stripe modo test
 - Checkout redirige correctamente a `/suscripcion/success` con detalles del plan
 - Webhook actualiza suscripcion en BD (estado, stripe_customer_id, plan_id)
@@ -617,17 +622,42 @@ El sistema implementa firma XAdES-BES (ETSI TS 101 903) conforme a la Ficha Tecn
 
 ## Planes de suscripcion
 
-| | Starter | Professional | Enterprise |
-|---|---------|-------------|------------|
-| Precio | $9.99/mes | $24.99/mes | $49.99/mes |
-| Comprobantes | 50/mes | 300/mes | Ilimitados |
-| Usuarios | 1 | 5 | Ilimitados |
-| Establecimientos | 1 | 3 | Ilimitados |
-| ATS con IA | Si | Si | Si |
-| Reportes avanzados | - | Si | Si |
-| RDEP automatico | - | Si | Si |
-| API access | - | - | Si |
-| Multi-empresa | - | - | Si |
+Estado actual: solo el plan **Gratuito** esta activo. Los planes pagos estan visibles como **Muy pronto** y no ejecutan checkout ni portal de facturacion.
+
+| | Gratuito | Starter | Professional | Enterprise |
+|---|----------|---------|-------------|------------|
+| Estado | Activo | Muy pronto | Muy pronto | Muy pronto |
+| Precio mensual | $0.00/mes | $9.99/mes | $24.99/mes | $49.99/mes |
+| Precio anual | $0.00/anio | $119.88/anio | $299.88/anio | $599.88/anio |
+| Documentos | 100/anio | 500/anio | 1000/anio | Ilimitados |
+| Usuarios | 1 | 1 | 5 | Ilimitados |
+| Establecimientos | 1 | 1 | 3 | Ilimitados |
+| ATS con IA | Si | Si | Si | Si |
+| Reportes avanzados | - | - | Si | Si |
+| RDEP automatico | - | - | Si | Si |
+| API access | - | - | - | Si |
+| Multi-empresa | - | - | - | Si |
+
+### Estado de pagos
+
+- Stripe queda deshabilitado temporalmente porque la integracion disponible corresponde al flujo de prueba y no se ha validado para produccion.
+- `POST /api/stripe/checkout`, `POST /api/stripe/portal` y `POST /api/stripe/webhook` responden `503` con mensaje controlado.
+- La UI de `/suscripcion`, la landing y los modales de upgrade muestran los planes pagos como **Muy pronto**.
+- El plan `starter` existente en Supabase se trata como capa gratuita temporal cuando no hay `stripe_customer_id`, para mantener compatibilidad con las migraciones actuales.
+
+### Analisis para implementar PayPal
+
+PayPal debe entrar como nueva pasarela cuando se reactive monetizacion. El flujo recomendado es mantener la tabla `suscripciones` como fuente de verdad y agregar campos neutrales o especificos para PayPal, sin reutilizar los campos `stripe_*`.
+
+Plan tecnico recomendado:
+
+1. Crear aplicacion PayPal REST en modo sandbox y luego produccion.
+2. Configurar productos/planes recurrentes en PayPal Subscriptions para Starter, Professional y Enterprise, con variantes mensuales y anuales.
+3. Agregar variables `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID` y IDs de planes PayPal por cada plan/frecuencia.
+4. Crear rutas server-side equivalentes a checkout y webhook: crear suscripcion PayPal, capturar aprobacion, validar webhooks y sincronizar `suscripciones`.
+5. Agregar columnas nuevas en Supabase, por ejemplo `paypal_subscription_id`, `paypal_plan_id`, `paypal_payer_id`, `provider`, `current_period_start`, `current_period_end`.
+6. Validar eventos PayPal Webhooks como `BILLING.SUBSCRIPTION.ACTIVATED`, `BILLING.SUBSCRIPTION.UPDATED`, `BILLING.SUBSCRIPTION.CANCELLED`, `PAYMENT.SALE.COMPLETED` o sus equivalentes vigentes.
+7. Activar la UI de upgrade solo cuando el flujo sandbox tenga pruebas E2E y webhooks verificados.
 
 ---
 
@@ -673,13 +703,9 @@ GOOGLE_GENERATIVE_AI_API_KEY=tu-gemini-api-key
 # Email
 RESEND_API_KEY=tu-resend-api-key
 
-# Stripe (Fase 7 — pasarela de pago)
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_STARTER=price_...
-STRIPE_PRICE_PROFESSIONAL=price_...
-STRIPE_PRICE_ENTERPRISE=price_...
+# Pagos
+# Stripe esta pausado temporalmente. No se requieren variables de pago para operar el plan gratuito.
+# Futuro PayPal: PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_WEBHOOK_ID.
 
 # Sentry (Fase 7 — monitoreo, opcional)
 SENTRY_DSN=https://...@sentry.io/...
@@ -751,11 +777,7 @@ Esta guia describe paso a paso como configurar el despliegue automatico a AWS Ap
 | `RESEND_API_KEY` | API key de Resend |
 | `GEMINI_API_KEY` | API key de Google Gemini |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | Misma API key de Gemini |
-| `STRIPE_SECRET_KEY` | Secret key de Stripe (modo test o produccion) |
-| `STRIPE_WEBHOOK_SECRET` | Webhook signing secret de Stripe |
-| `STRIPE_PRICE_STARTER` | Price ID de Stripe para plan Starter |
-| `STRIPE_PRICE_PROFESSIONAL` | Price ID de Stripe para plan Professional |
-| `STRIPE_PRICE_ENTERPRISE` | Price ID de Stripe para plan Enterprise |
+| Variables de pago | No requeridas mientras solo este activo el plan gratuito |
 
 **Nota**: Las variables `NEXT_PUBLIC_*` se necesitan en build-time porque Next.js las embebe en el bundle del cliente. Se pasan como `--build-arg` en el Dockerfile.
 
@@ -789,11 +811,7 @@ En App Runner Console, ir al servicio creado > **Configuration** > **Environment
 | `GEMINI_API_KEY` | API key de Google Gemini |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | Misma API key de Gemini |
 | `RESEND_API_KEY` | API key de Resend |
-| `STRIPE_SECRET_KEY` | Secret key de Stripe |
-| `STRIPE_WEBHOOK_SECRET` | Webhook signing secret de Stripe |
-| `STRIPE_PRICE_STARTER` | Price ID de Stripe para plan Starter |
-| `STRIPE_PRICE_PROFESSIONAL` | Price ID de Stripe para plan Professional |
-| `STRIPE_PRICE_ENTERPRISE` | Price ID de Stripe para plan Enterprise |
+| Variables de pago | No requeridas mientras solo este activo el plan gratuito |
 | `SENTRY_DSN` | DSN de Sentry (opcional, monitoreo de errores) |
 
 Los secretos sensibles se configuran directamente en la consola de App Runner como variables de entorno runtime (no se exponen en el repositorio ni en los workflows de CI/CD).
@@ -843,70 +861,23 @@ GitHub (repositorio)
                             +-- npm ci + lint + build + test
 ```
 
-### Paso 8: Configurar Stripe (Fase 7 — Pasarela de Pago)
+### Paso 8: Pagos y planes
 
-Para habilitar pagos con Stripe, seguir estos pasos:
+Estado actual:
 
-**1. Crear cuenta y productos en Stripe**
-1. Crear cuenta en [stripe.com](https://stripe.com) y activar modo test
-2. En el [Dashboard de Stripe](https://dashboard.stripe.com), ir a **Products** > **Add product**
-3. Crear 3 productos con precios recurrentes (monthly):
-   - **facturIA Starter** — $9.99/mes
-   - **facturIA Professional** — $24.99/mes
-   - **facturIA Enterprise** — $49.99/mes
-4. Copiar el **Price ID** de cada producto (formato `price_...`)
+- Solo esta activo el plan gratuito.
+- Los planes Starter, Professional y Enterprise se muestran como **Muy pronto**.
+- Stripe queda pausado temporalmente; sus endpoints responden `503` y no crean sesiones, portales ni sincronizaciones.
+- No se deben configurar secretos Stripe en produccion hasta reactivar una pasarela validada.
 
-**2. Configurar webhook**
-1. En Stripe Dashboard, ir a **Developers** > **Webhooks**
-2. Click **Add endpoint**
-3. URL: `https://tu-dominio.com/api/stripe/webhook`
-4. Seleccionar eventos:
-   - `checkout.session.completed`
-   - `customer.subscription.updated`
-   - `customer.subscription.deleted`
-5. Click **Add endpoint** y copiar el **Signing secret** (formato `whsec_...`)
+Preparacion recomendada para PayPal:
 
-**3. Configurar variables de entorno**
-
-Agregar en `.env.local` (desarrollo) y en App Runner/GitHub Secrets (produccion):
-
-```
-STRIPE_SECRET_KEY=sk_test_...          # Dashboard > Developers > API keys
-STRIPE_PUBLISHABLE_KEY=pk_test_...     # Dashboard > Developers > API keys
-STRIPE_WEBHOOK_SECRET=whsec_...        # Del paso 2.5
-STRIPE_PRICE_STARTER=price_...         # Price ID del plan Starter
-STRIPE_PRICE_PROFESSIONAL=price_...    # Price ID del plan Professional
-STRIPE_PRICE_ENTERPRISE=price_...      # Price ID del plan Enterprise
-```
-
-**4. Probar en desarrollo con Stripe CLI**
-```bash
-# Instalar Stripe CLI: https://stripe.com/docs/stripe-cli
-stripe login
-stripe listen --forward-to localhost:3000/api/stripe/webhook
-# Copiar el webhook signing secret temporal que muestra la CLI
-```
-
-**5. Flujo de pago implementado**
-```
-Usuario en /suscripcion
-    |
-    +-- Click "Mejorar plan" --> POST /api/stripe/checkout
-    |                               |
-    |                               +-- Crea Stripe Checkout Session
-    |                               +-- Redirect a Stripe hosted checkout
-    |
-    +-- Completa pago en Stripe --> Stripe envia webhook
-    |                               |
-    |                               +-- POST /api/stripe/webhook
-    |                               +-- checkout.session.completed
-    |                               +-- Actualiza suscripcion en BD (estado, customer_id, subscription_id)
-    |
-    +-- Gestionar suscripcion --> POST /api/stripe/portal
-                                    |
-                                    +-- Redirect a Stripe Billing Portal
-                                    +-- Cambiar tarjeta, cancelar, ver facturas
-```
+1. Crear la app PayPal REST en sandbox.
+2. Crear productos y planes recurrentes para Starter, Professional y Enterprise.
+3. Definir IDs mensuales y anuales por plan.
+4. Implementar endpoints server-side para crear suscripciones y validar webhooks.
+5. Sincronizar la tabla `suscripciones` con un campo `provider` y campos `paypal_*`.
+6. Validar el flujo completo con sandbox, webhooks firmados y pruebas E2E antes de mostrar botones activos.
 
 ### Notas importantes
 

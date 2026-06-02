@@ -17,7 +17,6 @@ export function getStripe() {
 export async function crearCheckoutSession({ empresaId, planId, stripePriceId, email, returnUrl }) {
 	const session = await getStripe().checkout.sessions.create({
 		mode: 'subscription',
-		payment_method_types: ['card'],
 		customer_email: email,
 		line_items: [{ price: stripePriceId, quantity: 1 }],
 		success_url: `${returnUrl}/suscripcion/success?session_id={CHECKOUT_SESSION_ID}`,

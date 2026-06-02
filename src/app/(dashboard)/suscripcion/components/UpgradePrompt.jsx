@@ -13,8 +13,8 @@ export default function UpgradePrompt({ feature, planRequerido = 'Professional' 
 				Funcion no disponible
 			</h3>
 			<p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-				{feature} esta disponible en el plan {planRequerido} o superior.
-				Actualiza tu suscripcion para acceder.
+				{feature} estara disponible en el plan {planRequerido} o superior.
+				Los planes pagos estaran disponibles muy pronto.
 			</p>
 			<Link href="/suscripcion">
 				<GlassButton variant="primary">

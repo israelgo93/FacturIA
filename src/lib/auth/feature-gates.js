@@ -16,7 +16,7 @@ export async function verificarAccesoCompleto(empresaId) {
 		.select(`
 			estado, trial_ends_at,
 			planes (
-				nombre, limite_comprobantes_mes, limite_usuarios,
+				nombre, limite_documentos_anual, limite_comprobantes_mes, limite_usuarios,
 				limite_establecimientos, limite_puntos_emision,
 				tiene_reportes_ia, tiene_rdep, tiene_api, tiene_multi_empresa
 			)
@@ -47,12 +47,15 @@ export async function verificarAccesoCompleto(empresaId) {
 		return { activa: false, razon: 'Plan no encontrado', features: {} };
 	}
 
+	const anio = ahoraEcuador().getFullYear();
+	const limiteDocumentos = plan.limite_documentos_anual ?? plan.limite_comprobantes_mes ?? null;
 	const [comprobantesRes, usuariosRes, establecimientosRes, puntosRes] = await Promise.all([
 		supabase
 			.from('comprobantes')
 			.select('*', { count: 'exact', head: true })
 			.eq('empresa_id', empresaId)
-			.gte('created_at', new Date(ahoraEcuador().getFullYear(), ahoraEcuador().getMonth(), 1).toISOString()),
+			.gte('created_at', new Date(anio, 0, 1).toISOString())
+			.lt('created_at', new Date(anio + 1, 0, 1).toISOString()),
 		supabase
 			.from('perfiles_empresa')
 			.select('*', { count: 'exact', head: true })
@@ -78,8 +81,8 @@ export async function verificarAccesoCompleto(empresaId) {
 		plan: plan.nombre,
 		estado: sub.estado,
 		features: {
-			puede_emitir: plan.limite_comprobantes_mes === null || comprobantesUsados < plan.limite_comprobantes_mes,
-			comprobantes: { usados: comprobantesUsados, limite: plan.limite_comprobantes_mes },
+			puede_emitir: limiteDocumentos === null || comprobantesUsados < limiteDocumentos,
+			comprobantes: { usados: comprobantesUsados, limite: limiteDocumentos, periodo: 'anual' },
 			puede_invitar: plan.limite_usuarios === null || usuariosActivos < plan.limite_usuarios,
 			usuarios: { activos: usuariosActivos, limite: plan.limite_usuarios },
 			puede_crear_establecimiento: plan.limite_establecimientos === null || establecimientos < plan.limite_establecimientos,
