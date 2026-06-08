@@ -45,6 +45,8 @@ export async function guardarEmpresaOnboarding(prevState, formData) {
 		empresa = data;
 	}
 
+	await crearTrialAutomatico(empresa.id);
+
 	return { success: true, data: empresa };
 }
 

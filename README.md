@@ -644,6 +644,8 @@ Estado actual: solo el plan **Gratuito** esta activo. Los planes pagos estan vis
 - `POST /api/stripe/checkout`, `POST /api/stripe/portal` y `POST /api/stripe/webhook` responden `503` con mensaje controlado.
 - La UI de `/suscripcion`, la landing y los modales de upgrade muestran los planes pagos como **Muy pronto**.
 - Todos los usuarios quedan en plan `free` mientras pagos esta pausado, salvo cuentas internas elevadas manualmente.
+- Toda empresa nueva recibe automaticamente una suscripcion `free` activa al crearse. Esto se garantiza desde el onboarding y desde el trigger `ensure_empresa_free_subscription_trigger` en Supabase.
+- Validacion en Supabase: una empresa temporal creada en transaccion recibio `empresa_plan = free` y `suscripcion_plan = free`; con 99 documentos `verificar_limite_plan` devolvio `permitido = true`; con 100 documentos devolvio `permitido = false` por `Limite anual de documentos alcanzado`. La transaccion limpio la data temporal.
 
 ### Cuentas internas DataTensei
 

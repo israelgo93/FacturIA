@@ -70,7 +70,20 @@ Inventario de comprobantes al momento de la auditoria:
 - Otros usuarios: 37 comprobantes de pruebas (`AUT`: 16, `DEV`: 5, `NAT`: 3, `PPR`: 10, `voided`: 3).
 - Produccion fuera de `test@datatensei.com`: 0 comprobantes.
 
-## 0.5 Estado Slack (Verificado via MCP)
+## 0.5 Garantia de Suscripcion Gratuita
+
+Correccion aplicada tras detectar el error `Sin suscripcion activa` en la empresa `Asesoria CANMAC`:
+
+- Toda empresa nueva obtiene una suscripcion `free` activa al crearse.
+- La garantia existe en dos capas:
+  - Aplicacion: `guardarEmpresaOnboarding()` llama a `crearTrialAutomatico()` desde el primer paso de empresa.
+  - Base de datos: trigger `ensure_empresa_free_subscription_trigger` crea la suscripcion `free` aunque la empresa se inserte por otro flujo.
+- Backfill aplicado: todas las empresas existentes tienen fila en `suscripciones`.
+- Validacion remota: `total_empresas = 3`, `con_suscripcion = 3`, `sin_suscripcion = 0`.
+- Validacion de limite `free`: 99 documentos anuales permite emitir; 100 documentos anuales bloquea con `Limite anual de documentos alcanzado`.
+- La prueba de umbral se ejecuto con data temporal y se limpio dentro de la misma validacion.
+
+## 0.6 Estado Slack (Verificado via MCP)
 
 Canal `#facturia` confirma:
 - ✅ Mensaje F7 implementada (24-mar, 23:05)
@@ -78,7 +91,7 @@ Canal `#facturia` confirma:
 - ✅ Migración 012 aplicada exitosamente
 - ✅ Fase 6 implementada
 
-## 0.6 ⚠️ HALLAZGOS CRÍTICOS — Input para Fase 8
+## 0.7 ⚠️ HALLAZGOS CRÍTICOS — Input para Fase 8
 
 ### HALLAZGO 1 — RLS Inconsistente (CRÍTICO)
 
