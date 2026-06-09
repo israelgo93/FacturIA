@@ -1109,7 +1109,7 @@ export async function reConsultarAutorizacion(comprobanteId) {
 }
 
 /**
- * Re-envía un comprobante PPR al SRI con nueva clave de acceso.
+ * Re-envía un comprobante pendiente/no autorizado/devuelto al SRI con nueva clave de acceso.
  * Resetea el comprobante a draft, actualiza fecha si es antigua, y re-procesa.
  */
 export async function reenviarComprobante(comprobanteId) {
@@ -1125,8 +1125,8 @@ export async function reenviarComprobante(comprobanteId) {
 		.single();
 
 	if (error || !comp) return { error: 'Comprobante no encontrado' };
-	if (comp.estado !== 'PPR') {
-		return { error: `Solo se pueden re-enviar comprobantes en estado PPR. Estado actual: ${comp.estado}` };
+	if (!['PPR', 'NAT', 'DEV'].includes(comp.estado)) {
+		return { error: `Solo se pueden re-enviar comprobantes en estado PPR, NAT o DEV. Estado actual: ${comp.estado}` };
 	}
 
 	const hoyEcuador = fechaHoyEcuador();

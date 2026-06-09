@@ -123,10 +123,12 @@ export default function ComprobanteDetalle({ comprobante }) {
 						<GlassButton size="sm" icon={RefreshCw} onClick={handleReConsultar} loading={procesando}>
 							Re-consultar SRI
 						</GlassButton>
-						<GlassButton size="sm" variant="secondary" icon={RotateCcw} onClick={handleReenviar} loading={procesando}>
-							Re-enviar al SRI
-						</GlassButton>
 					</>
+				)}
+				{['PPR', 'NAT', 'DEV'].includes(comp.estado) && (
+					<GlassButton size="sm" variant="secondary" icon={RotateCcw} onClick={handleReenviar} loading={procesando}>
+						Re-enviar al SRI
+					</GlassButton>
 				)}
 					{(comp.estado === 'draft' || comp.estado === 'NAT' || comp.estado === 'DEV') && (
 						<GlassButton variant="ghost" size="sm" icon={Ban} onClick={handleAnular}>

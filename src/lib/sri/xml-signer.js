@@ -15,6 +15,17 @@ import crypto from 'crypto';
 const NS_DS = 'http://www.w3.org/2000/09/xmldsig#';
 const NS_ETSI = 'http://uri.etsi.org/01903/v1.3.2#';
 
+const X509_ATTRIBUTE_NAMES = {
+	'2.5.4.3': 'CN',
+	'2.5.4.6': 'C',
+	'2.5.4.7': 'L',
+	'2.5.4.8': 'ST',
+	'2.5.4.10': 'O',
+	'2.5.4.11': 'OU',
+	'2.5.4.97': '2.5.4.97',
+	'1.2.840.113549.1.9.1': 'E',
+};
+
 /**
  * Firma un XML con certificado .p12 usando XAdES-BES enveloped
  * @param {string} xmlString - XML sin firmar
@@ -279,11 +290,11 @@ function xmlEncode(str) {
  * Formatea issuer DN en formato RFC 2253 para X509IssuerName
  * Orden: más específico a más general (leaf → root)
  */
-function formatX509IssuerDN(issuer) {
+export function formatX509IssuerDN(issuer) {
 	const attrs = issuer.attributes.slice().reverse();
 	return attrs.map(attr => {
-		const name = attr.shortName || attr.name;
-		const value = attr.value
+		const name = attr.shortName || attr.name || X509_ATTRIBUTE_NAMES[attr.type] || attr.type;
+		const value = String(attr.value ?? '')
 			.replace(/\\/g, '\\\\')
 			.replace(/"/g, '\\"')
 			.replace(/,/g, '\\,')

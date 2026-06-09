@@ -83,7 +83,25 @@ Correccion aplicada tras detectar el error `Sin suscripcion activa` en la empres
 - Validacion de limite `free`: 99 documentos anuales permite emitir; 100 documentos anuales bloquea con `Limite anual de documentos alcanzado`.
 - La prueba de umbral se ejecuto con data temporal y se limpio dentro de la misma validacion.
 
-## 0.6 Estado Slack (Verificado via MCP)
+## 0.6 Nota de Revision XAdES UANATACA
+
+Caso CANMAC (`1313594747001`) en ambiente de pruebas:
+
+- Comprobante `001-001-000000001` fue recibido por SRI, pero quedo `NO AUTORIZADO`.
+- Error SRI: identificador `39`, mensaje `FIRMA INVALIDA`.
+- Detalle SRI: `La informacion sobre el certificado de firma no se ajusta a XAdES`.
+- El certificado activo es UANATACA (`UANATACA CA2 2016`) y esta vigente hasta `2026-09-18`.
+- En el XML firmado se detecto `X509IssuerName` con prefijo invalido `undefined=VATES-A66721499`.
+- Hipotesis de trabajo: el formateador RFC 2253 de `xml-signer.js` no mapea OIDs no reconocidos por `node-forge`, en particular `2.5.4.97` (`organizationIdentifier`) usado por UANATACA.
+- Punto de control previo al fix: commit `5dc86d065fcaacfc302e089d146cb4c0f888fd86`.
+- Tag de rollback publicado: `rollback-xades-uanataca-20260609`.
+- Intento de validacion local: bloqueado porque el certificado CANMAC esta cifrado con una `ENCRYPTION_KEY` distinta a la disponible localmente. El reenvio no llego al SRI desde este entorno.
+- Estado tras rollback de prueba: el comprobante CANMAC quedo nuevamente en `NAT` con su clave de acceso original.
+- Fix publicado para prueba en produccion: `xml-signer.js` usa el OID cuando `node-forge` no expone `shortName` ni `name`, evitando `undefined=...` en `X509IssuerName`.
+- Para probar el mismo comprobante `NAT/DEV`, la UI habilita `Re-enviar al SRI`; la accion regenera clave, XML y firma.
+- Si falla en produccion, revertir el commit del fix o volver al tag `rollback-xades-uanataca-20260609`.
+
+## 0.7 Estado Slack (Verificado via MCP)
 
 Canal `#facturia` confirma:
 - ✅ Mensaje F7 implementada (24-mar, 23:05)
@@ -91,7 +109,7 @@ Canal `#facturia` confirma:
 - ✅ Migración 012 aplicada exitosamente
 - ✅ Fase 6 implementada
 
-## 0.7 ⚠️ HALLAZGOS CRÍTICOS — Input para Fase 8
+## 0.8 ⚠️ HALLAZGOS CRÍTICOS — Input para Fase 8
 
 ### HALLAZGO 1 — RLS Inconsistente (CRÍTICO)
 
