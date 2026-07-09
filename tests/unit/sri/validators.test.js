@@ -78,6 +78,22 @@ describe('validarFactura', () => {
 		expect(result.errores.some((e) => e.includes('RUC del comprador'))).toBe(true);
 	});
 
+	it('acepta RUC real de sociedad que no pasa Modulo 11 (advertencia SRI 62, no rechazo)', () => {
+		// RUC real y ACTIVO en el SRI (GLOPACK S.A.S.) cuyo dígito verificador
+		// no cumple el algoritmo estándar Módulo 11 para sociedades
+		const factura = {
+			...facturaValida,
+			comprador: {
+				tipoIdentificacion: '04',
+				identificacion: '1391938494001',
+				razonSocial: 'GLORIA AMANDA PACKING HOUSE GLOPACK S.A.S.',
+			},
+		};
+		const result = validarFactura(factura);
+		expect(result.valid).toBe(true);
+		expect(result.errores).toHaveLength(0);
+	});
+
 	it('valida cédula de 10 dígitos (tipo 05)', () => {
 		const factura = {
 			...facturaValida,

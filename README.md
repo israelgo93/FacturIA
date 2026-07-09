@@ -618,6 +618,19 @@ El sistema implementa firma XAdES-BES (ETSI TS 101 903) conforme a la Ficha Tecn
 
 **Resultado verificado**: Factura 001-001-000000001 autorizada por el SRI en ambiente de pruebas (6 de febrero de 2026).
 
+### Validacion de RUC: digito verificador como advertencia (no bloqueo)
+
+El SRI asigna RUCs legitimos que no cumplen los algoritmos clasicos de digito verificador (Modulo 10 para personas naturales, Modulo 11 para sociedades y entidades publicas). Casos reales confirmados como ACTIVOS en el SRI:
+
+- `1391936618001` DATATENSEI S.A.S. (Modulo 11 calcula 3, el RUC real tiene 8)
+- `1391938494001` GLORIA AMANDA PACKING HOUSE GLOPACK S.A.S. (Modulo 11 calcula 7, el RUC real tiene 4)
+
+Por esta razon, en `src/lib/sri/validators.js` (`validarRucEcuador`) y `src/lib/validations/common.js` (`validarRUC`) el fallo del digito verificador se trata como **advertencia** (console.warn), no como error bloqueante. Esto aplica al RUC del emisor, comprador y proveedor. Las validaciones estructurales si son bloqueantes: 13 digitos numericos, provincia 01-24, tercer digito valido (0-6 o 9) y sufijo distinto de 000.
+
+Respaldo normativo (Ficha Tecnica v2.32): una identificacion de receptor que no pasa el digito verificador genera la ADVERTENCIA 62 del SRI ("Identificacion incorrecta"), no un rechazo. El SRI solo rechaza cuando el RUC del receptor no existe en el registro (codigo 69) o el RUC emisor no existe (codigo 46). El SRI es el validador final de existencia del RUC.
+
+Historial: la factura 001-001-000000009 (comprador GLOPACK S.A.S.) fallaba con ERROR_VALIDACION porque la validacion del comprador aun bloqueaba por digito verificador; corregido igualando el comportamiento ya aplicado al emisor.
+
 ---
 
 ## Planes de suscripcion

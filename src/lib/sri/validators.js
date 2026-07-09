@@ -52,8 +52,16 @@ export function validarCedulaEcuador(cedula) {
  * Valida un RUC ecuatoriano (13 dígitos)
  * Soporta: persona natural (3er dígito 0-5), sociedad privada (3er dígito 9),
  * entidad pública (3er dígito 6)
+ *
+ * NOTA: El fallo del dígito verificador (Módulo 10/11) se reporta como
+ * `warning`, no como error bloqueante. El SRI asigna RUCs legítimos que no
+ * pasan el algoritmo estándar (ej: 1391936618001 DATATENSEI S.A.S.,
+ * 1391938494001 GLOPACK S.A.S.). Según la Ficha Técnica v2.32, una
+ * identificación de receptor que no pasa el dígito verificador genera la
+ * ADVERTENCIA 62 del SRI, no un rechazo. Las validaciones estructurales
+ * (longitud, provincia, tercer dígito, sufijo) sí son bloqueantes.
  * @param {string} ruc
- * @returns {{ valid: boolean, error?: string }}
+ * @returns {{ valid: boolean, error?: string, warning?: string }}
  */
 export function validarRucEcuador(ruc) {
 	if (!ruc || typeof ruc !== 'string') {
@@ -80,7 +88,7 @@ export function validarRucEcuador(ruc) {
 	if (tercerDigito >= 0 && tercerDigito <= 5) {
 		const validacionCedula = validarCedulaEcuador(ruc.substring(0, 10));
 		if (!validacionCedula.valid) {
-			return { valid: false, error: `RUC persona natural inválido: ${validacionCedula.error}` };
+			return { valid: true, warning: `RUC persona natural no supera verificación: ${validacionCedula.error}` };
 		}
 		return { valid: true };
 	}
@@ -96,7 +104,7 @@ export function validarRucEcuador(ruc) {
 		const digitoVerificador = residuo === 0 ? 0 : 11 - residuo;
 
 		if (digitoVerificador !== parseInt(ruc[8], 10)) {
-			return { valid: false, error: 'Dígito verificador de RUC público incorrecto' };
+			return { valid: true, warning: 'Dígito verificador de RUC público no supera Módulo 11' };
 		}
 		return { valid: true };
 	}
@@ -112,7 +120,7 @@ export function validarRucEcuador(ruc) {
 		const digitoVerificador = residuo === 0 ? 0 : 11 - residuo;
 
 		if (digitoVerificador !== parseInt(ruc[9], 10)) {
-			return { valid: false, error: 'Dígito verificador de RUC sociedad privada incorrecto' };
+			return { valid: true, warning: 'Dígito verificador de RUC sociedad privada no supera Módulo 11' };
 		}
 		return { valid: true };
 	}
@@ -219,8 +227,8 @@ function validarEmisor(datos, errores) {
 		errores.push('RUC del emisor debe tener exactamente 13 dígitos numéricos');
 	} else {
 		const validacionRuc = validarRucEcuador(datos.emisor.ruc);
-		if (!validacionRuc.valid) {
-			console.warn(`[Validación] Advertencia RUC emisor: ${validacionRuc.error} — se permite porque ya está registrado ante el SRI`);
+		if (!validacionRuc.valid || validacionRuc.warning) {
+			console.warn(`[Validación] Advertencia RUC emisor: ${validacionRuc.error || validacionRuc.warning} — se permite porque ya está registrado ante el SRI`);
 		}
 	}
 	if (!datos.emisor?.razonSocial) {
@@ -252,11 +260,13 @@ function validarSujetoComprador(datos, errores) {
 		errores.push('Razón social del comprador es requerida');
 	}
 
-	// Validar RUC si tipo es 04
+	// Validar RUC si tipo es 04 (dígito verificador es solo advertencia — el SRI es el validador final)
 	if (datos.comprador?.tipoIdentificacion === '04' && datos.comprador.identificacion) {
 		const validacionRuc = validarRucEcuador(datos.comprador.identificacion);
 		if (!validacionRuc.valid) {
 			errores.push(`RUC del comprador inválido: ${validacionRuc.error}`);
+		} else if (validacionRuc.warning) {
+			console.warn(`[Validación] Advertencia RUC comprador ${datos.comprador.identificacion}: ${validacionRuc.warning} — el SRI valida la existencia del RUC (advertencia 62)`);
 		}
 	}
 	// Validar cédula si tipo es 05
@@ -296,11 +306,13 @@ function validarSujetoProveedor(datos, errores) {
 			errores.push(`Cédula del proveedor inválida: ${validacionCedula.error}`);
 		}
 	}
-	// Validar RUC si tipo es 04
+	// Validar RUC si tipo es 04 (dígito verificador es solo advertencia — el SRI es el validador final)
 	if (datos.proveedor?.tipoIdentificacion === '04' && datos.proveedor.identificacion) {
 		const validacionRuc = validarRucEcuador(datos.proveedor.identificacion);
 		if (!validacionRuc.valid) {
 			errores.push(`RUC del proveedor inválido: ${validacionRuc.error}`);
+		} else if (validacionRuc.warning) {
+			console.warn(`[Validación] Advertencia RUC proveedor ${datos.proveedor.identificacion}: ${validacionRuc.warning} — el SRI valida la existencia del RUC (advertencia 62)`);
 		}
 	}
 }
