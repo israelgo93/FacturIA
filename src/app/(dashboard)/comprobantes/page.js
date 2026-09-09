@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, FileText, ChevronDown, Receipt, CreditCard, ArrowDownLeft, Truck, ShoppingCart, FileCheck, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassButton from '@/components/ui/GlassButton';
 import ComprobanteList from '@/components/comprobantes/ComprobanteList';
-import { listarComprobantes } from './actions';
+import { consultarEstadosSRILote, listarComprobantes } from './actions';
+import { createClient as createBrowserClient } from '@/lib/supabase/client';
+import { toast } from 'sonner';
 
 const TIPOS_COMPROBANTE = [
 	{ codigo: '01', nombre: 'Factura', ruta: '/comprobantes/nuevo', icon: FileText },
@@ -165,7 +167,9 @@ function NuevoComprobanteDropdown() {
 	);
 }
 
-export default function ComprobantesPage() {
+function ComprobantesContent() {
+	const router = useRouter();
+	const searchParams = useSearchParams();
 	const [datos, setDatos] = useState({
 		comprobantes: [],
 		total: 0,
@@ -174,7 +178,17 @@ export default function ComprobantesPage() {
 		totalPages: 0,
 	});
 	const [cargando, setCargando] = useState(true);
-	const [filtros, setFiltros] = useState({ busqueda: '', estado: '', page: 1 });
+	const [consultando, setConsultando] = useState(false);
+	const [filtros, setFiltros] = useState(() => ({
+		busqueda: searchParams.get('busqueda') || '',
+		estado: searchParams.get('estado') || '',
+		estadoSRI: searchParams.get('estadoSRI') || '',
+		ambiente: searchParams.get('ambiente') || '2',
+		tipoComprobante: searchParams.get('tipo') || '',
+		fechaDesde: searchParams.get('desde') || '',
+		fechaHasta: searchParams.get('hasta') || '',
+		page: Number(searchParams.get('page')) || 1,
+	}));
 
 	const cargar = useCallback(async (params) => {
 		setCargando(true);
@@ -182,6 +196,11 @@ export default function ComprobantesPage() {
 			page: params?.page || 1,
 			busqueda: params?.busqueda || '',
 			estado: params?.estado || undefined,
+			estadoSRI: params?.estadoSRI || undefined,
+			ambiente: params?.ambiente || '2',
+			tipoComprobante: params?.tipoComprobante || undefined,
+			fechaDesde: params?.fechaDesde || undefined,
+			fechaHasta: params?.fechaHasta || undefined,
 		});
 		if (result.data) {
 			setDatos(result.data);
@@ -190,11 +209,55 @@ export default function ComprobantesPage() {
 	}, []);
 
 	useEffect(() => {
-		cargar(filtros);
+		const timer = setTimeout(() => void cargar(filtros), 0);
+		return () => clearTimeout(timer);
 	}, [filtros, cargar]);
 
+	useEffect(() => {
+		const supabase = createBrowserClient();
+		let recargaId;
+		const channel = supabase
+			.channel('comprobantes-listado')
+			.on('postgres_changes', { event: '*', schema: 'public', table: 'comprobantes' }, () => {
+				window.clearTimeout(recargaId);
+				recargaId = window.setTimeout(() => cargar(filtros), 250);
+			})
+			.subscribe();
+
+		return () => {
+			window.clearTimeout(recargaId);
+			supabase.removeChannel(channel);
+		};
+	}, [cargar, filtros]);
+
 	const handleFilter = (newFiltros) => {
-		setFiltros((prev) => ({ ...prev, ...newFiltros }));
+		const siguientes = { ...filtros, ...newFiltros };
+		const query = new URLSearchParams();
+		if (siguientes.busqueda) query.set('busqueda', siguientes.busqueda);
+		if (siguientes.estado) query.set('estado', siguientes.estado);
+		if (siguientes.estadoSRI) query.set('estadoSRI', siguientes.estadoSRI);
+		if (siguientes.ambiente !== '2') query.set('ambiente', siguientes.ambiente);
+		if (siguientes.tipoComprobante) query.set('tipo', siguientes.tipoComprobante);
+		if (siguientes.fechaDesde) query.set('desde', siguientes.fechaDesde);
+		if (siguientes.fechaHasta) query.set('hasta', siguientes.fechaHasta);
+		if (siguientes.page > 1) query.set('page', String(siguientes.page));
+		router.replace(query.size ? `/comprobantes?${query.toString()}` : '/comprobantes', { scroll: false });
+		setFiltros(siguientes);
+	};
+
+	const handleConsultarVisibles = async (ids) => {
+		if (!confirm(`Se consultarán ${ids.length} comprobantes en su ambiente SRI registrado. ¿Continuar?`)) return;
+		setConsultando(true);
+		const result = await consultarEstadosSRILote(ids);
+		if (result.error) {
+			toast.error(result.error);
+		} else {
+			const errores = result.data.filter((item) => item.error).length;
+			const inconclusas = result.data.filter((item) => item.data?.inconclusa).length;
+			toast.success(`Consulta finalizada: ${result.data.length - errores - inconclusas} confirmados, ${inconclusas} inconclusos y ${errores} errores`);
+			await cargar(filtros);
+		}
+		setConsultando(false);
 	};
 
 	return (
@@ -216,8 +279,19 @@ export default function ComprobantesPage() {
 				total={datos.total}
 				page={datos.page}
 				totalPages={datos.totalPages}
+				filtros={filtros}
 				onFilter={handleFilter}
+				onConsultarVisibles={handleConsultarVisibles}
+				consultando={consultando || cargando}
 			/>
 		</div>
+	);
+}
+
+export default function ComprobantesPage() {
+	return (
+		<Suspense fallback={<div className="h-40 animate-pulse rounded-xl" style={{ background: 'var(--glass-bg)' }} />}>
+			<ComprobantesContent />
+		</Suspense>
 	);
 }

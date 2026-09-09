@@ -3,6 +3,48 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 
+function PaginationBar({ pagination, onPageChange }) {
+	if (!pagination) return null;
+
+	return (
+		<div
+			className="flex items-center justify-between px-4 sm:px-5 py-3"
+			style={{ borderTop: '1px solid var(--glass-border)' }}
+		>
+			<p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+				{pagination.from}-{pagination.to} de {pagination.total}
+			</p>
+			<div className="flex items-center gap-1">
+				<button
+					onClick={() => onPageChange?.(pagination.page - 1)}
+					disabled={pagination.page <= 1}
+					className="p-2.5 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-colors touch-target flex items-center justify-center"
+					style={{ color: 'var(--text-muted)' }}
+					onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
+					onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+					aria-label="Anterior"
+				>
+					<ChevronLeft className="w-4 h-4" />
+				</button>
+				<span className="text-xs px-2" style={{ color: 'var(--text-muted)' }}>
+					{pagination.page}/{pagination.totalPages}
+				</span>
+				<button
+					onClick={() => onPageChange?.(pagination.page + 1)}
+					disabled={pagination.page >= pagination.totalPages}
+					className="p-2.5 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-colors touch-target flex items-center justify-center"
+					style={{ color: 'var(--text-muted)' }}
+					onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
+					onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+					aria-label="Siguiente"
+				>
+					<ChevronRight className="w-4 h-4" />
+				</button>
+			</div>
+		</div>
+	);
+}
+
 export default function GlassTable({
 	columns = [],
 	data = [],
@@ -20,46 +62,6 @@ export default function GlassTable({
 			</div>
 		);
 	}
-
-	const PaginationBar = () => (
-		pagination && (
-			<div
-				className="flex items-center justify-between px-4 sm:px-5 py-3"
-				style={{ borderTop: '1px solid var(--glass-border)' }}
-			>
-				<p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-					{pagination.from}-{pagination.to} de {pagination.total}
-				</p>
-				<div className="flex items-center gap-1">
-					<button
-						onClick={() => onPageChange?.(pagination.page - 1)}
-						disabled={pagination.page <= 1}
-						className="p-2.5 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-colors touch-target flex items-center justify-center"
-						style={{ color: 'var(--text-muted)' }}
-						onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
-						onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-						aria-label="Anterior"
-					>
-						<ChevronLeft className="w-4 h-4" />
-					</button>
-					<span className="text-xs px-2" style={{ color: 'var(--text-muted)' }}>
-						{pagination.page}/{pagination.totalPages}
-					</span>
-					<button
-						onClick={() => onPageChange?.(pagination.page + 1)}
-						disabled={pagination.page >= pagination.totalPages}
-						className="p-2.5 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-colors touch-target flex items-center justify-center"
-						style={{ color: 'var(--text-muted)' }}
-						onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-hover)'}
-						onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-						aria-label="Siguiente"
-					>
-						<ChevronRight className="w-4 h-4" />
-					</button>
-				</div>
-			</div>
-		)
-	);
 
 	return (
 		<div className={`glass rounded-2xl overflow-hidden ${className}`}>
@@ -83,7 +85,7 @@ export default function GlassTable({
 							))}
 						</div>
 					)}
-					<PaginationBar />
+					<PaginationBar pagination={pagination} onPageChange={onPageChange} />
 				</div>
 			)}
 
@@ -144,7 +146,7 @@ export default function GlassTable({
 					</table>
 				</div>
 
-				<PaginationBar />
+				<PaginationBar pagination={pagination} onPageChange={onPageChange} />
 			</div>
 		</div>
 	);

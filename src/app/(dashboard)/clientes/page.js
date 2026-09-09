@@ -31,7 +31,10 @@ export default function ClientesPage() {
 		setLoading(false);
 	}, [busqueda, page, filtroTipo, filtroActivo]);
 
-	useEffect(() => { cargarDatos(); }, [cargarDatos]);
+	useEffect(() => {
+		const timer = setTimeout(() => void cargarDatos(), 0);
+		return () => clearTimeout(timer);
+	}, [cargarDatos]);
 
 	const handleToggle = async (id, activo) => {
 		const result = await toggleCliente(id, !activo);

@@ -22,9 +22,9 @@ export default function NotificationPanel({ open, onClose, onCountChange }) {
 	}, [onCountChange]);
 
 	useEffect(() => {
-		if (open) {
-			cargar();
-		}
+		if (!open) return undefined;
+		const timer = setTimeout(() => void cargar(), 0);
+		return () => clearTimeout(timer);
 	}, [open, cargar]);
 
 	const handleRead = async (id) => {

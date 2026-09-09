@@ -36,16 +36,22 @@ export default function PuntosEmisionPage() {
 		setLoading(false);
 	};
 
-	useEffect(() => { cargarDatos(); }, []);
+	useEffect(() => {
+		const timer = setTimeout(() => void cargarDatos(), 0);
+		return () => clearTimeout(timer);
+	}, []);
 
 	useEffect(() => {
-		if (state?.success) {
-			toast.success(editItem ? 'Punto de emisión actualizado' : 'Punto de emisión creado');
-			setModalOpen(false);
-			setEditItem(null);
-			cargarDatos();
-		}
-		if (state?.error) toast.error(state.error);
+		const timer = setTimeout(() => {
+			if (state?.success) {
+				toast.success(editItem ? 'Punto de emisión actualizado' : 'Punto de emisión creado');
+				setModalOpen(false);
+				setEditItem(null);
+				void cargarDatos();
+			}
+			if (state?.error) toast.error(state.error);
+		}, 0);
+		return () => clearTimeout(timer);
 	}, [state, editItem]);
 
 	const columns = [

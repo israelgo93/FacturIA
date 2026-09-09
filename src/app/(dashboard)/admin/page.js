@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { verificarSuperAdmin } from '@/lib/auth/superadmin-guard';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import AdminMetricsCards from './components/AdminMetricsCards';
 import EmpresasTable from './components/EmpresasTable';
 
@@ -8,7 +8,7 @@ export default async function AdminPage() {
 	const { isSuperAdmin } = await verificarSuperAdmin();
 	if (!isSuperAdmin) redirect('/dashboard');
 
-	const supabase = await createClient();
+	const supabase = createAdminClient();
 	const { data: metricas } = await supabase
 		.from('v_admin_metricas_globales')
 		.select('*')

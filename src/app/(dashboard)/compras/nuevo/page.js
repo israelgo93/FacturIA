@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -15,12 +15,13 @@ import GlassInput from '@/components/ui/GlassInput';
 import GlassSelect from '@/components/ui/GlassSelect';
 
 function getEmptyForm() {
+	const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date());
 	return {
 		tipo_id_proveedor: '01', identificacion_proveedor: '', razon_social_proveedor: '',
 		tipo_comprobante: '01', cod_sustento: '01',
 		establecimiento: '001', punto_emision: '001', secuencial: '',
-		fecha_emision: '',
-		fecha_registro: '',
+		fecha_emision: hoy,
+		fecha_registro: hoy,
 		autorizacion: '',
 		base_no_grava_iva: 0, base_imponible_0: 0, base_imponible_iva: 0,
 		base_imp_exenta: 0, monto_iva: 0, monto_ice: 0,
@@ -33,15 +34,6 @@ export default function NuevaCompraPage() {
 	const router = useRouter();
 	const [saving, setSaving] = useState(false);
 	const [form, setForm] = useState(getEmptyForm());
-
-	useEffect(() => {
-		const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date());
-		setForm((prev) => ({
-			...prev,
-			fecha_emision: prev.fecha_emision || hoy,
-			fecha_registro: prev.fecha_registro || hoy,
-		}));
-	}, []);
 
 	const updateForm = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 

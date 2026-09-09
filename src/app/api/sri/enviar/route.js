@@ -6,6 +6,10 @@ import { procesarComprobante } from '@/lib/sri/comprobante-orchestrator';
 
 export async function POST(req) {
 	try {
+		const supabase = await createClient();
+		const { data: { user } } = await supabase.auth.getUser();
+		if (!user) return Response.json({ error: 'No autenticado' }, { status: 401 });
+
 		const { comprobanteId } = await req.json();
 		if (!comprobanteId) {
 			return Response.json({ error: 'comprobanteId es requerido' }, { status: 400 });

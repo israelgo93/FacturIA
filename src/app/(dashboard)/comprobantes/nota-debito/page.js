@@ -44,7 +44,7 @@ export default function NotaDebitoPage() {
 	const [motivos, setMotivos] = useState([{ razon: '', valor: '' }]);
 
 	// Pagos
-	const [pagos, setPagos] = useState([{ formaPago: '20', total: '' }]);
+	const [pagos, setPagos] = useState([{ formaPago: '20' }]);
 
 	// Cargar establecimientos
 	useEffect(() => {
@@ -113,14 +113,6 @@ export default function NotaDebitoPage() {
 		return motivos.reduce((sum, m) => sum + (Number(m.valor) || 0), 0).toFixed(2);
 	};
 
-	// Actualizar total de pagos automáticamente
-	useEffect(() => {
-		const total = calcularTotal();
-		if (pagos.length === 1) {
-			setPagos([{ ...pagos[0], total }]);
-		}
-	}, [motivos]);
-
 	const handleCrearBorrador = async () => {
 		setLoading(true);
 		setError(null);
@@ -144,7 +136,7 @@ export default function NotaDebitoPage() {
 				})),
 				pagos: pagos.map((p) => ({
 					formaPago: p.formaPago,
-					total: Number(p.total),
+					total: Number(calcularTotal()),
 				})),
 			});
 

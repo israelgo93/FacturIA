@@ -41,7 +41,10 @@ export default function EquipoPage() {
 		setLoading(false);
 	};
 
-	useEffect(() => { cargar(); }, []);
+	useEffect(() => {
+		const timer = setTimeout(() => void cargar(), 0);
+		return () => clearTimeout(timer);
+	}, []);
 
 	const handleInvitar = async (e) => {
 		e.preventDefault();

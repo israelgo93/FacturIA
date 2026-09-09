@@ -10,19 +10,26 @@ const PASOS_TIMELINE = [
 	{ estado: 'AUT', label: 'Autorizado', descripcion: 'Autorizado por el SRI' },
 ];
 
-const ORDEN_ESTADOS = { draft: 0, CREADO: 0, signed: 1, sent: 2, PPR: 2, AUT: 3, NAT: 3, DEV: 2, voided: -1 };
+const ORDEN_ESTADOS = { draft: 0, CREADO: 0, signed: 1, sent: 2, PPR: 2, AUT: 3, NAT: 3, DEV: 2, PAN: 3, ANU: 3, DESC: -1, voided: -1 };
 
 export default function ComprobanteTimeline({ estado, fechaAutorizacion }) {
 	const pasoActual = ORDEN_ESTADOS[estado] ?? 0;
 	const esError = estado === 'NAT' || estado === 'DEV';
-	const esAnulado = estado === 'voided';
+	const esAnulado = estado === 'ANU' || estado === 'ANULADO';
+	const esPendienteAnular = estado === 'PAN';
+	const esDescartado = estado === 'DESC' || estado === 'voided';
 
-	if (esAnulado) {
+	if (esAnulado || esPendienteAnular || esDescartado) {
+		const texto = esAnulado
+			? 'Comprobante anulado por el SRI'
+			: esPendienteAnular
+				? 'Comprobante pendiente de anular en el SRI'
+				: 'Comprobante descartado localmente';
 		return (
 			<GlassCard className="p-4" animate={false}>
 				<div className="flex items-center gap-2">
-					<Circle className="w-4 h-4" style={{ color: 'var(--color-accent-slate)' }} />
-					<span className="text-sm" style={{ color: 'var(--color-accent-slate)' }}>Comprobante anulado</span>
+					<Circle className="w-4 h-4" style={{ color: esDescartado ? 'var(--color-accent-slate)' : 'var(--color-warning)' }} />
+					<span className="text-sm" style={{ color: esDescartado ? 'var(--color-accent-slate)' : 'var(--color-warning)' }}>{texto}</span>
 				</div>
 			</GlassCard>
 		);

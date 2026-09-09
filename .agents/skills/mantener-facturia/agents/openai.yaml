@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mantenimiento de FacturIA"
+  short_description: "Mantiene FacturIA con controles SRI y CI/CD"
+  default_prompt: "Usa $mantener-facturia para implementar y verificar esta actualizacion de FacturIA."

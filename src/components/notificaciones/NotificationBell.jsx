@@ -15,9 +15,12 @@ export default function NotificationBell() {
 	}, []);
 
 	useEffect(() => {
-		refreshCount();
+		const initial = setTimeout(() => void refreshCount(), 0);
 		const t = setInterval(refreshCount, 60000);
-		return () => clearInterval(t);
+		return () => {
+			clearTimeout(initial);
+			clearInterval(t);
+		};
 	}, [refreshCount]);
 
 	return (

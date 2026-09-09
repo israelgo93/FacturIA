@@ -23,14 +23,20 @@ export default function CertificadoPage() {
 		setLoading(false);
 	};
 
-	useEffect(() => { cargarDatos(); }, []);
+	useEffect(() => {
+		const timer = setTimeout(() => void cargarDatos(), 0);
+		return () => clearTimeout(timer);
+	}, []);
 
 	useEffect(() => {
-		if (state?.success) {
-			toast.success('Certificado subido exitosamente');
-			cargarDatos();
-		}
-		if (state?.error) toast.error(state.error);
+		const timer = setTimeout(() => {
+			if (state?.success) {
+				toast.success('Certificado subido exitosamente');
+				void cargarDatos();
+			}
+			if (state?.error) toast.error(state.error);
+		}, 0);
+		return () => clearTimeout(timer);
 	}, [state]);
 
 	const handleEliminar = async () => {

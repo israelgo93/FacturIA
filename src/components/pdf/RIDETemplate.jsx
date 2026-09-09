@@ -149,7 +149,7 @@ export default function RIDETemplate({ comprobante, barcodeDataUri }) {
 				<View style={s.header}>
 					<View style={s.hLeft}>
 						{emp.logo_url ? (
-							<Image src={emp.logo_url} style={s.logo} />
+							<Image src={emp.logo_url} style={s.logo} alt="Logotipo de la empresa" />
 						) : (
 							<Text style={s.noLogo}>NO TIENE LOGO</Text>
 						)}
@@ -197,7 +197,7 @@ export default function RIDETemplate({ comprobante, barcodeDataUri }) {
 						)}
 						<View style={{ marginTop: 6 }}>
 							<Text style={s.labelBold}>CLAVE DE ACCESO / N° DE AUTORIZACION</Text>
-							{barcodeDataUri && <Image src={barcodeDataUri} style={s.barcode} />}
+							{barcodeDataUri && <Image src={barcodeDataUri} style={s.barcode} alt="Código de barras de la clave de acceso" />}
 							<Text style={s.barcodeText}>{comp.clave_acceso || comp.numero_autorizacion || ''}</Text>
 						</View>
 					</View>

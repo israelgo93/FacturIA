@@ -270,7 +270,7 @@ Configuracion inicial de la empresa y gestion de catalogos maestros.
 - CRUD de clientes con tabla paginada, busqueda global, filtros por tipo e importacion CSV masiva
 - CRUD de productos con configuracion IVA/ICE por producto e importacion CSV masiva
 - Validacion de identificaciones ecuatorianas (RUC Modulo 11, Cedula Modulo 10)
-- 4 subagentes Cursor especializados (repo-scout, sri-validator, test-writer, db-migrator)
+- Reglas operativas para agentes en `AGENTS.md` y skill versionada `mantener-facturia`
 - 5 skills de conocimiento procedimental (supabase-rls, xml-sri, glass-ui, nextjs-patterns, ci-cd-apprunner)
 - Redireccion inteligente post-login (onboarding pendiente o dashboard)
 
@@ -577,10 +577,30 @@ Detalle historico verificado en modo test:
 3. Construir XML segun tipo (XML Builder con fast-xml-parser)
 4. Firmar con XAdES-BES (certificado .p12)
 5. Enviar al SRI via SOAP (RecepcionComprobantesOffline)
-6. Consultar autorizacion con reintentos (AutorizacionComprobantesOffline, 10x5s)
+6. Consultar autorizacion inicial (AutorizacionComprobantesOffline)
 7. Generar RIDE PDF (react-pdf/renderer)
 8. Enviar email con XML + RIDE adjuntos (Resend)
 ```
+
+### Vigencia y anulaciones de comprobantes
+
+La autorizacion inicial y la vigencia fiscal son conceptos distintos. Un comprobante que alguna vez fue autorizado puede quedar `PENDIENTE DE ANULAR` o `ANULADO`; por eso FacturIA consulta bajo demanda el servicio `ConsultaComprobante` usando la clave y el ambiente guardados en el servidor.
+
+| Respuesta de vigencia SRI | Estado interno | Significado |
+|---|---|---|
+| `AUTORIZADO` | `AUT` | Vigente en el SRI |
+| `NO AUTORIZADO` | `NAT` | No autorizado por el SRI |
+| `PENDIENTE DE ANULAR` | `PAN` | Solicitud de anulacion pendiente |
+| `ANULADO` | `ANU` | Anulacion confirmada por el SRI |
+
+- `DESC` identifica un descarte local; no equivale a una anulacion fiscal.
+- Una consulta rechazada, codigo 99, timeout o SOAP Fault es inconclusa: se registra el error y se conserva el ultimo estado fiscal valido.
+- El codigo 70 conserva la misma clave, secuencial y XML; el documento no se vuelve a enviar mientras el SRI lo procesa.
+- El detalle se actualiza automaticamente mientras esta en proceso y las pantallas reciben cambios mediante Supabase Realtime.
+- `/comprobantes` filtra por busqueda, estado operativo, estado exacto SRI, tipo, fechas y ambiente. Produccion (`2`) es el ambiente predeterminado y Pruebas (`1`) debe seleccionarse explicitamente.
+- La consulta masiva opera solo sobre los comprobantes visibles, en lotes pequenos y con bloqueo temporal por fila para evitar duplicados.
+
+La migracion `20260907231638_sincronizacion_estado_sri.sql` agrega la trazabilidad de consulta, restricciones, indices y la publicacion Realtime de `comprobantes`.
 
 ### Firma Electronica XAdES-BES
 
@@ -691,7 +711,7 @@ Plan tecnico recomendado:
 
 ### Requisitos
 
-- Node.js 20+ (desarrollo local usa v25, Docker usa v20 LTS)
+- Node.js 22+ (CI y Docker usan Node 22)
 - Cuenta Supabase con proyecto configurado
 
 ### Instalacion
@@ -716,8 +736,10 @@ SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
 SRI_AMBIENTE=1
 SRI_WS_RECEPCION_PRUEBAS=https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl
 SRI_WS_AUTORIZACION_PRUEBAS=https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+SRI_WS_CONSULTA_PRUEBAS=https://celcer.sri.gob.ec/comprobantes-electronicos-ws/ConsultaComprobante?wsdl
 SRI_WS_RECEPCION_PROD=https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl
 SRI_WS_AUTORIZACION_PROD=https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+SRI_WS_CONSULTA_PROD=https://cel.sri.gob.ec/comprobantes-electronicos-ws/ConsultaComprobante?wsdl
 
 # Seguridad
 ENCRYPTION_KEY=tu-clave-aes-256-de-32-caracteres
@@ -756,8 +778,12 @@ Luego configura las variables `NEXT_PUBLIC_SUPABASE_*` y `SUPABASE_SERVICE_ROLE_
 npm run dev       # Servidor de desarrollo en http://localhost:3000
 npm run build     # Build de produccion
 npm run lint      # Verificar codigo
+npm run lint:strict # Verificar codigo sin permitir warnings
 npm run test      # Tests unitarios (vitest)
+npm run sri:audit-status # Vista previa SRI sin modificar la base; produccion por defecto
 ```
+
+La auditoria operativa acepta `-- --ambiente=1 --limite=20`. Solo informa diferencias; la persistencia se realiza desde la consulta individual o masiva autenticada de `/comprobantes`.
 
 ---
 
@@ -832,8 +858,10 @@ En App Runner Console, ir al servicio creado > **Configuration** > **Environment
 | `SRI_AMBIENTE` | `1` (pruebas) o `2` (produccion) |
 | `SRI_WS_RECEPCION_PRUEBAS` | URL WSDL recepcion pruebas |
 | `SRI_WS_AUTORIZACION_PRUEBAS` | URL WSDL autorizacion pruebas |
+| `SRI_WS_CONSULTA_PRUEBAS` | URL WSDL de consulta de vigencia en pruebas |
 | `SRI_WS_RECEPCION_PROD` | URL WSDL recepcion produccion |
 | `SRI_WS_AUTORIZACION_PROD` | URL WSDL autorizacion produccion |
+| `SRI_WS_CONSULTA_PROD` | URL WSDL de consulta de vigencia en produccion |
 | `GEMINI_API_KEY` | API key de Google Gemini |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | Misma API key de Gemini |
 | `RESEND_API_KEY` | API key de Resend |
@@ -991,7 +1019,7 @@ facturia/
 | test-writer | Generacion de tests unitarios, integracion y E2E |
 | db-migrator | Migraciones SQL, politicas RLS, verificacion de schema |
 
-5 skills de conocimiento procedimental:
+Skills de conocimiento procedimental:
 
 | Skill | Proposito |
 |-------|-----------|
@@ -1000,6 +1028,7 @@ facturia/
 | glass-ui | Sistema de diseno con soporte de temas |
 | nextjs-patterns | Patrones Next.js 16+ con App Router |
 | ci-cd-apprunner | CI/CD GitHub Actions hacia App Runner |
+| mantener-facturia | Flujo obligatorio de mantenimiento, SRI, Supabase, validacion y documentacion |
 
 ---
 
@@ -1007,7 +1036,7 @@ facturia/
 
 | Pipeline | Trigger | Destino |
 |----------|---------|---------|
-| ci.yml | Pull Request | Lint + Build (validacion) |
+| ci.yml | Pull Request | Node 22 + lint estricto + build + tests |
 | deploy-aws.yml | Push a main | ECR + App Runner produccion |
 
 ---

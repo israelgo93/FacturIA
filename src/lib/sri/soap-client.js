@@ -2,6 +2,7 @@
  * Cliente SOAP para Web Services del SRI
  * WS Recepción: Envío de comprobantes firmados
  * WS Autorización: Consulta de autorización por clave de acceso
+ * WS Consulta: Consulta de la vigencia fiscal actual del comprobante
  */
 import soap from 'soap';
 
@@ -10,10 +11,14 @@ const WS_URLS = {
 	pruebas: {
 		recepcion: process.env.SRI_WS_RECEPCION_PRUEBAS,
 		autorizacion: process.env.SRI_WS_AUTORIZACION_PRUEBAS,
+		consulta: process.env.SRI_WS_CONSULTA_PRUEBAS
+			|| 'https://celcer.sri.gob.ec/comprobantes-electronicos-ws/ConsultaComprobante?wsdl',
 	},
 	produccion: {
 		recepcion: process.env.SRI_WS_RECEPCION_PROD,
 		autorizacion: process.env.SRI_WS_AUTORIZACION_PROD,
+		consulta: process.env.SRI_WS_CONSULTA_PROD
+			|| 'https://cel.sri.gob.ec/comprobantes-electronicos-ws/ConsultaComprobante?wsdl',
 	},
 };
 
@@ -154,15 +159,9 @@ export async function consultarAutorizacion(claveAcceso, ambiente = '1') {
 
 		const tiempoMs = Date.now() - startTime;
 
-		// Debug: log de la respuesta completa del SRI
-		console.log('[SRI-AUTH] Respuesta completa:', JSON.stringify(result, null, 2));
-
 		const respuesta = result?.RespuestaAutorizacionComprobante;
 		const numComprobantes = respuesta?.numeroComprobantes;
 		const autorizaciones = respuesta?.autorizaciones;
-
-		console.log('[SRI-AUTH] numeroComprobantes:', numComprobantes);
-		console.log('[SRI-AUTH] autorizaciones keys:', autorizaciones ? Object.keys(autorizaciones) : 'null');
 
 		// Intentar obtener la autorizacion de multiples formas
 		let autorizacion = autorizaciones?.autorizacion?.[0]
@@ -202,9 +201,97 @@ export async function consultarAutorizacion(claveAcceso, ambiente = '1') {
 }
 
 /**
+ * Normaliza la respuesta del servicio ConsultaComprobante.
+ * Se exporta para probar todas las variantes del SOAP sin llamar al SRI.
+ * @param {Object} result
+ * @returns {Object}
+ */
+export function normalizarRespuestaConsultaEstado(result) {
+	const respuesta = result?.EstadoAutorizacionComprobante
+		|| result?.RespuestaConsultaComprobante
+		|| null;
+
+	if (!respuesta) {
+		return {
+			estadoConsulta: 'RESPUESTA_INVALIDA',
+			estadoAutorizacion: null,
+			mensajes: [{ tipo: 'ERROR', mensaje: 'El SRI devolvió una respuesta sin datos de consulta.' }],
+		};
+	}
+
+	const mensajesRaw = respuesta.mensajes?.mensaje;
+	const mensajes = mensajesRaw
+		? (Array.isArray(mensajesRaw) ? mensajesRaw : [mensajesRaw]).map((mensaje) => ({
+			tipo: mensaje.tipo,
+			codigo: mensaje.identificador,
+			mensaje: mensaje.mensaje,
+			informacionAdicional: mensaje.informacionAdicional,
+		}))
+		: [];
+
+	return {
+		estadoConsulta: respuesta.estadoConsulta || null,
+		estadoAutorizacion: respuesta.estadoAutorizacion || null,
+		claveAcceso: respuesta.claveAcceso || null,
+		tipoComprobante: respuesta.tipoComprobante || null,
+		rucEmisor: respuesta.rucEmisor || null,
+		fechaAutorizacion: respuesta.fechaAutorizacion || null,
+		mensajes,
+	};
+}
+
+/**
+ * Consulta la vigencia fiscal actual de un comprobante.
+ * @param {string} claveAcceso - Clave de acceso de 49 dígitos
+ * @param {string} ambiente - '1'=Pruebas, '2'=Producción
+ * @returns {Promise<Object>}
+ */
+export async function consultarEstadoComprobante(claveAcceso, ambiente) {
+	const startTime = Date.now();
+	if (!/^\d{49}$/.test(claveAcceso || '')) {
+		return {
+			estadoConsulta: 'RECHAZADA',
+			estadoAutorizacion: null,
+			codigo: 'CLAVE_ACCESO_INVALIDA',
+			mensajes: [{ tipo: 'ERROR', codigo: 'CLAVE_ACCESO_INVALIDA', mensaje: 'La clave de acceso debe contener 49 dígitos.' }],
+			tiempoMs: Date.now() - startTime,
+		};
+	}
+
+	const urls = ambiente === '2' ? WS_URLS.produccion : WS_URLS.pruebas;
+
+	for (let intento = 0; intento < 2; intento++) {
+		try {
+			const client = await crearClienteSOAP(urls.consulta);
+			const [result] = await client.consultarEstadoAutorizacionComprobanteAsync({ claveAcceso });
+			return {
+				...normalizarRespuestaConsultaEstado(result),
+				tiempoMs: Date.now() - startTime,
+			};
+		} catch (error) {
+			const errorInfo = clasificarError(error);
+			const reintentable = [SRI_ERROR_CODES.CONEXION, SRI_ERROR_CODES.TIMEOUT].includes(errorInfo.codigo);
+			if (intento === 0 && reintentable) {
+				await new Promise((resolve) => setTimeout(resolve, 500));
+				continue;
+			}
+
+			console.error(`[SRI-CONSULTA] ${errorInfo.codigo}: ${errorInfo.mensaje}`);
+			return {
+				estadoConsulta: 'ERROR_CONEXION',
+				estadoAutorizacion: null,
+				codigo: errorInfo.codigo,
+				mensajes: [{ tipo: 'ERROR', codigo: errorInfo.codigo, mensaje: errorInfo.mensaje }],
+				tiempoMs: Date.now() - startTime,
+			};
+		}
+	}
+}
+
+/**
  * Obtiene la URL del WS según ambiente y tipo
  * @param {string} ambiente - '1' o '2'
- * @param {'recepcion'|'autorizacion'} tipo
+ * @param {'recepcion'|'autorizacion'|'consulta'} tipo
  * @returns {string}
  */
 export function getWSUrl(ambiente, tipo) {

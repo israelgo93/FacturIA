@@ -2,6 +2,7 @@
 	"name": "facturia",
 	"version": "0.1.0",
 	"private": true,
+	"type": "module",
 	"scripts": {
 		"dev": "next dev",
 		"build": "next build",
@@ -10,7 +11,8 @@
 		"lint:strict": "eslint src --ext .js,.jsx,.ts,.tsx --max-warnings 0",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"sri:audit-status": "node --env-file=.env.local scripts/auditar-estados-sri.mjs"
 	},
 	"dependencies": {
 		"@ai-sdk/google": "^3.0.21",

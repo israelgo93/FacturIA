@@ -48,7 +48,7 @@ export default function LiquidacionCompraPage() {
 	]);
 
 	// Pagos
-	const [pagos, setPagos] = useState([{ formaPago: '01', total: '' }]);
+	const [pagos, setPagos] = useState([{ formaPago: '01' }]);
 
 	// Cargar establecimientos
 	useEffect(() => {
@@ -154,13 +154,6 @@ export default function LiquidacionCompraPage() {
 
 	const totales = calcularTotales();
 
-	// Actualizar total de pagos automáticamente
-	useEffect(() => {
-		if (pagos.length === 1) {
-			setPagos([{ ...pagos[0], total: totales.total }]);
-		}
-	}, [detalles]);
-
 	const handleCrearBorrador = async () => {
 		setLoading(true);
 		setError(null);
@@ -183,7 +176,7 @@ export default function LiquidacionCompraPage() {
 				})),
 				pagos: pagos.map((p) => ({
 					formaPago: p.formaPago,
-					total: Number(p.total),
+					total: Number(totales.total),
 				})),
 			});
 

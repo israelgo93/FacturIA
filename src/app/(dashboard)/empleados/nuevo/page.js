@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -25,10 +25,11 @@ const TIPOS_CONTRATO = [
 ];
 
 function getEmptyForm() {
+	const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date());
 	return {
 		tipo_identificacion: 'C', identificacion: '',
 		apellidos: '', nombres: '',
-		fecha_ingreso: '',
+		fecha_ingreso: hoy,
 		fecha_salida: '', cargo: '', tipo_contrato: '01',
 		sueldo_mensual: 0,
 	};
@@ -38,14 +39,6 @@ export default function NuevoEmpleadoPage() {
 	const router = useRouter();
 	const [saving, setSaving] = useState(false);
 	const [form, setForm] = useState(getEmptyForm());
-
-	useEffect(() => {
-		const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date());
-		setForm((prev) => ({
-			...prev,
-			fecha_ingreso: prev.fecha_ingreso || hoy,
-		}));
-	}, []);
 
 	const updateForm = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 

@@ -5,9 +5,15 @@
  * CRUD + procesamiento + anulación
  */
 import { createClient } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
 import { obtenerSiguienteSecuencial, generarNumeroCompleto } from '@/lib/sri/secuencial-manager';
 import { procesarComprobante as procesarComprobanteMotor } from '@/lib/sri/comprobante-orchestrator';
-import { consultarAutorizacion, getWSUrl } from '@/lib/sri/soap-client';
+import { consultarAutorizacion, consultarEstadoComprobante, getWSUrl } from '@/lib/sri/soap-client';
+import {
+	esEstadoConsultableSRI,
+	esRespuestaVigenciaConcluyente,
+	mapearVigenciaAEstadoInterno,
+} from '@/lib/sri/estado-comprobante';
 import { getTarifaIVA } from '@/lib/utils/sri-catalogs';
 import { fechaHoyEcuador } from '@/lib/utils/formatters';
 
@@ -179,9 +185,8 @@ export async function crearBorrador(formData) {
  */
 export async function procesarComprobante(comprobanteId) {
 	try {
-		console.log('[procesarComprobante] Iniciando para:', comprobanteId);
 		const resultado = await procesarComprobanteMotor(comprobanteId);
-		console.log('[procesarComprobante] Resultado:', JSON.stringify(resultado, null, 2));
+		revalidarVistasComprobante(comprobanteId);
 		return { data: resultado };
 	} catch (error) {
 		console.error('[procesarComprobante] Error:', error.message, error.stack);
@@ -190,10 +195,13 @@ export async function procesarComprobante(comprobanteId) {
 }
 
 /**
- * Anula un comprobante (solo borradores)
+ * Descarta localmente un comprobante que nunca alcanzó un estado fiscal final.
+ * Esto no representa una anulación ante el SRI.
  */
-export async function anularComprobante(comprobanteId) {
+export async function descartarComprobante(comprobanteId) {
 	const supabase = await createClient();
+	const { data: { user } } = await supabase.auth.getUser();
+	if (!user) return { error: 'No autenticado' };
 
 	const { data: comp } = await supabase
 		.from('comprobantes')
@@ -203,16 +211,17 @@ export async function anularComprobante(comprobanteId) {
 
 	if (!comp) return { error: 'Comprobante no encontrado' };
 	if (comp.estado !== 'draft' && comp.estado !== 'NAT' && comp.estado !== 'DEV') {
-		return { error: 'Solo se pueden anular comprobantes en estado borrador, no autorizado o devuelto' };
+		return { error: 'Solo se pueden descartar comprobantes en estado borrador, no autorizado o devuelto' };
 	}
 
 	const { error } = await supabase
 		.from('comprobantes')
-		.update({ estado: 'voided' })
+		.update({ estado: 'DESC' })
 		.eq('id', comprobanteId);
 
 	if (error) return { error: error.message };
-	return { data: { estado: 'voided' } };
+	revalidarVistasComprobante(comprobanteId);
+	return { data: { estado: 'DESC' } };
 }
 
 /**
@@ -226,24 +235,34 @@ export async function listarComprobantes({
 	fechaDesde,
 	fechaHasta,
 	busqueda,
+	ambiente = '2',
+	estadoSRI,
 } = {}) {
 	const supabase = await createClient();
 
 	let query = supabase
 		.from('comprobantes')
 		.select(
-			'id, tipo_comprobante, secuencial, numero_completo, clave_acceso, estado, fecha_emision, razon_social_comprador, identificacion_comprador, importe_total, created_at',
+			'id, tipo_comprobante, secuencial, numero_completo, clave_acceso, estado, estado_sri, estado_sri_consultado_at, estado_sri_error_codigo, estado_sri_error_mensaje, ambiente, fecha_emision, razon_social_comprador, identificacion_comprador, importe_total, created_at',
 			{ count: 'exact' }
 		)
 		.order('created_at', { ascending: false });
 
 	if (estado) query = query.eq('estado', estado);
+	if (estadoSRI) query = query.eq('estado_sri', estadoSRI);
+	if (ambiente === '1' || ambiente === '2') query = query.eq('ambiente', Number(ambiente));
 	if (tipoComprobante) query = query.eq('tipo_comprobante', tipoComprobante);
 	if (fechaDesde) query = query.gte('fecha_emision', fechaDesde);
 	if (fechaHasta) query = query.lte('fecha_emision', fechaHasta);
 	if (busqueda) {
+		const busquedaSegura = String(busqueda)
+			.trim()
+			.replace(/[^\p{L}\p{N}\s@.+-]/gu, '');
+		if (!busquedaSegura) {
+			return { error: 'El criterio de búsqueda no contiene caracteres válidos' };
+		}
 		query = query.or(
-			`razon_social_comprador.ilike.%${busqueda}%,identificacion_comprador.ilike.%${busqueda}%,numero_completo.ilike.%${busqueda}%`
+			`razon_social_comprador.ilike.%${busquedaSegura}%,identificacion_comprador.ilike.%${busquedaSegura}%,numero_completo.ilike.%${busquedaSegura}%,clave_acceso.ilike.%${busquedaSegura}%`
 		);
 	}
 
@@ -1076,6 +1095,9 @@ export async function reConsultarAutorizacion(comprobanteId) {
 
 	if (error || !comp) return { error: 'Comprobante no encontrado' };
 	if (!comp.clave_acceso) return { error: 'El comprobante no tiene clave de acceso' };
+	if (!['sent', 'PPR'].includes(comp.estado)) {
+		return { error: `La autorización inicial no puede consultarse desde el estado ${comp.estado}` };
+	}
 
 	const ambiente = String(comp.ambiente);
 	const autorizacion = await consultarAutorizacion(comp.clave_acceso, ambiente);
@@ -1094,22 +1116,187 @@ export async function reConsultarAutorizacion(comprobanteId) {
 	if (autorizacion.estado === 'AUTORIZADO') {
 		await supabase.from('comprobantes').update({
 			estado: 'AUT',
+			estado_sri: 'AUTORIZADO',
+			estado_sri_consultado_at: new Date().toISOString(),
+			estado_sri_origen: 'AUTORIZACION',
+			estado_sri_error_codigo: null,
+			estado_sri_error_mensaje: null,
 			numero_autorizacion: autorizacion.numeroAutorizacion,
 			fecha_autorizacion: autorizacion.fechaAutorizacion,
 			xml_autorizado: autorizacion.xmlAutorizado,
 		}).eq('id', comprobanteId);
 
+		revalidarVistasComprobante(comprobanteId);
 		return { data: { estado: 'AUT', autorizacion } };
 	} else if (autorizacion.estado === 'NO AUTORIZADO') {
-		await supabase.from('comprobantes').update({ estado: 'NAT' }).eq('id', comprobanteId);
+		await supabase.from('comprobantes').update({
+			estado: 'NAT',
+			estado_sri: 'NO AUTORIZADO',
+			estado_sri_consultado_at: new Date().toISOString(),
+			estado_sri_origen: 'AUTORIZACION',
+			estado_sri_error_codigo: null,
+			estado_sri_error_mensaje: null,
+		}).eq('id', comprobanteId);
+		revalidarVistasComprobante(comprobanteId);
 		return { data: { estado: 'NAT', mensajes: autorizacion.mensajes } };
 	}
 
-	return { data: { estado: autorizacion.estado, mensajes: autorizacion.mensajes } };
+	return {
+		data: {
+			estado: comp.estado,
+			estadoRespuesta: autorizacion.estado,
+			mensajes: autorizacion.mensajes,
+			inconclusa: true,
+		},
+	};
 }
 
 /**
- * Re-envía un comprobante pendiente/no autorizado/devuelto al SRI con nueva clave de acceso.
+ * Consulta bajo demanda la vigencia fiscal actual de un comprobante.
+ * Los errores o respuestas inconclusas nunca sustituyen el último estado válido.
+ */
+export async function consultarEstadoSRI(comprobanteId) {
+	const supabase = await createClient();
+	const { data: { user } } = await supabase.auth.getUser();
+	if (!user) return { error: 'No autenticado' };
+
+	const { data: comp, error } = await supabase
+		.from('comprobantes')
+		.select('id, clave_acceso, estado, estado_sri, ambiente, empresa_id, estado_sri_consulta_en_curso_at')
+		.eq('id', comprobanteId)
+		.single();
+
+	if (error || !comp) return { error: 'Comprobante no encontrado' };
+	if (!comp.clave_acceso) return { error: 'El comprobante no tiene clave de acceso' };
+	if (!esEstadoConsultableSRI(comp.estado)) {
+		return { error: `El estado ${comp.estado} todavía no puede consultarse en el SRI` };
+	}
+
+	const ahora = new Date();
+	const limiteLease = new Date(ahora.getTime() - 2 * 60 * 1000).toISOString();
+	const { data: lease, error: leaseError } = await supabase
+		.from('comprobantes')
+		.update({ estado_sri_consulta_en_curso_at: ahora.toISOString() })
+		.eq('id', comprobanteId)
+		.eq('clave_acceso', comp.clave_acceso)
+		.or(`estado_sri_consulta_en_curso_at.is.null,estado_sri_consulta_en_curso_at.lt.${limiteLease}`)
+		.select('id')
+		.maybeSingle();
+
+	if (leaseError) return { error: leaseError.message };
+	if (!lease) return { error: 'Ya existe una consulta al SRI en curso para este comprobante' };
+
+	const ambiente = String(comp.ambiente);
+	let respuesta;
+	try {
+		respuesta = await consultarEstadoComprobante(comp.clave_acceso, ambiente);
+
+		await supabase.from('sri_log').insert({
+			empresa_id: comp.empresa_id,
+			comprobante_id: comprobanteId,
+			tipo_operacion: 'CONSULTA_ESTADO',
+			url_servicio: getWSUrl(ambiente, 'consulta'),
+			response_xml: JSON.stringify({
+				estadoConsulta: respuesta.estadoConsulta,
+				estadoAutorizacion: respuesta.estadoAutorizacion,
+				claveAcceso: respuesta.claveAcceso,
+				tipoComprobante: respuesta.tipoComprobante,
+				rucEmisor: respuesta.rucEmisor,
+				fechaAutorizacion: respuesta.fechaAutorizacion,
+			}),
+			estado_respuesta: respuesta.estadoAutorizacion || respuesta.estadoConsulta,
+			mensajes_error: respuesta.mensajes,
+			duracion_ms: respuesta.tiempoMs,
+		});
+
+		if (esRespuestaVigenciaConcluyente(respuesta)) {
+			const estado = mapearVigenciaAEstadoInterno(respuesta.estadoAutorizacion);
+			const { data: actualizado, error: updateError } = await supabase
+				.from('comprobantes')
+				.update({
+					estado,
+					estado_sri: respuesta.estadoAutorizacion,
+					estado_sri_consultado_at: new Date().toISOString(),
+					estado_sri_origen: 'CONSULTA_ESTADO',
+					estado_sri_error_codigo: null,
+					estado_sri_error_mensaje: null,
+					estado_sri_consulta_en_curso_at: null,
+				})
+				.eq('id', comprobanteId)
+				.eq('clave_acceso', comp.clave_acceso)
+				.eq('ambiente', comp.ambiente)
+				.select('id, estado, estado_sri, estado_sri_consultado_at, estado_sri_error_codigo, estado_sri_error_mensaje')
+				.single();
+
+			if (updateError) return { error: updateError.message };
+			if (comp.estado !== estado) {
+				await supabase.from('dashboard_cache').delete().eq('empresa_id', comp.empresa_id);
+			}
+			revalidarVistasComprobante(comprobanteId);
+			return { data: { ...actualizado, mensajes: respuesta.mensajes } };
+		}
+
+		const codigoError = respuesta.codigo
+			|| respuesta.mensajes?.[0]?.codigo
+			|| respuesta.estadoConsulta
+			|| 'RESPUESTA_INCONCLUSA';
+		const mensajeError = respuesta.mensajes?.[0]?.mensaje
+			|| 'El SRI no devolvió un estado fiscal concluyente.';
+
+		await supabase
+			.from('comprobantes')
+			.update({
+				estado_sri_error_codigo: String(codigoError),
+				estado_sri_error_mensaje: mensajeError,
+				estado_sri_consulta_en_curso_at: null,
+			})
+			.eq('id', comprobanteId)
+			.eq('clave_acceso', comp.clave_acceso);
+
+		revalidarVistasComprobante(comprobanteId);
+		return {
+			data: {
+				estado: comp.estado,
+				estado_sri: comp.estado_sri,
+				estado_sri_error_codigo: String(codigoError),
+				estado_sri_error_mensaje: mensajeError,
+				mensajes: respuesta.mensajes,
+				inconclusa: true,
+			},
+		};
+	} catch (consultaError) {
+		await supabase
+			.from('comprobantes')
+			.update({
+				estado_sri_error_codigo: 'CONSULTA_ESTADO_ERROR',
+				estado_sri_error_mensaje: consultaError.message,
+				estado_sri_consulta_en_curso_at: null,
+			})
+			.eq('id', comprobanteId)
+			.eq('clave_acceso', comp.clave_acceso);
+		return { error: consultaError.message };
+	}
+}
+
+/**
+ * Consulta en lotes pequeños los comprobantes visibles o seleccionados.
+ */
+export async function consultarEstadosSRILote(comprobanteIds) {
+	const ids = Array.from(new Set(Array.isArray(comprobanteIds) ? comprobanteIds : [])).slice(0, 20);
+	if (ids.length === 0) return { error: 'Selecciona al menos un comprobante consultable' };
+
+	const resultados = [];
+	for (let i = 0; i < ids.length; i += 3) {
+		const lote = ids.slice(i, i + 3);
+		const respuestas = await Promise.all(lote.map((id) => consultarEstadoSRI(id)));
+		resultados.push(...respuestas.map((resultado, indice) => ({ id: lote[indice], ...resultado })));
+	}
+
+	return { data: resultados };
+}
+
+/**
+ * Re-envía un comprobante no autorizado/devuelto al SRI con nueva clave de acceso.
  * Resetea el comprobante a draft, actualiza fecha si es antigua, y re-procesa.
  */
 export async function reenviarComprobante(comprobanteId) {
@@ -1125,13 +1312,19 @@ export async function reenviarComprobante(comprobanteId) {
 		.single();
 
 	if (error || !comp) return { error: 'Comprobante no encontrado' };
-	if (!['PPR', 'NAT', 'DEV'].includes(comp.estado)) {
-		return { error: `Solo se pueden re-enviar comprobantes en estado PPR, NAT o DEV. Estado actual: ${comp.estado}` };
+	if (!['NAT', 'DEV'].includes(comp.estado)) {
+		return { error: `Solo se pueden re-enviar comprobantes no autorizados o devueltos. Estado actual: ${comp.estado}` };
 	}
 
 	const hoyEcuador = fechaHoyEcuador();
 	const actualizacion = {
 		estado: 'draft',
+		estado_sri: null,
+		estado_sri_consultado_at: null,
+		estado_sri_origen: null,
+		estado_sri_error_codigo: null,
+		estado_sri_error_mensaje: null,
+		estado_sri_consulta_en_curso_at: null,
 		clave_acceso: null,
 		xml_sin_firma: null,
 		xml_firmado: null,
@@ -1152,14 +1345,20 @@ export async function reenviarComprobante(comprobanteId) {
 	if (updateError) return { error: `Error reseteando comprobante: ${updateError.message}` };
 
 	try {
-		console.log('[reenviarComprobante] Re-procesando:', comprobanteId);
 		const resultado = await procesarComprobanteMotor(comprobanteId);
-		console.log('[reenviarComprobante] Resultado:', JSON.stringify(resultado, null, 2));
+		revalidarVistasComprobante(comprobanteId);
 		return { data: resultado };
 	} catch (err) {
 		console.error('[reenviarComprobante] Error:', err.message);
 		return { error: err.message };
 	}
+}
+
+function revalidarVistasComprobante(comprobanteId) {
+	revalidatePath('/comprobantes');
+	revalidatePath(`/comprobantes/${comprobanteId}`);
+	revalidatePath('/dashboard');
+	revalidatePath('/reportes');
 }
 
 async function insertarDetallesComprobante(supabase, comprobanteId, empresaId, detalles) {

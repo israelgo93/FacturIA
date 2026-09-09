@@ -44,18 +44,27 @@ export default function OnboardingPage() {
 	}, [router]);
 
 	useEffect(() => {
-		if (empresaState?.success) { setStep(1); toast.success('Datos de empresa guardados'); }
-		if (empresaState?.error) toast.error(empresaState.error);
+		const timer = setTimeout(() => {
+			if (empresaState?.success) { setStep(1); toast.success('Datos de empresa guardados'); }
+			if (empresaState?.error) toast.error(empresaState.error);
+		}, 0);
+		return () => clearTimeout(timer);
 	}, [empresaState]);
 
 	useEffect(() => {
-		if (estabState?.success) { setStep(2); toast.success('Establecimiento guardado'); }
-		if (estabState?.error) toast.error(estabState.error);
+		const timer = setTimeout(() => {
+			if (estabState?.success) { setStep(2); toast.success('Establecimiento guardado'); }
+			if (estabState?.error) toast.error(estabState.error);
+		}, 0);
+		return () => clearTimeout(timer);
 	}, [estabState]);
 
 	useEffect(() => {
-		if (puntoState?.success) { setStep(3); toast.success('Punto de emisión guardado'); }
-		if (puntoState?.error) toast.error(puntoState.error);
+		const timer = setTimeout(() => {
+			if (puntoState?.success) { setStep(3); toast.success('Punto de emisión guardado'); }
+			if (puntoState?.error) toast.error(puntoState.error);
+		}, 0);
+		return () => clearTimeout(timer);
 	}, [puntoState]);
 
 	const handleSkipCertificado = () => setStep(4);

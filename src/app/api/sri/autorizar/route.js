@@ -1,17 +1,23 @@
 /**
- * API Route: Consultar autorización de comprobante en el SRI
+ * API Route autenticada: consultar autorización inicial de un comprobante.
+ * El ambiente y la clave siempre se obtienen de la base de datos.
  */
-import { consultarAutorizacion } from '@/lib/sri/soap-client';
+import { createClient } from '@/lib/supabase/server';
+import { reConsultarAutorizacion } from '@/app/(dashboard)/comprobantes/actions';
 
 export async function POST(req) {
 	try {
-		const { claveAcceso, ambiente } = await req.json();
-		if (!claveAcceso) {
-			return Response.json({ error: 'claveAcceso es requerida' }, { status: 400 });
+		const supabase = await createClient();
+		const { data: { user } } = await supabase.auth.getUser();
+		if (!user) return Response.json({ error: 'No autenticado' }, { status: 401 });
+
+		const { comprobanteId } = await req.json();
+		if (!comprobanteId) {
+			return Response.json({ error: 'comprobanteId es requerido' }, { status: 400 });
 		}
 
-		const resultado = await consultarAutorizacion(claveAcceso, ambiente || '1');
-		return Response.json(resultado);
+		const resultado = await reConsultarAutorizacion(comprobanteId);
+		return Response.json(resultado, { status: resultado.error ? 400 : 200 });
 	} catch (error) {
 		return Response.json({ error: error.message }, { status: 500 });
 	}

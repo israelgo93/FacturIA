@@ -14,7 +14,10 @@ const ESTADOS = {
 	AUT: { label: 'Autorizado', bg: 'var(--color-success-muted)', text: 'var(--color-success)' },
 	NAT: { label: 'No Autorizado', bg: 'var(--color-danger-muted)', text: 'var(--color-danger)' },
 	DEV: { label: 'Devuelto', bg: 'var(--color-danger-muted)', text: 'var(--color-danger)' },
-	voided: { label: 'Anulado', bg: 'var(--color-neutral-muted)', text: 'var(--color-accent-slate)' },
+	PAN: { label: 'Pendiente de anular', bg: 'var(--color-warning-muted)', text: 'var(--color-warning)' },
+	ANU: { label: 'Anulado por el SRI', bg: 'var(--color-danger-muted)', text: 'var(--color-danger)' },
+	DESC: { label: 'Descartado', bg: 'var(--color-neutral-muted)', text: 'var(--color-accent-slate)' },
+	voided: { label: 'Descartado', bg: 'var(--color-neutral-muted)', text: 'var(--color-accent-slate)' },
 
 	// --- Códigos SRI 3 letras (plan Fase 6) ---
 	BOR: { label: 'Borrador', bg: 'var(--color-neutral-muted)', text: 'var(--color-accent-slate)' },
@@ -23,7 +26,6 @@ const ESTADOS = {
 	REC: { label: 'Recibido', bg: 'var(--color-info-muted)', text: 'var(--color-info)' },
 	NAU: { label: 'No Autorizado', bg: 'var(--color-danger-muted)', text: 'var(--color-danger)' },
 	ERR: { label: 'Error', bg: 'var(--color-danger-muted)', text: 'var(--color-danger)' },
-	ANU: { label: 'Anulado', bg: 'var(--color-neutral-muted)', text: 'var(--color-accent-slate)' },
 	PROCESANDO: { label: 'Procesando', bg: 'var(--color-warning-muted)', text: 'var(--color-warning)' },
 
 	// --- Legacy mayúsculas ---
@@ -78,7 +80,7 @@ function resolveEstadoKey(raw) {
 	if (ESTADOS[low]) return low;
 	// Alias comunes
 	if (up === 'BORRADOR' || low === 'borrador') return 'draft';
-	if (up === 'ANULADO' || up === 'ANU') return 'voided';
+	if (up === 'DESCARTADO') return 'DESC';
 	return s;
 }
 

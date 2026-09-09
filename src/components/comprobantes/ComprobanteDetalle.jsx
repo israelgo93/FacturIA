@@ -1,48 +1,151 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import GlassCard from '@/components/ui/GlassCard';
 import GlassButton from '@/components/ui/GlassButton';
 import StatusBadge from './StatusBadge';
 import ComprobanteTimeline from './ComprobanteTimeline';
 import { ArrowLeft, Send, FileText, Download, Mail, Ban, Eye, RefreshCw, RotateCcw } from 'lucide-react';
-import { procesarComprobante, anularComprobante, reConsultarAutorizacion, reenviarComprobante } from '@/app/(dashboard)/comprobantes/actions';
+import {
+	consultarEstadoSRI,
+	descartarComprobante,
+	procesarComprobante,
+	reConsultarAutorizacion,
+	reenviarComprobante,
+} from '@/app/(dashboard)/comprobantes/actions';
+import { createClient as createBrowserClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
 export default function ComprobanteDetalle({ comprobante }) {
+	const router = useRouter();
 	const [procesando, setProcesando] = useState(false);
+	const [consultandoVigencia, setConsultandoVigencia] = useState(false);
 	const [enviandoEmail, setEnviandoEmail] = useState(false);
-	const comp = comprobante;
+	const [actualizacion, setActualizacion] = useState(null);
+	const comp = useMemo(
+		() => ({ ...comprobante, ...(actualizacion || {}) }),
+		[comprobante, actualizacion]
+	);
+
+	useEffect(() => {
+		const supabase = createBrowserClient();
+		const channel = supabase
+			.channel(`comprobante-${comprobante.id}`)
+			.on(
+				'postgres_changes',
+				{
+					event: 'UPDATE',
+					schema: 'public',
+					table: 'comprobantes',
+					filter: `id=eq.${comprobante.id}`,
+				},
+				(payload) => setActualizacion((prev) => ({ ...(prev || {}), ...payload.new }))
+			)
+			.subscribe();
+
+		return () => {
+			supabase.removeChannel(channel);
+		};
+	}, [comprobante.id]);
+
+	useEffect(() => {
+		if (comp.estado !== 'PPR') return undefined;
+
+		let cancelado = false;
+		let timeoutId;
+		let intento = 0;
+		const demoras = [5000, 10000, 30000];
+
+		const programar = () => {
+			if (cancelado || intento >= 10) return;
+			const demora = demoras[Math.min(intento, demoras.length - 1)];
+			timeoutId = window.setTimeout(async () => {
+				if (document.hidden) {
+					programar();
+					return;
+				}
+
+				intento += 1;
+				const result = await reConsultarAutorizacion(comprobante.id);
+				if (cancelado) return;
+				if (result.data && !result.data.inconclusa) {
+					setActualizacion((prev) => ({ ...(prev || {}), ...result.data }));
+					router.refresh();
+					toast.success(`Estado actualizado automáticamente: ${result.data.estado}`);
+					return;
+				}
+				programar();
+			}, demora);
+		};
+
+		programar();
+		return () => {
+			cancelado = true;
+			window.clearTimeout(timeoutId);
+		};
+	}, [comp.estado, comprobante.id, router]);
+
+	const aplicarResultado = (data) => {
+		if (data) setActualizacion((prev) => ({ ...(prev || {}), ...data }));
+		router.refresh();
+	};
 
 	const handleProcesar = async () => {
 		setProcesando(true);
 		const result = await procesarComprobante(comp.id);
 		if (result.error) toast.error(result.error);
-		else toast.success(`Estado: ${result.data?.estado}`);
+		else {
+			aplicarResultado(result.data);
+			toast.success(`Estado: ${result.data?.estado}`);
+		}
 		setProcesando(false);
 	};
 
-	const handleAnular = async () => {
-		const result = await anularComprobante(comp.id);
+	const handleDescartar = async () => {
+		if (!confirm('Este comprobante se marcará como descartado localmente. Esto no ejecuta una anulación ante el SRI. ¿Continuar?')) return;
+		const result = await descartarComprobante(comp.id);
 		if (result.error) toast.error(result.error);
-		else toast.success('Comprobante anulado');
+		else {
+			aplicarResultado(result.data);
+			toast.success('Comprobante descartado');
+		}
 	};
 
 	const handleReConsultar = async () => {
 		setProcesando(true);
 		const result = await reConsultarAutorizacion(comp.id);
 		if (result.error) toast.error(result.error);
-		else toast.success(`Estado actualizado: ${result.data?.estado}`);
+		else if (result.data?.inconclusa) toast.info(`El SRI respondió: ${result.data.estadoRespuesta}`);
+		else {
+			aplicarResultado(result.data);
+			toast.success(`Estado actualizado: ${result.data?.estado}`);
+		}
 		setProcesando(false);
 	};
 
+	const handleConsultarVigencia = async () => {
+		setConsultandoVigencia(true);
+		const result = await consultarEstadoSRI(comp.id);
+		if (result.error) toast.error(result.error);
+		else {
+			aplicarResultado(result.data);
+			if (result.data?.inconclusa) toast.warning(result.data.estado_sri_error_mensaje);
+			else toast.success(`Estado fiscal confirmado: ${result.data?.estado_sri}`);
+		}
+		setConsultandoVigencia(false);
+	};
+
 	const handleReenviar = async () => {
-		if (!confirm('Se generará una nueva clave de acceso y se re-enviará al SRI. ¿Continuar?')) return;
+		if (!confirm('El comprobante fue rechazado. Se corregirá y procesará nuevamente con una nueva clave. ¿Continuar?')) return;
 		setProcesando(true);
 		const result = await reenviarComprobante(comp.id);
 		if (result.error) toast.error(result.error);
-		else toast.success(`Estado: ${result.data?.estado}`);
+		else {
+			aplicarResultado(result.data);
+			toast.success(`Estado: ${result.data?.estado}`);
+		}
 		setProcesando(false);
 	};
 
@@ -91,6 +194,7 @@ export default function ComprobanteDetalle({ comprobante }) {
 
 	const tieneXML = Boolean(comp.xml_autorizado || comp.xml_firmado);
 	const estaAutorizado = comp.estado === 'AUT';
+	const puedeConsultarVigencia = ['sent', 'PPR', 'AUT', 'NAT', 'PAN', 'ANU'].includes(comp.estado);
 
 	return (
 		<div className="max-w-4xl mx-auto space-y-6">
@@ -125,14 +229,19 @@ export default function ComprobanteDetalle({ comprobante }) {
 						</GlassButton>
 					</>
 				)}
-				{['PPR', 'NAT', 'DEV'].includes(comp.estado) && (
+				{puedeConsultarVigencia && (
+					<GlassButton size="sm" variant="secondary" icon={FileText} onClick={handleConsultarVigencia} loading={consultandoVigencia}>
+						Consultar estado SRI
+					</GlassButton>
+				)}
+				{['NAT', 'DEV'].includes(comp.estado) && (
 					<GlassButton size="sm" variant="secondary" icon={RotateCcw} onClick={handleReenviar} loading={procesando}>
 						Re-enviar al SRI
 					</GlassButton>
 				)}
 					{(comp.estado === 'draft' || comp.estado === 'NAT' || comp.estado === 'DEV') && (
-						<GlassButton variant="ghost" size="sm" icon={Ban} onClick={handleAnular}>
-							Anular
+						<GlassButton variant="ghost" size="sm" icon={Ban} onClick={handleDescartar}>
+							Descartar
 						</GlassButton>
 					)}
 				</div>
@@ -163,6 +272,30 @@ export default function ComprobanteDetalle({ comprobante }) {
 
 			{/* Timeline */}
 			<ComprobanteTimeline estado={comp.estado} fechaAutorizacion={comp.fecha_autorizacion} />
+
+			<GlassCard className="p-4" animate={false}>
+				<div className="flex flex-wrap items-start justify-between gap-3">
+					<div>
+						<p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Vigencia fiscal</p>
+						<p className="text-sm mt-1" style={{ color: 'var(--text-primary)' }}>
+							{comp.estado_sri || 'Sin verificación de vigencia'}
+						</p>
+						{comp.estado_sri_consultado_at && (
+							<p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+								Última consulta: {new Date(comp.estado_sri_consultado_at).toLocaleString('es-EC')}
+							</p>
+						)}
+					</div>
+					<span className="text-xs px-2 py-1 rounded-md" style={{ background: 'var(--glass-hover)', color: 'var(--text-secondary)' }}>
+						Ambiente: {Number(comp.ambiente) === 2 ? 'Producción' : 'Pruebas'}
+					</span>
+				</div>
+				{comp.estado_sri_error_mensaje && (
+					<p className="text-xs mt-3" style={{ color: 'var(--color-warning)' }}>
+						Última consulta inconclusa ({comp.estado_sri_error_codigo}): {comp.estado_sri_error_mensaje}
+					</p>
+				)}
+			</GlassCard>
 
 			{/* Clave de acceso */}
 			{comp.clave_acceso && (

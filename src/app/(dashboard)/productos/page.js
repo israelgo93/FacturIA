@@ -31,7 +31,10 @@ export default function ProductosPage() {
 		setLoading(false);
 	}, [busqueda, page, filtroActivo]);
 
-	useEffect(() => { cargarDatos(); }, [cargarDatos]);
+	useEffect(() => {
+		const timer = setTimeout(() => void cargarDatos(), 0);
+		return () => clearTimeout(timer);
+	}, [cargarDatos]);
 
 	const handleToggle = async (id, activo) => {
 		const result = await toggleProducto(id, !activo);

@@ -28,7 +28,10 @@ export default function ComprasPage() {
 		setLoading(false);
 	}, [busqueda, page]);
 
-	useEffect(() => { cargarDatos(); }, [cargarDatos]);
+	useEffect(() => {
+		const timer = setTimeout(() => void cargarDatos(), 0);
+		return () => clearTimeout(timer);
+	}, [cargarDatos]);
 
 	const handleEliminar = async (id) => {
 		if (!confirm('¿Eliminar esta compra?')) return;

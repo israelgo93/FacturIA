@@ -1,7 +1,13 @@
 import '@/styles/globals.css';
 import { Toaster } from 'sonner';
+import { Inter } from 'next/font/google';
 import ThemeProvider from '@/components/providers/ThemeProvider';
 import { SerwistProvider } from './serwist-provider';
+
+const inter = Inter({
+	subsets: ['latin'],
+	display: 'swap',
+});
 
 export const metadata = {
 	title: 'facturIA — Facturación Electrónica con IA',
@@ -38,15 +44,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
 	return (
 		<html lang="es" suppressHydrationWarning>
-			<head>
-				<link rel="preconnect" href="https://fonts.googleapis.com" />
-				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-				<link
-					href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-					rel="stylesheet"
-				/>
-			</head>
-			<body className="antialiased">
+			<body className={`${inter.className} antialiased`}>
 				<SerwistProvider swUrl="/serwist/sw.js">
 					<ThemeProvider>
 						{children}

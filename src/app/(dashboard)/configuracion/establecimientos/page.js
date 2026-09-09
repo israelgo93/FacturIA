@@ -29,16 +29,22 @@ export default function EstablecimientosPage() {
 		setLoading(false);
 	};
 
-	useEffect(() => { cargarDatos(); }, []);
+	useEffect(() => {
+		const timer = setTimeout(() => void cargarDatos(), 0);
+		return () => clearTimeout(timer);
+	}, []);
 
 	useEffect(() => {
-		if (state?.success) {
-			toast.success(editItem ? 'Establecimiento actualizado' : 'Establecimiento creado');
-			setModalOpen(false);
-			setEditItem(null);
-			cargarDatos();
-		}
-		if (state?.error) toast.error(state.error);
+		const timer = setTimeout(() => {
+			if (state?.success) {
+				toast.success(editItem ? 'Establecimiento actualizado' : 'Establecimiento creado');
+				setModalOpen(false);
+				setEditItem(null);
+				void cargarDatos();
+			}
+			if (state?.error) toast.error(state.error);
+		}, 0);
+		return () => clearTimeout(timer);
 	}, [state, editItem]);
 
 	const handleToggle = async (id, activo) => {

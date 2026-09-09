@@ -7,10 +7,12 @@ export const SRI_WS = {
 	PRUEBAS: {
 		RECEPCION: 'https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl',
 		AUTORIZACION: 'https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl',
+		CONSULTA: 'https://celcer.sri.gob.ec/comprobantes-electronicos-ws/ConsultaComprobante?wsdl',
 	},
 	PRODUCCION: {
 		RECEPCION: 'https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl',
 		AUTORIZACION: 'https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl',
+		CONSULTA: 'https://cel.sri.gob.ec/comprobantes-electronicos-ws/ConsultaComprobante?wsdl',
 	},
 };
 
@@ -33,6 +35,8 @@ export const ESTADOS_COMPROBANTE = {
 	AUTORIZADO: 'AUTORIZADO',
 	NO_AUTORIZADO: 'NO_AUTORIZADO',
 	ANULADO: 'ANULADO',
+	PENDIENTE_ANULAR: 'PENDIENTE DE ANULAR',
+	DESCARTADO: 'DESC',
 	PPR: 'PPR',
 };
 
